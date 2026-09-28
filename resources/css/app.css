@@ -1,0 +1,31 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
+
+@source '../views';
+@source '../js';
+
+/* Design tokens agreed in the prototype: white surfaces, grey-50 canvas, one indigo accent. */
+@theme {
+    --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
+
+    --color-canvas: #f9fafb;
+    --color-line: #eaecf0;
+    --color-line-strong: #d0d5dd;
+    --color-ink: #101828;
+    --color-ink-2: #344054;
+    --color-muted: #667085;
+
+    --color-accent: #4f46e5;
+    --color-accent-strong: #3730a3;
+    --color-accent-soft: #eef2ff;
+    --color-accent-ring: #e0e7ff;
+}
+
+@layer base {
+    html { -webkit-font-smoothing: antialiased; }
+    body { @apply bg-canvas text-ink font-sans; }
+    h1, h2, h3 { letter-spacing: -0.02em; }
+    :focus-visible { outline: none; box-shadow: 0 0 0 4px var(--color-accent-ring); }
+}

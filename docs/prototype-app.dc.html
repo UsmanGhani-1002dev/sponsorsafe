@@ -1,0 +1,1750 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sponsor Compliance HR – prototype</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F9FAFB}
+input,select,button{font:inherit}
+input,select{box-sizing:border-box;width:100%;min-height:44px;padding:10px 12px;border:1px solid #D0D5DD;border-radius:8px;background:#FFFFFF;color:#101828;font-size:15px;box-shadow:0 1px 2px rgba(16,24,40,.05)}
+input:focus,select:focus,button:focus-visible{outline:none;box-shadow:0 0 0 4px #E0E7FF;border-color:#A5B4FC}
+button{transition:background-color .12s,box-shadow .12s}
+button:hover{filter:brightness(.97)}
+label{font-size:14px;font-weight:500;color:#344054}
+a{color:#4F46E5}a:hover{color:#3730A3}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1024px; background: #F9FAFB; color: #101828; font-family: Geist, system-ui, sans-serif; overflow: hidden">
+
+<!-- ================= LOGIN ================= -->
+<sc-if value="{{isLogin}}" hint-placeholder-val="{{true}}">
+<div style="width: 1440px; height: 1024px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding: 48px; background: #F9FAFB">
+<div style="display: flex; align-items: center; gap: 10px"><span aria-hidden="true" style="width: 36px; height: 36px; border-radius: 10px; background: #4F46E5; display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF; font-size: 17px; font-weight: 700">S</span><span style="font-size: 20px; font-weight: 600; letter-spacing: -0.02em">SponsorSafe</span></div>
+<div style="width: 420px; box-sizing: border-box; background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 14px; box-shadow: 0 4px 8px -2px rgba(16,24,40,0.08); padding: 32px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-direction: column; gap: 4px"><h1 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.02em">Sign in</h1><span style="font-size: 14px; color: #667085">For business admins and employees</span></div>
+<sc-if value="{{authEmailStep}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="a-email">Email</label><input id="a-email" type="email" value="{{auth.email}}" onChange="{{aEmail}}" placeholder="you@company.co.uk"></div>
+<button type="button" onClick="{{authNext}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer">Next</button>
+</sc-if>
+<sc-if value="{{authPwStep}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid #EAECF0; border-radius: 10px; background: #F9FAFB">
+<div style="display: flex; align-items: center; gap: 12px; min-width: 0"><span aria-hidden="true" style="width: 40px; height: 40px; flex-shrink: 0; border-radius: 999px; background: #EEF2FF; color: #3730A3; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600">{{acct.initials}}</span>
+<div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 15px; font-weight: 600">{{acct.name}}</span><span style="font-size: 13px; color: #667085; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{acct.email}}</span><span style="font-size: 13px; color: #667085">{{acct.sub}}</span></div></div>
+<button type="button" onClick="{{notYou}}" style="min-height: 36px; padding: 6px 10px; border: none; background: transparent; color: #4F46E5; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap">Not you?</button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="display: flex; justify-content: space-between; align-items: baseline"><label for="a-pw">Password</label><button type="button" onClick="{{forgot}}" style="border: none; background: transparent; color: #4F46E5; font-size: 13px; font-weight: 500; cursor: pointer; padding: 4px 0">Forgot password?</button></div><input id="a-pw" type="password" value="{{auth.pw}}" onChange="{{aPw}}"></div>
+<button type="button" onClick="{{signIn}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer">Sign in</button>
+</sc-if>
+<sc-if value="{{hasAuthErr}}" hint-placeholder-val="{{false}}"><div style="padding: 10px 12px; border-radius: 8px; background: #FEF3F2; border: 1px solid #FECDCA; font-size: 14px; color: #B42318">{{auth.err}}</div></sc-if>
+<sc-if value="{{hasAuthInfo}}" hint-placeholder-val="{{false}}"><div style="padding: 10px 12px; border-radius: 8px; background: #EEF4FF; border: 1px solid #C7D7FE; font-size: 14px; color: #3538CD">{{auth.info}}</div></sc-if>
+</div>
+<div style="width: 420px; box-sizing: border-box; padding: 16px; border: 1px dashed #D0D5DD; border-radius: 12px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 13px; font-weight: 600; color: #344054">Prototype demo accounts (any password works)</span>
+<sc-for list="{{demoAccounts}}" as="d" hint-placeholder-count="4"><button type="button" onClick="{{d.fill}}" style="display: flex; justify-content: space-between; gap: 8px; min-height: 36px; padding: 6px 10px; border: 1px solid #EAECF0; border-radius: 8px; background: #FFFFFF; cursor: pointer; font-size: 13px; color: #344054; text-align: left"><span>{{d.label}}</span><span style="color: #667085">{{d.email}}</span></button></sc-for>
+</div>
+<a href="Website.dc.html" style="font-size: 14px; font-weight: 500">← Back to website</a>
+</div>
+</sc-if>
+
+<!-- ================= ADMIN ================= -->
+<sc-if value="{{isAdmin}}" hint-placeholder-val="{{false}}">
+<div style="width: 1440px; height: 1024px; display: flex; flex-direction: column">
+<header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; background: #FFFFFF; color: #101828; border-bottom: 1px solid #EAECF0">
+<div style="display: flex; align-items: center; gap: 12px"><span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 8px; background: #4F46E5; display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF; font-size: 14px; font-weight: 700">S</span><div style="font-family: Geist, system-ui, sans-serif; letter-spacing: -0.02em; font-size: 17px; font-weight: 600">{{biz.name}}</div><div style="font-size: 14px; color: #667085">HR admin · Sponsor licence {{biz.licence}}</div></div>
+<div style="display: flex; align-items: center; gap: 16px"><span style="font-size: 14px; color: #667085">Today is 24 Sep 2026 (demo)</span>
+<button type="button" onClick="{{logout}}" style="min-height: 40px; padding: 8px 14px; border-radius: 8px; border: 1px solid #D0D5DD; background: #FFFFFF; color: #344054; font-weight: 600; cursor: pointer">Log out</button></div>
+</header>
+<div style="flex-grow: 1; display: flex; min-height: 0">
+<nav aria-label="Sections" style="width: 240px; flex-shrink: 0; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid #EAECF0; background: #FFFFFF">
+<sc-for list="{{tabs}}" as="tb" hint-placeholder-count="8">
+<button type="button" onClick="{{tb.go}}" style="{{tb.style}}"><span>{{tb.label}}</span><sc-if value="{{tb.hasCount}}" hint-placeholder-val="{{false}}"><span style="{{tb.countStyle}}">{{tb.count}}</span></sc-if></button>
+</sc-for>
+</nav>
+<main style="flex-grow: 1; overflow-y: auto; padding: 32px 40px 56px">
+
+<!-- DASHBOARD -->
+<sc-if value="{{isDash}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 32px">
+<h1 style="margin: 0; font-family: Geist, system-ui, sans-serif; letter-spacing: -0.02em; font-size: 26px; font-weight: 600">Dashboard</h1>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+<sc-for list="{{stats}}" as="s" hint-placeholder-count="4">
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 20px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 14px; color: #667085">{{s.label}}</div>
+<div style="{{s.numStyle}}">{{s.value}}</div>
+<div style="font-size: 13px; color: #667085">{{s.hint}}</div>
+</div>
+</sc-for>
+</div>
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Unexplained absences</h2>
+<p style="margin: 0; font-size: 14px; color: #667085">From the clock-in system: a scheduled working day with no clock-in and no absence recorded.</p>
+<sc-if value="{{noAlerts}}" hint-placeholder-val="{{false}}"><div style="padding: 16px 20px; background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); font-size: 15px; color: #344054">All clear — every scheduled day is accounted for.</div></sc-if>
+<sc-for list="{{alertRows}}" as="al" hint-placeholder-count="1">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05)">
+<div style="display: flex; flex-direction: column; gap: 2px"><div style="font-size: 16px; font-weight: 600">{{al.who}} · {{al.date}}</div><div style="font-size: 14px; color: #667085">No clock-in, no absence recorded</div></div>
+<div style="display: flex; gap: 10px">
+<button type="button" onClick="{{al.classify}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; cursor: pointer">Classify absence</button>
+<button type="button" onClick="{{al.dismiss}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: 1px solid #D0D5DD; background: #FFFFFF; color: #101828; font-weight: 500; cursor: pointer">Worked – clock-in missed</button>
+</div>
+</div>
+</sc-for>
+</section>
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Right-to-work watchlist</h2>
+<p style="margin: 0; font-size: 14px; color: #667085">Employees with time-limited permission. A follow-up check is needed before each expiry.</p>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); overflow: hidden">
+<div style="display: grid; grid-template-columns: 1.2fr 1.3fr 1.4fr 1.2fr 130px; gap: 12px; padding: 12px 20px; background: #F9FAFB; font-size: 13px; font-weight: 600; color: #344054"><span>Employee</span><span>Status</span><span>Expiry</span><span>Unpaid days 2026</span><span></span></div>
+<sc-for list="{{watchRows}}" as="w" hint-placeholder-count="4">
+<div style="display: grid; grid-template-columns: 1.2fr 1.3fr 1.4fr 1.2fr 130px; gap: 12px; padding: 12px 20px; border-top: 1px solid #F2F4F7; font-size: 14px; align-items: center">
+<span style="font-weight: 600">{{w.name}}</span><span>{{w.status}}</span><span><span style="{{w.bs}}">{{w.expiry}}</span></span><span style="font-family: 'Geist Mono', ui-monospace, monospace">{{w.unpaid}}</span>
+<button type="button" onClick="{{w.open}}" style="min-height: 36px; padding: 6px 10px; border-radius: 6px; border: 1px solid #4F46E5; background: #FFFFFF; color: #4F46E5; font-size: 13px; font-weight: 600; cursor: pointer">Open profile</button>
+</div>
+</sc-for>
+</div>
+</section>
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Next Home Office deadlines</h2>
+<sc-if value="{{noPending}}" hint-placeholder-val="{{false}}"><div style="padding: 16px 20px; background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); font-size: 15px; color: #344054">Nothing to report right now.</div></sc-if>
+<sc-for list="{{nextTasks}}" as="t" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05)">
+<div style="display: flex; flex-direction: column; gap: 2px"><div style="font-size: 15px; font-weight: 600">{{t.event}}</div><div style="font-size: 14px; color: #667085">{{t.who}} · deadline {{t.deadline}}</div></div>
+<span style="{{t.bs}}">{{t.badge}}</span>
+</div>
+</sc-for>
+</section>
+</div>
+</sc-if>
+
+<!-- EMPLOYEES LIST -->
+<sc-if value="{{isEmpList}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<h1 style="margin: 0; font-family: Geist, system-ui, sans-serif; letter-spacing: -0.02em; font-size: 26px; font-weight: 600">Employees</h1>
+<button type="button" onClick="{{goAdd}}" style="min-height: 44px; padding: 10px 18px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; cursor: pointer">+ Add employee</button>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); overflow: hidden">
+<div style="display: grid; grid-template-columns: 1.2fr 1.2fr 1.4fr 1.3fr 0.9fr 1fr 130px; gap: 12px; padding: 12px 20px; background: #F9FAFB; font-size: 13px; font-weight: 600; color: #344054">
+<span>Employee</span><span>Job title</span><span>Right to work</span><span>Expiry</span><span>Documents</span><span>Home Office</span><span></span>
+</div>
+<sc-if value="{{noEmployees}}" hint-placeholder-val="{{false}}"><div style="padding: 16px 20px; font-size: 14px; color: #344054">No employees yet. Add the first one.</div></sc-if>
+<sc-for list="{{empRows}}" as="e" hint-placeholder-count="5">
+<div style="display: grid; grid-template-columns: 1.2fr 1.2fr 1.4fr 1.3fr 0.9fr 1fr 130px; gap: 12px; padding: 14px 20px; border-top: 1px solid #F2F4F7; font-size: 14px; align-items: center">
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600; font-size: 15px">{{e.name}}</span><span style="font-size: 13px; color: #667085">{{e.site}}</span></div>
+<span>{{e.role}}</span><span>{{e.status}}</span>
+<span><span style="{{e.visaBs}}">{{e.visa}}</span></span>
+<span><span style="{{e.docsBs}}">{{e.docs}}</span></span>
+<span><span style="{{e.repBs}}">{{e.reports}}</span></span>
+<button type="button" onClick="{{e.open}}" style="min-height: 40px; padding: 8px 12px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer">Open profile</button>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<!-- ADD EMPLOYEE -->
+<sc-if value="{{isAdd}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 20px; max-width: 1060px">
+<h1 style="margin: 0; font-family: Geist, system-ui, sans-serif; letter-spacing: -0.02em; font-size: 26px; font-weight: 600">Add employee</h1>
+<p style="margin: 0; font-size: 15px; color: #344054">Right-to-work must be checked before the first day of work. Fields change depending on the employee's right-to-work basis.</p>
+
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">1. Personal details</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-name">Full legal name</label><input id="n-name" type="text" value="{{ne.name}}" onChange="{{nName}}" placeholder="As on passport"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-dob">Date of birth</label><input id="n-dob" type="date" value="{{ne.dob}}" onChange="{{nDob}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-nat">Nationality</label>
+<select id="n-nat" value="{{ne.nationality}}" onChange="{{nNat}}"><sc-for list="{{natOpts}}" as="o" hint-placeholder-count="10"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-email">Email (portal login)</label><input id="n-email" type="email" value="{{ne.email}}" onChange="{{nEmail}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-phone">Phone</label><input id="n-phone" type="text" value="{{ne.phone}}" onChange="{{nPhone}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-ni">National Insurance number</label><input id="n-ni" type="text" value="{{ne.ni}}" onChange="{{nNi}}" placeholder="QQ 12 34 56 C"></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-addr">UK home address</label><input id="n-addr" type="text" value="{{ne.address}}" onChange="{{nAddr}}" placeholder="Street, town, postcode"></div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-pno">Passport number</label><input id="n-pno" type="text" value="{{ne.passportNo}}" onChange="{{nPno}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-pexp">Passport expiry</label><input id="n-pexp" type="date" value="{{ne.passportExp}}" onChange="{{nPexp}}"></div>
+</div>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">2. Right to work</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-basis">Right-to-work basis</label>
+<select id="n-basis" value="{{ne.basis}}" onChange="{{nBasis}}"><sc-for list="{{basisOpts}}" as="o" hint-placeholder-count="6"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div>
+<sc-if value="{{neIsOther}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-ov">Visa type</label>
+<select id="n-ov" value="{{ne.otherVisa}}" onChange="{{nOv}}"><sc-for list="{{otherVisaOpts}}" as="o" hint-placeholder-count="4"><option value="{{o.id}}">{{o.id}}</option></sc-for></select></div>
+</sc-if>
+</div>
+<div style="padding: 12px 14px; background: #EEF2FF; border-radius: 8px; font-size: 14px; line-height: 1.5; color: #3730A3">{{neBasisHint}}</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-meth">Check method</label>
+<select id="n-meth" value="{{ne.rtwMethod}}" onChange="{{nMeth}}"><sc-for list="{{methodOpts}}" as="o" hint-placeholder-count="3"><option value="{{o.id}}">{{o.id}}</option></sc-for></select></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-rdate">Check date</label><input id="n-rdate" type="date" value="{{ne.rtwDate}}" onChange="{{nRdate}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-rby">Checked by</label><input id="n-rby" type="text" value="{{ne.rtwBy}}" onChange="{{nRby}}" placeholder="Your name"></div>
+<sc-if value="{{neNeedsShare}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-share">Share code</label><input id="n-share" type="text" value="{{ne.shareCode}}" onChange="{{nShare}}" placeholder="9 characters"></div>
+</sc-if>
+<sc-if value="{{neLimited}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-vs">Visa / permission start</label><input id="n-vs" type="date" value="{{ne.visaStart}}" onChange="{{nVs}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-ve">Visa / permission expiry</label><input id="n-ve" type="date" value="{{ne.visaEnd}}" onChange="{{nVe}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-res">Work restrictions</label><input id="n-res" type="text" value="{{ne.restrictions}}" onChange="{{nRes}}" placeholder="e.g. 20 hrs/week in term time"></div>
+</sc-if>
+</div>
+</div>
+
+<sc-if value="{{neSponsored}}" hint-placeholder-val="{{true}}">
+<div style="background: #FFFFFF; border: 2px solid #4F46E5; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">3. Sponsorship (must match the Certificate of Sponsorship)</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-cos">CoS number</label><input id="n-cos" type="text" value="{{ne.cosNo}}" onChange="{{nCos}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-cosd">CoS assigned date</label><input id="n-cosd" type="date" value="{{ne.cosDate}}" onChange="{{nCosd}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-soc">SOC code</label><input id="n-soc" type="text" value="{{ne.soc}}" onChange="{{nSoc}}" placeholder="4-digit occupation code"></div>
+</div>
+<div style="font-size: 14px; color: #344054">Job title, salary and hours below must be the same as on the CoS. Also keep the job advert and interview notes as recruitment evidence.</div>
+</div>
+</sc-if>
+
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">{{neJobHeading}}</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-role">Job title</label><input id="n-role" type="text" value="{{ne.role}}" onChange="{{nRole}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-sal">Annual salary</label><input id="n-sal" type="text" value="{{ne.salary}}" onChange="{{nSal}}" placeholder="£"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-start">Start date</label><input id="n-start" type="date" value="{{ne.start}}" onChange="{{nStart}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-site">Work site</label>
+<select id="n-site" value="{{ne.site}}" onChange="{{nSite}}"><sc-for list="{{siteOpts}}" as="o" hint-placeholder-count="2"><option value="{{o.id}}">{{o.name}}</option></sc-for></select></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-days">Working days per week</label><input id="n-days" type="text" value="{{ne.days}}" onChange="{{nDays}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-hours">Contracted hours per week</label><input id="n-hours" type="text" value="{{ne.hours}}" onChange="{{nHours}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-ct">Contract type</label>
+<select id="n-ct" value="{{ne.contract}}" onChange="{{nCt}}"><sc-for list="{{contractOpts}}" as="o" hint-placeholder-count="3"><option value="{{o.id}}">{{o.id}}</option></sc-for></select></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="n-inv">Employee portal access</label>
+<select id="n-inv" value="{{ne.invite}}" onChange="{{nInv}}"><option value="yes">Send portal invite by email</option><option value="no">No portal access</option></select></div>
+</div>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Documents required for this employee</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{neDocs}}" as="d" hint-placeholder-count="5"><span style="display: inline-block; padding: 6px 12px; border-radius: 999px; background: #F2F4F7; font-size: 13px; font-weight: 600; color: #344054">{{d.label}}</span></sc-for>
+</div>
+<div style="font-size: 14px; color: #344054">After saving, the passport / ID request is sent to the employee's portal. Upload the rest from the profile.</div>
+</div>
+
+<sc-if value="{{hasNeErr}}" hint-placeholder-val="{{false}}"><div style="padding: 12px 14px; background: #FEF3F2; border-radius: 8px; font-size: 14px; font-weight: 600; color: #B42318">{{neErr}}</div></sc-if>
+<div style="display: flex; gap: 12px">
+<button type="button" onClick="{{saveEmployee}}" style="min-height: 48px; padding: 12px 22px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-size: 16px; font-weight: 600; cursor: pointer">Save employee</button>
+<button type="button" onClick="{{fillDemo}}" style="min-height: 48px; padding: 12px 18px; border-radius: 8px; border: 1px solid #D0D5DD; background: #FFFFFF; color: #101828; font-weight: 500; cursor: pointer">Fill with dummy data</button>
+</div>
+</div>
+</sc-if>
+
+<!-- EMPLOYEE PROFILE -->
+<sc-if value="{{isProfile}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 22px">
+<div><button type="button" onClick="{{backToList}}" style="min-height: 40px; padding: 6px 2px; border: none; background: transparent; color: #4F46E5; font-size: 15px; font-weight: 600; cursor: pointer">← All employees</button></div>
+<sc-if value="{{hasNeMsg}}" hint-placeholder-val="{{false}}"><div style="padding: 12px 16px; background: #ECFDF3; border-radius: 8px; font-size: 14px; font-weight: 600; color: #067647">{{neMsg}}</div></sc-if>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 24px 28px; display: flex; align-items: center; justify-content: space-between; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h1 style="margin: 0; font-family: Geist, system-ui, sans-serif; letter-spacing: -0.02em; font-size: 26px; font-weight: 600">{{prof.name}}</h1>
+<div style="font-size: 15px; color: #344054">{{prof.role}} · {{prof.site}} · Started {{prof.start}}</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px">
+<span style="{{prof.statusBs}}">{{prof.status}}</span>
+<span style="{{prof.docsBs}}">Documents {{prof.docs}}</span>
+<span style="{{prof.visaBs}}">Expiry: {{prof.visaText}}</span>
+<span style="{{prof.repBs}}">Home Office: {{prof.reports}}</span>
+<span style="{{prof.checkBs}}">Compliance: {{prof.check}}</span>
+<sc-if value="{{prof.isLeaver}}" hint-placeholder-val="{{false}}"><span style="{{prof.leftBs}}">{{prof.leftText}}</span></sc-if>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<button type="button" onClick="{{exportPack}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: 1px solid #4F46E5; background: #FFFFFF; color: #4F46E5; font-weight: 600; cursor: pointer; white-space: nowrap">Export compliance pack (PDF)</button>
+<sc-if value="{{prof.canEnd}}" hint-placeholder-val="{{true}}"><button type="button" onClick="{{openEnd}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: 1px solid #D92D20; background: #FFFFFF; color: #D92D20; font-weight: 600; cursor: pointer; white-space: nowrap">End employment</button></sc-if>
+</div>
+</div>
+<sc-if value="{{hasPackMsg}}" hint-placeholder-val="{{false}}"><div style="padding: 12px 16px; background: #EEF2FF; border-radius: 8px; font-size: 14px; color: #3730A3">{{packMsg}}</div></sc-if>
+<sc-if value="{{showEndPanel}}" hint-placeholder-val="{{false}}">
+<div style="background: #FFFFFF; border: 2px solid #D92D20; border-radius: 12px; padding: 22px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">End employment for {{prof.name}}</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="e-date">Last working day</label><input id="e-date" type="date" value="{{endForm.date}}" onChange="{{eDate}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="e-reason">Reason</label><select id="e-reason" value="{{endForm.reason}}" onChange="{{eReason}}"><sc-for list="{{endReasons}}" as="o" hint-placeholder-count="6"><option value="{{o.id}}">{{o.id}}</option></sc-for></select></div>
+</div>
+<div style="font-size: 14px; line-height: 1.5; color: #344054">{{endHint}}</div>
+<div style="display: flex; gap: 10px"><button type="button" onClick="{{endEmp}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: none; background: #D92D20; color: #FFFFFF; font-weight: 600; cursor: pointer">Confirm end of employment</button><button type="button" onClick="{{closeEnd}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: 1px solid #D0D5DD; background: #FFFFFF; color: #101828; font-weight: 500; cursor: pointer">Cancel</button></div>
+</div>
+</sc-if>
+<sc-if value="{{hasEndMsg}}" hint-placeholder-val="{{false}}"><div style="padding: 12px 16px; background: #FEF3F2; border-radius: 8px; font-size: 14px; font-weight: 600; color: #B42318">{{endMsg}}</div></sc-if>
+<div style="display: flex; gap: 4px; border-bottom: 1px solid #EAECF0">
+<sc-for list="{{empTabs}}" as="et" hint-placeholder-count="5"><button type="button" onClick="{{et.go}}" style="{{et.style}}">{{et.label}}</button></sc-for>
+</div>
+
+<sc-if value="{{empOverview}}" hint-placeholder-val="{{true}}">
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start">
+<sc-for list="{{profSections}}" as="sec" hint-placeholder-count="4">
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 22px 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">{{sec.title}}</h2>
+<sc-for list="{{sec.fields}}" as="f" hint-placeholder-count="5">
+<div style="display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 12px; font-size: 14px; align-items: center; padding-top: 10px; border-top: 1px solid #F2F4F7">
+<span style="color: #667085">{{f.label}}</span>
+<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap"><span style="font-weight: 500">{{f.value}}</span><sc-if value="{{f.hasBadge}}" hint-placeholder-val="{{false}}"><span style="{{f.bs}}">{{f.badge}}</span></sc-if></div>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{empDocs}}" hint-placeholder-val="{{false}}">
+<div style="display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 20px; align-items: start">
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); overflow: hidden">
+<sc-for list="{{docRows}}" as="dc" hint-placeholder-count="7">
+<div style="padding: 16px 20px; border-bottom: 1px solid #F2F4F7; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 600">{{dc.label}}</span><span style="font-size: 13px; color: #667085">{{dc.req}}</span></div>
+<div style="display: flex; align-items: center; gap: 8px">
+<sc-if value="{{dc.canRequest}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{dc.request}}" style="min-height: 36px; padding: 6px 10px; border-radius: 6px; border: 1px solid #4F46E5; background: #FFFFFF; color: #4F46E5; font-size: 13px; font-weight: 600; cursor: pointer">Request from employee</button></sc-if>
+<span style="{{dc.bs}}">{{dc.status}}</span>
+</div>
+</div>
+<sc-for list="{{dc.files}}" as="fl" hint-placeholder-count="1">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; background: #F9FAFB; border-radius: 8px; font-size: 14px">
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 500; font-size: 13px">{{fl.name}}</span><span style="color: #667085; font-size: 13px">Uploaded {{fl.uploaded}} by {{fl.by}}</span></div>
+<sc-if value="{{fl.hasExpiry}}" hint-placeholder-val="{{false}}"><span style="{{fl.bs}}">{{fl.expiry}}</span></sc-if>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 22px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">Upload document</h2>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="u-cat">Category</label>
+<select id="u-cat" value="{{upload.cat}}" onChange="{{uCat}}"><sc-for list="{{catOpts}}" as="o" hint-placeholder-count="9"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="u-file">File</label><input id="u-file" type="file" onChange="{{uFile}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="u-exp">Expiry date (if any)</label><input id="u-exp" type="date" value="{{upload.expiry}}" onChange="{{uExp}}"></div>
+<button type="button" onClick="{{doUpload}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; cursor: pointer">Upload</button>
+<sc-if value="{{hasUploadMsg}}" hint-placeholder-val="{{false}}"><div style="font-size: 14px; font-weight: 600; color: #3730A3">{{uploadMsg}}</div></sc-if>
+<div style="font-size: 13px; line-height: 1.5; color: #667085">Stored encrypted, outside the public web root. Only HR admins can view or download. Every view is logged.</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{empCheck}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<p style="margin: 0; font-size: 15px; color: #344054">Everything the law and the sponsor duties expect for this employee. Fix anything marked Missing or Check.</p>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); overflow: hidden">
+<sc-for list="{{checkRows}}" as="c" hint-placeholder-count="10">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; border-bottom: 1px solid #F2F4F7">
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 600">{{c.label}}</span><span style="font-size: 13px; color: #667085">{{c.detail}}</span></div>
+<span style="{{c.bs}}">{{c.badge}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{empAbs}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 16px">
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px">
+<div style="display: flex; gap: 40px">
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; color: #667085">Unpaid / unauthorised days in 2026</span><span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 24px; font-weight: 500">{{prof.unpaid}}</span></div>
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; color: #667085">Annual leave left in 2026</span><span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 24px; font-weight: 500">{{prof.annualLeft}}</span></div>
+</div>
+<button type="button" onClick="{{recordForSel}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; cursor: pointer">Record absence</button>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); overflow: hidden">
+<div style="display: grid; grid-template-columns: 1.5fr 1.3fr 70px 1fr 1.1fr 1.4fr; gap: 12px; padding: 12px 20px; background: #F9FAFB; font-size: 13px; font-weight: 600; color: #344054"><span>Type</span><span>Dates</span><span>Days</span><span>Pay</span><span>Reason</span><span>Home Office</span></div>
+<sc-if value="{{noProfAbs}}" hint-placeholder-val="{{false}}"><div style="padding: 16px 20px; font-size: 14px; color: #344054">No absences recorded.</div></sc-if>
+<sc-for list="{{profAbsences}}" as="a" hint-placeholder-count="2">
+<div style="display: grid; grid-template-columns: 1.5fr 1.3fr 70px 1fr 1.1fr 1.4fr; gap: 12px; padding: 14px 20px; border-top: 1px solid #F2F4F7; font-size: 14px; align-items: center">
+<span>{{a.type}}</span><span>{{a.dates}}</span><span style="font-family: 'Geist Mono', ui-monospace, monospace">{{a.n}}</span><span>{{a.pay}}</span><span style="color: #344054">{{a.reason}}</span><span><span style="{{a.bs}}">{{a.badge}}</span></span>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{empRep}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<sc-if value="{{noProfTasks}}" hint-placeholder-val="{{false}}"><div style="padding: 16px 20px; background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); font-size: 14px; color: #344054">No Home Office reports for this employee.</div></sc-if>
+<sc-for list="{{profTasks}}" as="t" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05)">
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 600">{{t.event}}</span><span style="font-size: 13px; color: #667085">Triggered {{t.trigger}} · deadline {{t.deadline}} · from {{t.source}}</span><sc-if value="{{t.done}}" hint-placeholder-val="{{false}}"><span style="font-size: 13px; color: #344054">{{t.doneText}}</span></sc-if></div>
+<div style="display: flex; align-items: center; gap: 10px"><span style="{{t.bs}}">{{t.badge}}</span><sc-if value="{{t.isPending}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{t.editFromProfile}}" style="min-height: 40px; padding: 8px 12px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer">Mark reported</button></sc-if></div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{empHist}}" hint-placeholder-val="{{false}}">
+<div style="display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 20px; align-items: start">
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); overflow: hidden">
+<div style="display: grid; grid-template-columns: 110px 1fr 1.2fr 1.2fr 1.3fr; gap: 12px; padding: 12px 20px; background: #F9FAFB; font-size: 13px; font-weight: 600; color: #344054"><span>Date</span><span>Field</span><span>From</span><span>To</span><span>Home Office</span></div>
+<sc-if value="{{noHist}}" hint-placeholder-val="{{false}}"><div style="padding: 16px 20px; font-size: 14px; color: #344054">No changes recorded yet.</div></sc-if>
+<sc-for list="{{histRows}}" as="h" hint-placeholder-count="2">
+<div style="display: grid; grid-template-columns: 110px 1fr 1.2fr 1.2fr 1.3fr; gap: 12px; padding: 14px 20px; border-top: 1px solid #F2F4F7; font-size: 14px; align-items: center">
+<span>{{h.date}}</span><div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600">{{h.field}}</span><span style="font-size: 13px; color: #667085">by {{h.by}}</span></div><span style="color: #667085">{{h.from}}</span><span>{{h.to}}</span><span><span style="{{h.bs}}">{{h.badge}}</span></span>
+</div>
+</sc-for>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 22px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">Record a change</h2>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="c-field">What changed</label>
+<select id="c-field" value="{{chg.field}}" onChange="{{cField}}"><sc-for list="{{chgOpts}}" as="o" hint-placeholder-count="8"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div>
+<div style="font-size: 13px; line-height: 1.5; color: #344054">Current: <strong>{{chgCurrent}}</strong></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="c-val">New value</label><input id="c-val" type="text" value="{{chg.value}}" onChange="{{cValue}}"></div>
+<div style="{{chgHintStyle}}">{{chgHint}}</div>
+<button type="button" onClick="{{recordChange}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; cursor: pointer">Save change</button>
+<sc-if value="{{hasChgMsg}}" hint-placeholder-val="{{false}}"><div style="font-size: 14px; font-weight: 600; color: #3730A3">{{chgMsg}}</div></sc-if>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<!-- EMPLOYEE REQUESTS -->
+<sc-if value="{{isRequests}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 24px">
+<h1 style="margin: 0; font-family: Geist, system-ui, sans-serif; letter-spacing: -0.02em; font-size: 26px; font-weight: 600">Employee requests</h1>
+<p style="margin: 0; font-size: 15px; color: #344054">Sent from the employee portal. Approving updates the employee's record, adds absences and creates Home Office tasks where needed.</p>
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Waiting for you</h2>
+<sc-if value="{{noReqRows}}" hint-placeholder-val="{{false}}"><div style="padding: 16px 20px; background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); font-size: 15px; color: #344054">No requests waiting.</div></sc-if>
+<sc-for list="{{reqRows}}" as="r" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 18px 22px; background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05)">
+<div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap"><span style="font-size: 16px; font-weight: 600">{{r.who}}</span><span style="display: inline-block; padding: 3px 10px; border-radius: 999px; background: #F2F4F7; font-size: 12px; font-weight: 600; color: #344054">{{r.kind}}</span><span style="font-size: 13px; color: #667085">Sent {{r.submitted}}</span></div>
+<div style="font-size: 15px">{{r.summary}}</div>
+<sc-if value="{{r.hasDetail}}" hint-placeholder-val="{{false}}"><div style="font-size: 14px; color: #344054">Employee note: {{r.detail}}</div></sc-if>
+<sc-if value="{{r.hasPreview}}" hint-placeholder-val="{{false}}"><div><span style="{{r.pbs}}">{{r.preview}}</span></div></sc-if>
+</div>
+<div style="display: flex; gap: 10px; flex-shrink: 0">
+<button type="button" onClick="{{r.approve}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: none; background: #067647; color: #FFFFFF; font-weight: 600; cursor: pointer">Approve</button>
+<button type="button" onClick="{{r.reject}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: 1px solid #D0D5DD; background: #FFFFFF; color: #101828; font-weight: 500; cursor: pointer">Decline</button>
+</div>
+</div>
+</sc-for>
+</section>
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Waiting for employees</h2>
+<sc-if value="{{noAwaitRows}}" hint-placeholder-val="{{false}}"><div style="padding: 16px 20px; background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); font-size: 15px; color: #344054">Nothing outstanding.</div></sc-if>
+<sc-for list="{{awaitRows}}" as="r" hint-placeholder-count="1">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05)">
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 600">{{r.who}} · {{r.summary}}</span><span style="font-size: 13px; color: #667085">Requested {{r.submitted}}</span></div>
+<span style="{{r.bs}}">Waiting for upload</span>
+</div>
+</sc-for>
+</section>
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Recently decided</h2>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); overflow: hidden">
+<sc-for list="{{decidedRows}}" as="r" hint-placeholder-count="3">
+<div style="display: grid; grid-template-columns: 1fr 2fr 110px 1.6fr; gap: 12px; padding: 12px 20px; border-bottom: 1px solid #F2F4F7; font-size: 14px; align-items: center">
+<span style="font-weight: 600">{{r.who}}</span><span>{{r.summary}}</span><span><span style="{{r.bs}}">{{r.status}}</span></span><span style="color: #344054">{{r.note}}</span>
+</div>
+</sc-for>
+</div>
+</section>
+</div>
+</sc-if>
+
+<!-- RECORD ABSENCE -->
+<sc-if value="{{isRecord}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 24px">
+<h1 style="margin: 0; font-family: Geist, system-ui, sans-serif; letter-spacing: -0.02em; font-size: 26px; font-weight: 600">Record absence</h1>
+<sc-if value="{{isClassifying}}" hint-placeholder-val="{{false}}"><div style="padding: 14px 18px; background: #EEF2FF; border-radius: 10px; font-size: 15px; color: #3730A3">{{classifyingNote}}</div></sc-if>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start">
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 28px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="f-worker">Employee</label>
+<select id="f-worker" value="{{form.worker}}" onChange="{{fWorker}}"><sc-for list="{{workerOpts}}" as="o" hint-placeholder-count="5"><option value="{{o.id}}">{{o.name}}</option></sc-for></select></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="f-type">Absence type</label>
+<select id="f-type" value="{{form.type}}" onChange="{{fType}}"><sc-for list="{{typeOpts}}" as="o" hint-placeholder-count="11"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="f-start">Start date</label><input id="f-start" type="date" value="{{form.start}}" onChange="{{fStart}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="f-end">End date</label><input id="f-end" type="date" value="{{form.end}}" onChange="{{fEnd}}"></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="f-reason">Reason (short, no medical detail)</label><input id="f-reason" type="text" value="{{form.reason}}" onChange="{{fReason}}" placeholder="e.g. Family holiday"></div>
+<sc-if value="{{needsEvidence}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-direction: column; gap: 6px"><label for="f-file">Fit note (required for 8+ days sickness)</label><input id="f-file" type="file"></div></sc-if>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 14px 16px; background: #F9FAFB; border-radius: 10px; font-size: 14px">
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="color: #667085">Working days</span><span style="font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 500; font-size: 18px">{{ev.n}}</span></div>
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="color: #667085">Pay</span><span style="font-weight: 600">{{payLabel}}</span></div>
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="color: #667085">Authorised</span><span style="font-weight: 600">{{authLabel}}</span></div>
+</div>
+<button type="button" onClick="{{save}}" style="min-height: 48px; padding: 12px 20px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-size: 16px; font-weight: 600; cursor: pointer">Save absence</button>
+<sc-if value="{{hasSaved}}" hint-placeholder-val="{{false}}"><div style="{{savedStyle}}">{{savedText}}</div></sc-if>
+</div>
+<div style="display: flex; flex-direction: column; gap: 16px">
+<div style="{{evPanelStyle}}">
+<div style="font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #344054">Home Office check</div>
+<div style="{{evTitleStyle}}">{{ev.title}}</div>
+<div style="font-size: 15px; line-height: 1.5; color: #101828">{{ev.detail}}</div>
+<sc-if value="{{ev.report}}" hint-placeholder-val="{{false}}"><div style="font-size: 15px; font-weight: 600; color: #D92D20">Deadline to report on the SMS: {{evDeadline}}</div><div style="font-size: 14px; color: #344054">Saving creates a task in Home Office reports.</div></sc-if>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 20px 24px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.5; color: #344054">
+<div style="font-weight: 600; color: #101828">Try it (Demo Retail Ltd)</div>
+<div>Aisha Rahman, Unpaid leave, 5 Oct to 23 Oct 2026 — goes over the 20-day limit.</div>
+<div>Rahul Mehta, Unauthorised absence, 28 Sep to 9 Oct 2026 — reaches 10 working days.</div>
+<div>Annual leave or sickness — no report needed.</div>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<!-- ABSENCE LOG -->
+<sc-if value="{{isLog}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<h1 style="margin: 0; font-family: Geist, system-ui, sans-serif; letter-spacing: -0.02em; font-size: 26px; font-weight: 600">Absence log</h1>
+<button type="button" onClick="{{goRecord}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; cursor: pointer">Record absence</button>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); overflow: hidden">
+<div style="display: grid; grid-template-columns: 140px 1.5fr 1.3fr 60px 1fr 1.1fr 1.5fr; gap: 12px; padding: 12px 20px; background: #F9FAFB; font-size: 13px; font-weight: 600; color: #344054"><span>Employee</span><span>Type</span><span>Dates</span><span>Days</span><span>Pay</span><span>Reason</span><span>Home Office</span></div>
+<sc-for list="{{absenceRows}}" as="a" hint-placeholder-count="6">
+<div style="display: grid; grid-template-columns: 140px 1.5fr 1.3fr 60px 1fr 1.1fr 1.5fr; gap: 12px; padding: 14px 20px; border-top: 1px solid #F2F4F7; font-size: 14px; align-items: center">
+<span style="font-weight: 600">{{a.who}}</span><span>{{a.type}}</span><span>{{a.dates}}</span><span style="font-family: 'Geist Mono', ui-monospace, monospace">{{a.n}}</span><span>{{a.pay}}</span><span style="color: #344054">{{a.reason}}</span>
+<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap"><span style="{{a.bs}}">{{a.badge}}</span><sc-if value="{{a.hasTask}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{a.open}}" style="min-height: 36px; padding: 6px 10px; border-radius: 6px; border: 1px solid #4F46E5; background: #FFFFFF; color: #4F46E5; font-size: 13px; font-weight: 600; cursor: pointer">Tick as reported</button></sc-if></div>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<!-- HOME OFFICE REPORTS -->
+<sc-if value="{{isReports}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 20px">
+<h1 style="margin: 0; font-family: Geist, system-ui, sans-serif; letter-spacing: -0.02em; font-size: 26px; font-weight: 600">Home Office reports</h1>
+<p style="margin: 0; font-size: 15px; color: #344054">Created automatically by absences, employee changes, leave approvals and work-site changes. Report on the Sponsor Management System, then tick it here.</p>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); overflow: hidden">
+<div style="display: grid; grid-template-columns: 2fr 1fr 120px 120px 1.5fr 160px; gap: 12px; padding: 12px 20px; background: #F9FAFB; font-size: 13px; font-weight: 600; color: #344054"><span>Event</span><span>Who</span><span>Triggered</span><span>Deadline</span><span>Status</span><span>Action</span></div>
+<sc-if value="{{noTasks}}" hint-placeholder-val="{{false}}"><div style="padding: 16px 20px; font-size: 14px; color: #344054">No reports yet.</div></sc-if>
+<sc-for list="{{taskRows}}" as="t" hint-placeholder-count="3">
+<div style="border-top: 1px solid #F2F4F7">
+<div style="display: grid; grid-template-columns: 2fr 1fr 120px 120px 1.5fr 160px; gap: 12px; padding: 14px 20px; font-size: 14px; align-items: center">
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600">{{t.event}}</span><span style="font-size: 13px; color: #667085">From: {{t.source}}</span></div>
+<span>{{t.who}}</span><span>{{t.trigger}}</span><span style="font-weight: 600">{{t.deadline}}</span>
+<div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start"><span style="{{t.bs}}">{{t.badge}}</span><sc-if value="{{t.done}}" hint-placeholder-val="{{false}}"><span style="font-size: 13px; color: #344054">{{t.doneText}}</span></sc-if></div>
+<div><sc-if value="{{t.isPending}}" hint-placeholder-val="{{true}}"><button type="button" onClick="{{t.edit}}" style="min-height: 40px; padding: 8px 12px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer">Mark reported</button></sc-if></div>
+</div>
+<sc-if value="{{t.isEditing}}" hint-placeholder-val="{{false}}">
+<div style="margin: 0 20px 18px; padding: 20px; background: #F9FAFB; border-radius: 10px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="r-date">Date reported</label><input id="r-date" type="date" value="{{rep.date}}" onChange="{{rDate}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="r-by">Reported by</label><input id="r-by" type="text" value="{{rep.by}}" onChange="{{rBy}}" placeholder="Name"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="r-ref">SMS reference / notes</label><input id="r-ref" type="text" value="{{rep.ref}}" onChange="{{rRef}}" placeholder="Reference or reason"></div>
+</div>
+<sc-if value="{{hasRepError}}" hint-placeholder-val="{{false}}"><div style="font-size: 14px; font-weight: 600; color: #D92D20">{{repError}}</div></sc-if>
+<div style="display: flex; gap: 10px">
+<button type="button" onClick="{{confirmRep}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: none; background: #067647; color: #FFFFFF; font-weight: 600; cursor: pointer">Reported to Home Office</button>
+<button type="button" onClick="{{notReq}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: 1px solid #D0D5DD; background: #FFFFFF; color: #101828; font-weight: 500; cursor: pointer">Not required (reason in notes)</button>
+<button type="button" onClick="{{cancelRep}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: none; background: transparent; color: #344054; font-weight: 500; cursor: pointer">Cancel</button>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<!-- WORK SITES -->
+<sc-if value="{{isSites}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 24px">
+<h1 style="margin: 0; font-family: Geist, system-ui, sans-serif; letter-spacing: -0.02em; font-size: 26px; font-weight: 600">Settings</h1>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start">
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">Business</h2>
+<sc-for list="{{bizFields}}" as="f" hint-placeholder-count="4"><div style="display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 12px; font-size: 14px; padding-top: 10px; border-top: 1px solid #F2F4F7"><span style="color: #667085">{{f.label}}</span><span style="font-weight: 500">{{f.value}}</span></div></sc-for>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; justify-content: space-between"><h2 style="margin: 0; font-size: 17px; font-weight: 600">Subscription</h2><span style="{{sub.bs}}">{{sub.status}}</span></div>
+<div style="display: flex; align-items: baseline; gap: 6px"><span style="font-size: 30px; font-weight: 600; letter-spacing: -0.02em">£{{sub.price}}</span><span style="font-size: 14px; color: #667085">per month · up to {{sub.limit}} employees</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: #344054">Employees</span><span style="font-weight: 600">{{sub.used}} of {{sub.limit}}</span></div><div style="height: 8px; border-radius: 4px; background: #F2F4F7"><div style="{{sub.barStyle}}"></div></div></div>
+<div style="font-size: 14px; color: #344054">Next payment {{sub.next}} · {{sub.method}}</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap">
+<button type="button" onClick="{{manageBilling}}" style="min-height: 40px; padding: 8px 14px; border-radius: 8px; border: 1px solid #D0D5DD; background: #FFFFFF; color: #344054; font-weight: 600; cursor: pointer">Manage billing</button>
+<button type="button" onClick="{{bookTraining}}" style="min-height: 40px; padding: 8px 14px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; cursor: pointer">Book 1-to-1 training · £{{sub.training}} per person</button>
+</div>
+<sc-if value="{{hasSubMsg}}" hint-placeholder-val="{{false}}"><div style="font-size: 14px; font-weight: 600; color: #3730A3">{{subMsg}}</div></sc-if>
+</div>
+</div>
+<h2 style="margin: 8px 0 0; font-size: 18px; font-weight: 600">Work sites</h2>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); overflow: hidden">
+<div style="display: grid; grid-template-columns: 1fr 2fr 1.5fr 1.3fr; gap: 12px; padding: 12px 20px; background: #F9FAFB; font-size: 13px; font-weight: 600; color: #344054"><span>Site</span><span>Address</span><span>Employees</span><span>Sponsor Management System</span></div>
+<sc-for list="{{siteRows}}" as="s" hint-placeholder-count="2">
+<div style="display: grid; grid-template-columns: 1fr 2fr 1.5fr 1.3fr; gap: 12px; padding: 14px 20px; border-top: 1px solid #F2F4F7; font-size: 14px; align-items: center">
+<span style="font-weight: 600">{{s.name}}</span><span>{{s.address}}</span><span>{{s.staff}}</span><span><span style="{{s.bs}}">{{s.sms}}</span></span>
+</div>
+</sc-for>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start">
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Add new work address</h2>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="s-name">Site name</label><input id="s-name" type="text" value="{{siteForm.name}}" onChange="{{sfName}}" placeholder="e.g. Third shop"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="s-addr">Full address and postcode</label><input id="s-addr" type="text" value="{{siteForm.address}}" onChange="{{sfAddr}}" placeholder="Street, town, postcode"></div>
+<button type="button" onClick="{{addSite}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; cursor: pointer">Add site</button>
+<sc-if value="{{hasSiteMsg}}" hint-placeholder-val="{{false}}"><div style="font-size: 14px; font-weight: 600; color: #3730A3">{{siteMsg}}</div></sc-if>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Move an employee to another site</h2>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="m-worker">Employee</label>
+<select id="m-worker" value="{{moveForm.worker}}" onChange="{{mWorker}}"><sc-for list="{{workerOpts}}" as="o" hint-placeholder-count="5"><option value="{{o.id}}">{{o.name}}</option></sc-for></select></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="m-site">New work site</label>
+<select id="m-site" value="{{moveForm.site}}" onChange="{{mSite}}"><sc-for list="{{siteOpts}}" as="o" hint-placeholder-count="2"><option value="{{o.id}}">{{o.name}}</option></sc-for></select></div>
+<button type="button" onClick="{{moveWorker}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; cursor: pointer">Move employee</button>
+<sc-if value="{{hasMoveMsg}}" hint-placeholder-val="{{false}}"><div style="font-size: 14px; font-weight: 600; color: #3730A3">{{moveMsg}}</div></sc-if>
+</div>
+</div>
+</div>
+</sc-if>
+
+</main>
+</div>
+</div>
+</sc-if>
+
+<!-- ================= EMPLOYEE PORTAL ================= -->
+<sc-if value="{{isPortal}}" hint-placeholder-val="{{false}}">
+<div style="width: 1440px; height: 1024px; display: flex; flex-direction: column">
+<header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; background: #FFFFFF; color: #101828; border-bottom: 1px solid #EAECF0">
+<div style="display: flex; align-items: center; gap: 12px"><span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 8px; background: #4F46E5; display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF; font-size: 14px; font-weight: 700">S</span><div style="font-family: Geist, system-ui, sans-serif; letter-spacing: -0.02em; font-size: 17px; font-weight: 600">Employee portal</div><div style="font-size: 14px; color: #667085">{{biz.name}}</div></div>
+<div style="display: flex; align-items: center; gap: 16px"><span style="font-size: 15px; font-weight: 600">{{me.name}}</span>
+<button type="button" onClick="{{logout}}" style="min-height: 40px; padding: 8px 14px; border-radius: 8px; border: 1px solid #D0D5DD; background: #FFFFFF; color: #344054; font-weight: 600; cursor: pointer">Log out</button></div>
+</header>
+<div style="flex-grow: 1; display: flex; min-height: 0">
+<nav aria-label="Portal sections" style="width: 240px; flex-shrink: 0; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid #EAECF0; background: #FFFFFF">
+<sc-for list="{{ptabs}}" as="tb" hint-placeholder-count="6">
+<button type="button" onClick="{{tb.go}}" style="{{tb.style}}"><span>{{tb.label}}</span><sc-if value="{{tb.hasCount}}" hint-placeholder-val="{{false}}"><span style="{{tb.countStyle}}">{{tb.count}}</span></sc-if></button>
+</sc-for>
+</nav>
+<main style="flex-grow: 1; overflow-y: auto; padding: 32px 40px 56px">
+
+<sc-if value="{{ptHome}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 28px">
+<h1 style="margin: 0; font-family: Geist, system-ui, sans-serif; letter-spacing: -0.02em; font-size: 26px; font-weight: 600">Hello, {{me.first}}</h1>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 22px; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 14px; color: #667085">Annual leave left in 2026</span><span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 32px; font-weight: 500">{{me.annualLeft}}</span><span style="font-size: 13px; color: #667085">of {{me.allowance}} days</span></div>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 22px; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 14px; color: #667085">Documents HR needs from you</span><span style="{{me.docNumStyle}}">{{me.docCount}}</span><button type="button" onClick="{{goPDocs}}" style="align-self: flex-start; min-height: 36px; padding: 4px 0; border: none; background: transparent; color: #4F46E5; font-weight: 600; cursor: pointer; text-decoration: underline">Go to my documents</button></div>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 22px; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 14px; color: #667085">Right to work</span><span style="font-size: 17px; font-weight: 600">{{me.rtwTitle}}</span><span style="font-size: 13px; line-height: 1.5; color: #344054">{{me.rtwNote}}</span></div>
+
+</div>
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Quick actions</h2>
+<div style="display: flex; gap: 12px; flex-wrap: wrap">
+<button type="button" onClick="{{goPLeave}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; cursor: pointer">Request leave</button>
+<button type="button" onClick="{{goPSick}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: 1px solid #4F46E5; background: #FFFFFF; color: #4F46E5; font-weight: 600; cursor: pointer">Report sickness</button>
+<button type="button" onClick="{{goPChange}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: 1px solid #4F46E5; background: #FFFFFF; color: #4F46E5; font-weight: 600; cursor: pointer">Update my address</button>
+
+</div>
+</section>
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Recent requests</h2>
+<sc-if value="{{noMyReq}}" hint-placeholder-val="{{false}}"><div style="padding: 16px 20px; background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); font-size: 15px; color: #344054">You haven't sent any requests yet.</div></sc-if>
+<sc-for list="{{myReqRecent}}" as="r" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05)">
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 600">{{r.summary}}</span><span style="font-size: 13px; color: #667085">{{r.kind}} · sent {{r.submitted}}</span></div>
+<span style="{{r.bs}}">{{r.status}}</span>
+</div>
+</sc-for>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{ptDocs}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 24px">
+<h1 style="margin: 0; font-family: Geist, system-ui, sans-serif; letter-spacing: -0.02em; font-size: 26px; font-weight: 600">My documents</h1>
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">Requested by HR</h2>
+<sc-if value="{{noPDocReq}}" hint-placeholder-val="{{false}}"><div style="padding: 16px 20px; background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); font-size: 15px; color: #344054">Nothing needed right now.</div></sc-if>
+<sc-for list="{{pDocReqRows}}" as="d" hint-placeholder-count="1">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 18px 22px; background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05)">
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 600">{{d.label}}</span><span style="font-size: 13px; color: #667085">Requested {{d.requested}}</span></div>
+<div style="display: flex; align-items: center; gap: 12px; width: 460px">
+<div style="flex-grow: 1"><label for="{{d.inputId}}" style="position: absolute; left: -9999px">File for {{d.label}}</label><input id="{{d.inputId}}" type="file" onChange="{{d.pick}}"></div>
+<button type="button" onClick="{{d.send}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; cursor: pointer">Send</button>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{hasPDocMsg}}" hint-placeholder-val="{{false}}"><div style="font-size: 14px; font-weight: 600; color: #3730A3">{{pDocMsg}}</div></sc-if>
+</section>
+<div style="display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 20px; align-items: start">
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">On file with HR</h2>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); overflow: hidden">
+<sc-for list="{{myDocs}}" as="d" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; border-bottom: 1px solid #F2F4F7; font-size: 14px">
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600">{{d.cat}}</span><span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; color: #344054">{{d.name}}</span></div>
+<span style="font-size: 13px; color: #667085">{{d.uploaded}}</span>
+</div>
+</sc-for>
+</div>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 22px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">Send another document</h2>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="pu-cat">What is it?</label>
+<select id="pu-cat" value="{{pUp.cat}}" onChange="{{puCat}}"><sc-for list="{{pUpOpts}}" as="o" hint-placeholder-count="3"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="pu-file">File</label><input id="pu-file" type="file" onChange="{{puFile}}"></div>
+<button type="button" onClick="{{puSend}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; cursor: pointer">Send to HR</button>
+</section>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ptLeave}}" hint-placeholder-val="{{false}}">
+<div style="display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 24px; align-items: start">
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 28px; display: flex; flex-direction: column; gap: 18px">
+<h1 style="margin: 0; font-family: Geist, system-ui, sans-serif; letter-spacing: -0.02em; font-size: 22px; font-weight: 600">Request leave or report sickness</h1>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="pl-type">Type</label>
+<select id="pl-type" value="{{pLeave.type}}" onChange="{{plType}}"><sc-for list="{{pLeaveTypes}}" as="o" hint-placeholder-count="5"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="pl-start">First day</label><input id="pl-start" type="date" value="{{pLeave.start}}" onChange="{{plStart}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="pl-end">Last day</label><input id="pl-end" type="date" value="{{pLeave.end}}" onChange="{{plEnd}}"></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="pl-reason">Note for HR</label><input id="pl-reason" type="text" value="{{pLeave.reason}}" onChange="{{plReason}}" placeholder="Optional"></div>
+<div style="padding: 14px 16px; background: #F9FAFB; border-radius: 10px; font-size: 15px">{{pLeaveInfo}}</div>
+<sc-if value="{{hasPLeaveNote}}" hint-placeholder-val="{{false}}"><div style="padding: 12px 14px; background: #FFFAEB; border-radius: 8px; font-size: 14px; line-height: 1.5; color: #93370D">{{pLeaveNote}}</div></sc-if>
+<button type="button" onClick="{{submitLeave}}" style="min-height: 48px; padding: 12px 20px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-size: 16px; font-weight: 600; cursor: pointer">Send to HR</button>
+<sc-if value="{{hasPLeaveMsg}}" hint-placeholder-val="{{false}}"><div style="font-size: 14px; font-weight: 600; color: #3730A3">{{pLeaveMsg}}</div></sc-if>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 22px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">My absence this year</h2>
+<sc-if value="{{noMyAbs}}" hint-placeholder-val="{{false}}"><div style="font-size: 14px; color: #344054">No absences recorded.</div></sc-if>
+<sc-for list="{{myAbs}}" as="a" hint-placeholder-count="3">
+<div style="display: flex; justify-content: space-between; gap: 12px; padding-top: 10px; border-top: 1px solid #F2F4F7; font-size: 14px"><span style="font-weight: 600">{{a.type}}</span><span style="color: #344054">{{a.dates}} · {{a.n}} days</span></div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ptChange}}" hint-placeholder-val="{{false}}">
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 28px; display: flex; flex-direction: column; gap: 18px; max-width: 760px">
+<h1 style="margin: 0; font-family: Geist, system-ui, sans-serif; letter-spacing: -0.02em; font-size: 22px; font-weight: 600">Update my details</h1>
+<p style="margin: 0; font-size: 15px; line-height: 1.5; color: #344054">Your employer must keep your details up to date. Tell HR as soon as something changes.</p>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="pc-kind">What has changed?</label>
+<select id="pc-kind" value="{{pChg.kind}}" onChange="{{pcKind}}"><sc-for list="{{pChgKinds}}" as="o" hint-placeholder-count="7"><option value="{{o.id}}">{{o.label}}</option></sc-for></select></div>
+<sc-if value="{{pChgIsDate}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-direction: column; gap: 6px"><label for="pc-date">{{pChgLabel}}</label><input id="pc-date" type="date" value="{{pChg.value}}" onChange="{{pcValue}}"></div></sc-if>
+<sc-if value="{{pChgIsText}}" hint-placeholder-val="{{true}}"><div style="display: flex; flex-direction: column; gap: 6px"><label for="pc-val">{{pChgLabel}}</label><input id="pc-val" type="text" value="{{pChg.value}}" onChange="{{pcValue}}" placeholder="{{pChgPh}}"></div></sc-if>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="pc-note">Anything else HR should know</label><input id="pc-note" type="text" value="{{pChg.note}}" onChange="{{pcNote}}" placeholder="Optional"></div>
+<sc-if value="{{hasPChgHint}}" hint-placeholder-val="{{false}}"><div style="padding: 12px 14px; background: #EEF2FF; border-radius: 8px; font-size: 14px; line-height: 1.5; color: #3730A3">{{pChgHint}}</div></sc-if>
+<button type="button" onClick="{{submitChange}}" style="min-height: 48px; padding: 12px 20px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-size: 16px; font-weight: 600; cursor: pointer">Send to HR</button>
+<sc-if value="{{hasPChgMsg}}" hint-placeholder-val="{{false}}"><div style="font-size: 14px; font-weight: 600; color: #3730A3">{{pChgMsg}}</div></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ptMyReq}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 20px">
+<h1 style="margin: 0; font-family: Geist, system-ui, sans-serif; letter-spacing: -0.02em; font-size: 26px; font-weight: 600">My requests</h1>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); overflow: hidden">
+<div style="display: grid; grid-template-columns: 1fr 2fr 110px 150px 1.6fr; gap: 12px; padding: 12px 20px; background: #F9FAFB; font-size: 13px; font-weight: 600; color: #344054"><span>Type</span><span>Details</span><span>Sent</span><span>Status</span><span>HR response</span></div>
+<sc-if value="{{noMyReq}}" hint-placeholder-val="{{false}}"><div style="padding: 16px 20px; font-size: 14px; color: #344054">No requests yet.</div></sc-if>
+<sc-for list="{{myReqRows}}" as="r" hint-placeholder-count="3">
+<div style="display: grid; grid-template-columns: 1fr 2fr 110px 150px 1.6fr; gap: 12px; padding: 14px 20px; border-top: 1px solid #F2F4F7; font-size: 14px; align-items: center">
+<span style="font-weight: 600">{{r.kind}}</span><span>{{r.summary}}</span><span>{{r.submitted}}</span><span><span style="{{r.bs}}">{{r.status}}</span></span><span style="color: #344054">{{r.note}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ptDetails}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<h1 style="margin: 0; font-family: Geist, system-ui, sans-serif; letter-spacing: -0.02em; font-size: 26px; font-weight: 600">My details</h1>
+<button type="button" onClick="{{goPChange}}" style="min-height: 44px; padding: 10px 16px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; cursor: pointer">Something's changed</button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start">
+<sc-for list="{{mySections}}" as="sec" hint-placeholder-count="3">
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,0.05); padding: 22px 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 600">{{sec.title}}</h2>
+<sc-for list="{{sec.fields}}" as="f" hint-placeholder-count="5">
+<div style="display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 12px; font-size: 14px; padding-top: 10px; border-top: 1px solid #F2F4F7"><span style="color: #667085">{{f.label}}</span><span style="font-weight: 500">{{f.value}}</span></div>
+</sc-for>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+</main>
+</div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1024}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const W = (id, bizId, name, role, basis, o) => Object.assign({
+      id, bizId, name, role, basis, sponsored: basis === 'sponsored', days: 5, hours: '37.5', site: '', visaType: '', visaStart: '', visa: '', rtw: '', restrictions: '',
+      nationality: 'British', dob: '', passportNo: '•••• [last 4]', passportExp: '', ni: '•••• [last 4]', address: '[Home address, postcode]', phone: '[Phone]', email: '[Email]',
+      rtwMethod: 'Home Office online check (share code)', shareCheck: '', rtwBy: '[HR admin]', cosNo: '', cosDate: '', soc: '', salary: '[Salary]', start: '', contract: 'Permanent', portal: true
+    }, o || {});
+    this.state = {
+      screen: 'login',
+      session: { role: null, bizId: 'b1', empId: null },
+      login: { adminBiz: 'b1', empBiz: 'b1', empId: 'w1' },
+      businesses: [
+        { id: 'b1', name: 'Demo Retail Ltd', licence: '[Licence number]', ao: '[Authorising Officer]', adminEmail: 'hr@demo-retail.example', adminName: 'Nadia Khan', created: '2026-01-10', status: 'Active', next: '2026-10-10', method: 'Card ending 4242 (Stripe)' },
+        { id: 'b2', name: 'Demo Catering Ltd', licence: '[Licence number]', ao: '[Authorising Officer]', adminEmail: 'hr@demo-catering.example', adminName: 'Mark Evans', created: '2026-05-02', status: 'Active', next: '2026-10-02', method: 'PayPal' },
+        { id: 'b3', name: 'Demo Cafe Ltd', licence: '[Licence number]', ao: '[Authorising Officer]', adminEmail: 'hr@demo-cafe.example', adminName: 'Leo Grant', created: '2026-03-15', status: 'Suspended', next: '', method: 'Card ending 1881 (Stripe)' }
+      ],
+      sites: [
+        { id: 's1', bizId: 'b1', name: 'Main shop', address: '[Main shop address, postcode]', taskId: null },
+        { id: 's2', bizId: 'b1', name: 'Second shop', address: '[Second shop address, postcode]', taskId: null },
+        { id: 's3', bizId: 'b2', name: 'Central kitchen', address: '[Kitchen address, postcode]', taskId: null }
+      ],
+      workers: [
+        W('w1', 'b1', 'Aisha Rahman', 'Sales Assistant', 'sponsored', { site: 's1', nationality: 'Pakistani', visaType: 'Skilled Worker', visaStart: '2025-11-01', visa: '2026-12-10', rtw: '2026-12-10', shareCheck: '2025-10-28', cosNo: '[CoS number]', cosDate: '2025-09-15', soc: '[SOC code]', salary: '[Salary on CoS]', start: '2025-11-03', passportExp: '2031-05-20', dob: '1996-04-12' }),
+        W('w2', 'b1', 'Rahul Mehta', 'Store Supervisor', 'sponsored', { site: 's1', hours: '40', nationality: 'Indian', visaType: 'Skilled Worker', visaStart: '2024-06-01', visa: '2028-03-01', rtw: '2028-03-01', shareCheck: '2024-05-28', cosNo: '[CoS number]', cosDate: '2024-04-10', soc: '[SOC code]', salary: '[Salary on CoS]', start: '2024-06-03', passportExp: '2029-08-14', dob: '1991-11-02' }),
+        W('w3', 'b1', 'James Carter', 'Stock Assistant', 'british', { site: 's2', days: 4, hours: '30', rtwMethod: 'Manual check of original passport', shareCheck: '2023-02-06', start: '2023-02-13', passportExp: '2030-01-09', dob: '1999-06-21' }),
+        W('w4', 'b1', 'Kasia Nowak', 'Sales Assistant', 'presettled', { site: 's2', nationality: 'Polish', visaType: 'EUSS pre-settled status', visaStart: '2022-02-14', visa: '2027-02-14', rtw: '2027-02-14', shareCheck: '2025-03-03', start: '2025-03-10', passportExp: '2032-07-30', dob: '1998-03-15' }),
+        W('w5', 'b1', 'Daniel Okafor', 'Part-time Sales Assistant', 'other', { site: 's1', days: 3, hours: '20', nationality: 'Nigerian', visaType: 'Graduate', visaStart: '2025-07-01', visa: '2027-06-30', rtw: '2027-06-30', restrictions: 'None on Graduate route', shareCheck: '2025-08-20', start: '2025-09-01', passportExp: '2030-10-11', dob: '2000-01-28' }),
+        W('w6', 'b2', 'Fatima Hussain', 'Chef', 'sponsored', { site: 's3', hours: '40', nationality: 'Bangladeshi', visaType: 'Skilled Worker', visaStart: '2024-09-20', visa: '2027-09-30', rtw: '2027-09-30', shareCheck: '2024-09-16', cosNo: '[CoS number]', cosDate: '2024-08-01', soc: '[SOC code]', salary: '[Salary on CoS]', start: '2024-09-23', passportExp: '2028-12-01', dob: '1989-08-09' }),
+        W('w7', 'b2', 'Tom Richards', 'Kitchen Porter', 'british', { site: 's3', rtwMethod: 'IDVT – certified identity provider', shareCheck: '2025-01-06', start: '2025-01-13', passportExp: '2033-03-18', dob: '2002-12-05' })
+      ],
+      absences: [
+        { id: 'a4', worker: 'w2', type: 'unauth', start: '2026-06-01', end: '2026-06-12', n: 10, reason: 'No contact, later returned', taskId: 't1' },
+        { id: 'a3', worker: 'w2', type: 'sick_self', start: '2026-09-14', end: '2026-09-15', n: 2, reason: 'Unwell', taskId: null },
+        { id: 'a1', worker: 'w1', type: 'annual', start: '2026-08-10', end: '2026-08-14', n: 5, reason: 'Holiday', taskId: null },
+        { id: 'a2', worker: 'w1', type: 'unpaid', start: '2026-03-02', end: '2026-03-09', n: 6, reason: 'Family matter', taskId: null },
+        { id: 'a5', worker: 'w3', type: 'annual', start: '2026-07-20', end: '2026-07-24', n: 5, reason: 'Holiday', taskId: null },
+        { id: 'a6', worker: 'w4', type: 'sick_fit', start: '2026-05-11', end: '2026-05-22', n: 10, reason: 'Fit note received', taskId: null },
+        { id: 'a8', worker: 'w4', type: 'annual', start: '2026-04-07', end: '2026-04-10', n: 4, reason: 'Easter break', taskId: null },
+        { id: 'a7', worker: 'w5', type: 'annual', start: '2026-09-07', end: '2026-09-08', n: 2, reason: 'Graduation', taskId: null },
+        { id: 'a9', worker: 'w6', type: 'unpaid', start: '2026-02-02', end: '2026-02-13', n: 10, reason: 'Family visit abroad', taskId: null },
+        { id: 'a11', worker: 'w6', type: 'annual', start: '2026-07-06', end: '2026-07-10', n: 5, reason: 'Holiday', taskId: null },
+        { id: 'a10', worker: 'w7', type: 'annual', start: '2026-08-17', end: '2026-08-21', n: 5, reason: 'Holiday', taskId: null }
+      ],
+      tasks: [
+        { id: 't2', bizId: 'b1', level: 'Worker', worker: 'w2', event: 'Job title changed (Sales Assistant to Store Supervisor)', trigger: '2026-09-10', deadline: this.addWD('2026-09-10', 10), status: 'Pending', source: 'Employee record', reportedOn: '', by: '', ref: '' },
+        { id: 't1', bizId: 'b1', level: 'Worker', worker: 'w2', event: 'Unauthorised absence reached 10 consecutive working days', trigger: '2026-06-12', deadline: this.addWD('2026-06-12', 10), status: 'Reported', source: 'Absence log', reportedOn: '2026-06-15', by: '[HR admin]', ref: '[SMS ref]' },
+        { id: 't3', bizId: 'b2', level: 'Company', worker: null, event: 'Registered office address changed', trigger: '2026-09-01', deadline: this.addWD('2026-09-01', 20), status: 'Pending', source: 'Company settings', reportedOn: '', by: '', ref: '' }
+      ],
+      docs: [
+        ['w1','rtw','rtw-share-code-check.pdf','2025-10-28',''],['w1','passport','passport-scan.pdf','2025-10-28','2031-05-20'],['w1','cos','certificate-of-sponsorship.pdf','2025-09-15',''],['w1','contract','employment-contract-signed.pdf','2025-11-03',''],['w1','jd','job-description.pdf','2025-11-03',''],['w1','payroll','payslips-2026.pdf','2026-09-01',''],
+        ['w2','rtw','rtw-share-code-check.pdf','2024-05-28',''],['w2','passport','passport-scan.pdf','2024-05-28','2029-08-14'],['w2','cos','certificate-of-sponsorship.pdf','2024-04-10',''],['w2','contract','employment-contract-signed.pdf','2024-06-03',''],['w2','jd','job-description-store-supervisor.pdf','2026-09-10',''],['w2','recruit','job-advert-and-interview-notes.pdf','2024-04-02',''],['w2','payroll','payslips-2026.pdf','2026-09-01',''],['w2','absence','absence-contact-log-june-2026.pdf','2026-06-15',''],
+        ['w3','rtw','passport-check-copy-signed-dated.pdf','2023-02-06',''],['w3','passport','passport-scan.pdf','2023-02-06','2030-01-09'],['w3','contract','employment-contract-signed.pdf','2023-02-13',''],['w3','jd','job-description.pdf','2023-02-13',''],['w3','payroll','payslips-2026.pdf','2026-09-01',''],
+        ['w4','rtw','rtw-share-code-check.pdf','2025-03-03',''],['w4','contract','employment-contract-signed.pdf','2025-03-10',''],['w4','jd','job-description.pdf','2025-03-10',''],['w4','payroll','payslips-2026.pdf','2026-09-01',''],['w4','absence','fit-note-may-2026.pdf','2026-05-22',''],
+        ['w5','rtw','rtw-share-code-check.pdf','2025-08-20',''],['w5','passport','passport-scan.pdf','2025-08-20','2030-10-11'],['w5','contract','employment-contract-signed.pdf','2025-09-01',''],['w5','jd','job-description.pdf','2025-09-01',''],['w5','payroll','payslips-2026.pdf','2026-09-01',''],
+        ['w6','rtw','rtw-share-code-check.pdf','2024-09-16',''],['w6','passport','passport-scan.pdf','2024-09-16','2028-12-01'],['w6','cos','certificate-of-sponsorship.pdf','2024-08-01',''],['w6','contract','employment-contract-signed.pdf','2024-09-23',''],['w6','jd','job-description-chef.pdf','2024-09-23',''],['w6','recruit','job-advert-and-interview-notes.pdf','2024-07-15',''],['w6','payroll','payslips-2026.pdf','2026-09-01',''],
+        ['w7','rtw','idvt-check-report.pdf','2025-01-06',''],['w7','passport','passport-scan.pdf','2025-01-06','2033-03-18'],['w7','contract','employment-contract-signed.pdf','2025-01-13',''],['w7','jd','job-description.pdf','2025-01-13',''],['w7','payroll','payslips-2026.pdf','2026-09-01','']
+      ].map((d, i) => ({ id: 'd' + (i + 1), worker: d[0], cat: d[1], name: d[2], uploaded: d[3], by: '[HR admin]', expiry: d[4] })),
+      history: [
+        { id: 'h2', worker: 'w2', date: '2026-09-10', field: 'Job title', from: 'Sales Assistant', to: 'Store Supervisor', by: '[HR admin]', taskId: 't2' },
+        { id: 'h1', worker: 'w1', date: '2026-04-12', field: 'Home address', from: '[Previous address]', to: '[Home address, postcode]', by: '[HR admin]', taskId: null },
+        { id: 'h3', worker: 'w6', date: '2026-04-01', field: 'Salary – increase', from: '[Previous salary]', to: '[Salary on CoS]', by: '[HR admin]', taskId: null }
+      ],
+      requests: [
+        { id: 'r1', bizId: 'b1', worker: 'w4', kind: 'leave', leaveType: 'annual', start: '2026-10-12', end: '2026-10-16', detail: 'Family visit', status: 'Pending', submitted: '2026-09-21' },
+        { id: 'r2', bizId: 'b1', worker: 'w2', kind: 'change', changeKind: 'address', value: '[New home address, postcode]', detail: 'Moving on 1 October', status: 'Pending', submitted: '2026-09-22' },
+        { id: 'r3', bizId: 'b1', worker: 'w5', kind: 'increment', value: '[Requested salary]', detail: '12 months in role, now a key-holder', status: 'Pending', submitted: '2026-09-18' },
+        { id: 'r4', bizId: 'b1', worker: 'w1', kind: 'change', changeKind: 'visa', value: '2029-12-10', detail: 'Extension granted. New share code: [share code]', status: 'Pending', submitted: '2026-09-23' },
+        { id: 'r5', bizId: 'b1', worker: 'w4', kind: 'docreq', docCat: 'passport', fileName: '', status: 'Awaiting employee', submitted: '2026-09-15' },
+        { id: 'r6', bizId: 'b2', worker: 'w6', kind: 'leave', leaveType: 'unpaid', start: '2026-10-19', end: '2026-11-06', detail: 'Family wedding abroad', status: 'Pending', submitted: '2026-09-20' },
+        { id: 'r7', bizId: 'b1', worker: 'w3', kind: 'other', value: 'Can I move my working days to Tue–Fri from November?', detail: '', status: 'Approved', submitted: '2026-09-02', decided: '2026-09-04', hrNote: 'Agreed from 2 November.' },
+        { id: 'r8', bizId: 'b1', worker: 'w1', kind: 'leave', leaveType: 'annual', start: '2026-08-10', end: '2026-08-14', detail: 'Holiday', status: 'Approved', submitted: '2026-07-20', decided: '2026-07-22', hrNote: 'Approved' }
+      ],
+      alerts: [ { id: 'al1', worker: 'w1', date: '2026-09-22' }, { id: 'al2', worker: 'w6', date: '2026-09-23' } ],
+      tab: 'dash', selWorker: null, empTab: 'overview',
+      form: { worker: 'w1', type: 'annual', start: '2026-10-05', end: '2026-10-09', reason: '' },
+      classifying: null, saved: null,
+      editTask: null, rep: { date: '2026-09-24', by: '', ref: '' }, repError: '',
+      siteForm: { name: '', address: '' }, siteMsg: '',
+      moveForm: { worker: 'w1', site: 's1' }, moveMsg: '',
+      upload: { cat: 'recruit', expiry: '', fileName: '' }, uploadMsg: '',
+      chg: { field: 'jobTitle', value: '' }, chgMsg: '', packMsg: '',
+      ne: this.blankNe('s1'), neErr: '', neMsg: '',
+      bizForm: { name: '', licence: '', ao: '', email: '' }, bizMsg: '',
+      ptab: 'home',
+      pLeave: { type: 'annual', start: '2026-10-12', end: '2026-10-16', reason: '' }, pLeaveMsg: '',
+      pChg: { kind: 'address', value: '', note: '' }, pChgMsg: '',
+      pFiles: {}, pDocMsg: '', pUp: { cat: 'other', fileName: '' },
+      nextId: 100,
+      notices: [
+        { id: 'n1', bizId: 'b1', title: 'Christmas opening hours', body: 'Both shops close at 4pm on 24 December and reopen on 27 December.', date: '2026-09-15', needsAck: false, acks: {} },
+        { id: 'n2', bizId: 'b1', title: 'Updated sickness absence policy', body: 'Please read the updated policy in the handbook. Report sickness through the portal before your shift starts.', date: '2026-09-18', needsAck: true, acks: { w2: '2026-09-18', w3: '2026-09-19' } },
+        { id: 'n3', bizId: 'b2', title: 'Food hygiene refresher training', body: 'All kitchen staff must complete the refresher by 31 October. Book a slot with your manager.', date: '2026-09-10', needsAck: true, acks: { w7: '2026-09-11' } }
+      ],
+      messages: [
+        { id: 'm1', n: 1, bizId: 'b1', worker: 'w4', from: 'hr', text: 'Hi Kasia, please upload a copy of your passport in the portal when you can.', date: '2026-09-15', read: true },
+        { id: 'm2', n: 2, bizId: 'b1', worker: 'w4', from: 'emp', text: 'Will do this week – it is at my parents\' house.', date: '2026-09-16', read: true },
+        { id: 'm3', n: 3, bizId: 'b1', worker: 'w1', from: 'emp', text: 'Hi, my visa extension has been approved. I have sent the new expiry date through the portal.', date: '2026-09-23', read: false },
+        { id: 'm4', n: 4, bizId: 'b2', worker: 'w6', from: 'emp', text: 'I have asked for unpaid leave for my sister\'s wedding – happy to discuss.', date: '2026-09-20', read: false }
+      ],
+      shareForm: { kind: 'payslip', title: '', file: '', period: '', payDate: '', effective: '', ack: 'no' }, shareMsg: '',
+      msgDraft: '', msgWorker: null, noticeForm: { title: '', body: '', ack: 'yes' }, noticeMsg: '',
+      pMsgDraft: '', pPayMsg: '',
+      endForm: { date: '2026-09-24', reason: 'Resigned' }, showEnd: false, endMsg: ''
+    };
+    this.state.shared = this.seedShared(this.state.workers);
+    this.state.workers = this.state.workers.map(w => Object.assign({}, w, { email: w.name.toLowerCase().replace(/[^a-z]+/g, '.') + '@' + (w.bizId === 'b1' ? 'demo-retail.example' : 'demo-catering.example') }));
+    this.state.auth = { step: 'email', email: '', pw: '', err: '', info: '' };
+    this.state.plan = { price: 20, limit: 15, training: 49 };
+    this.state.subMsg = '';
+  }
+
+  sharedKinds() {
+    return [
+      { id: 'payslip', label: 'Payslip', ack: false },
+      { id: 'p60', label: 'P60', ack: false },
+      { id: 'p45', label: 'P45', ack: false },
+      { id: 'statement', label: 'Written statement of employment particulars', ack: true },
+      { id: 'change', label: 'Change to terms (written statement of change)', ack: true },
+      { id: 'policy', label: 'Policy / handbook', ack: true },
+      { id: 'privacy', label: 'Privacy notice', ack: true },
+      { id: 'pension', label: 'Pension auto-enrolment letter', ack: false },
+      { id: 'letter', label: 'Other letter', ack: false }
+    ];
+  }
+  seedShared(ws) {
+    const out = []; let i = 1;
+    const add = (w, kind, title, o) => out.push(Object.assign({ id: 'x' + (i++), worker: w.id, kind, title, file: title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.pdf', period: '', payDate: '', effective: '', sentOn: '', needsAck: false, ackOn: '', seenOn: '' }, o));
+    ws.forEach(w => {
+      if (w.id !== 'w4') add(w, 'statement', 'Written statement of employment particulars', { sentOn: w.start, needsAck: true, ackOn: w.start });
+      add(w, 'privacy', 'Employee privacy notice', { sentOn: w.start, needsAck: true, ackOn: w.start });
+      add(w, 'policy', 'Employee handbook (incl. disciplinary and grievance)', { sentOn: w.start, needsAck: true, ackOn: w.start });
+      if (w.id !== 'w5') add(w, 'pension', 'Pension auto-enrolment letter', { sentOn: w.start });
+      add(w, 'p60', 'P60 2025/26', { sentOn: '2026-05-20', period: '2025/26' });
+      add(w, 'payslip', 'Payslip July 2026', { period: 'July 2026', payDate: '2026-07-31', sentOn: '2026-07-31', seenOn: '2026-08-01' });
+      add(w, 'payslip', 'Payslip August 2026', { period: 'August 2026', payDate: '2026-08-28', sentOn: '2026-08-28' });
+    });
+    const w1 = ws.find(w => w.id === 'w1'); if (w1) add(w1, 'change', 'Change to terms: overtime clause', { sentOn: '2026-09-20', effective: '2026-10-01', needsAck: true });
+    const w2 = ws.find(w => w.id === 'w2'); if (w2) add(w2, 'change', 'Change to terms: promotion to Store Supervisor', { sentOn: '2026-09-08', effective: '2026-09-10', needsAck: true, ackOn: '2026-09-09' });
+    return out;
+  }
+  addYears(s, n) { return s ? (Number(s.slice(0, 4)) + n) + s.slice(4) : ''; }
+
+  blankNe(site) {
+    return { name: '', dob: '', nationality: 'British', email: '', phone: '', ni: '', address: '', passportNo: '', passportExp: '',
+      basis: 'sponsored', otherVisa: 'Graduate', rtwMethod: 'Home Office online check (share code)', rtwDate: '2026-09-24', rtwBy: '', shareCode: '',
+      visaStart: '', visaEnd: '', restrictions: '', cosNo: '', cosDate: '', soc: '', role: '', salary: '', start: '', site: site || '', days: '5', hours: '37.5', contract: 'Permanent', invite: 'yes' };
+  }
+  today() { return '2026-09-24'; }
+  bankHolidays() { return ['2026-04-03','2026-04-06','2026-05-04','2026-05-25','2026-08-31','2026-12-25','2026-12-28','2027-01-01','2027-03-26','2027-03-29','2027-05-03','2027-05-31','2027-08-30']; }
+  types() {
+    return [
+      { id: 'annual', label: 'Annual leave', pay: 'Paid', rule: 'none' },
+      { id: 'bank', label: 'Bank holiday', pay: 'Paid', rule: 'none' },
+      { id: 'sick_self', label: 'Sickness – self-certified (1–7 days)', pay: 'SSP / sick pay', rule: 'none' },
+      { id: 'sick_fit', label: 'Sickness – fit note (8+ days)', pay: 'SSP / sick pay', rule: 'none' },
+      { id: 'family', label: 'Maternity / paternity / adoption / shared parental', pay: 'Statutory', rule: 'none' },
+      { id: 'compassionate', label: 'Compassionate / bereavement', pay: 'Per policy', rule: 'none' },
+      { id: 'otherpaid', label: 'Other paid leave', pay: 'Paid (full salary)', rule: 'none' },
+      { id: 'unpaid', label: 'Unpaid leave', pay: 'Unpaid', rule: 'unpaid' },
+      { id: 'unauth', label: 'Unauthorised absence', pay: 'Unpaid', rule: 'unauth' },
+      { id: 'jury', label: 'Jury service', pay: 'Per policy', rule: 'none' },
+      { id: 'training', label: 'Training / study leave', pay: 'Paid', rule: 'none' }
+    ];
+  }
+  docCats() {
+    return [
+      { id: 'rtw', label: 'Right-to-work check result' },
+      { id: 'passport', label: 'Passport / identity' },
+      { id: 'cos', label: 'Certificate of Sponsorship' },
+      { id: 'contract', label: 'Employment contract' },
+      { id: 'jd', label: 'Job description' },
+      { id: 'recruit', label: 'Recruitment evidence (advert, shortlist, interview notes)' },
+      { id: 'payroll', label: 'Payslips / payroll records' },
+      { id: 'absence', label: 'Absence evidence (fit notes, approvals)' },
+      { id: 'other', label: 'Other' }
+    ];
+  }
+  bases() {
+    return [
+      { id: 'british', label: 'British or Irish citizen', limited: false, share: false, hint: 'Check an original British or Irish passport in person (or use a certified IDVT provider). Keep a signed, dated copy. No follow-up check is needed.' },
+      { id: 'settled', label: 'EU Settlement Scheme – settled status', limited: false, share: true, hint: 'Do an online check with the share code and save the result. No follow-up check is needed.' },
+      { id: 'presettled', label: 'EU Settlement Scheme – pre-settled status', limited: true, share: true, hint: 'Do an online check with the share code. Record the expiry date: a follow-up check is due before it.' },
+      { id: 'ilr', label: 'Indefinite leave to remain', limited: false, share: true, hint: 'Do an online check with the share code and save the result. No follow-up check is needed.' },
+      { id: 'sponsored', label: 'Skilled Worker visa – sponsored by this business', limited: true, share: true, hint: 'Do an online check with the share code before they start. Job, salary and hours must match the CoS. A follow-up check is due before the visa expires, and sponsor reporting duties apply.' },
+      { id: 'other', label: 'Other visa (Graduate, Dependant, Student…)', limited: true, share: true, hint: 'Do an online check with the share code and record any work restrictions (e.g. Student hour limits). A follow-up check is due before the visa expires.' }
+    ];
+  }
+  reqFor(w) { const r = ['rtw', 'passport', 'contract', 'jd', 'payroll']; if (w && w.sponsored) r.push('cos', 'recruit'); return r; }
+  chgFields() {
+    return [
+      { id: 'jobTitle', label: 'Job title', prop: 'role', report: true, event: 'Job title changed' },
+      { id: 'soc', label: 'SOC code / duties', prop: 'soc', report: true, event: 'SOC code / duties changed' },
+      { id: 'salDown', label: 'Salary – reduction', prop: 'salary', report: true, event: 'Salary reduced' },
+      { id: 'salUp', label: 'Salary – increase', prop: 'salary', report: false },
+      { id: 'hours', label: 'Contracted weekly hours', prop: 'hours', report: true, event: 'Contracted hours changed' },
+      { id: 'address', label: 'Home address', prop: 'address', report: false },
+      { id: 'phone', label: 'Phone', prop: 'phone', report: false },
+      { id: 'email', label: 'Email', prop: 'email', report: false }
+    ];
+  }
+  toD(s) { const p = String(s || '').split('-').map(Number); return new Date(Date.UTC(p[0], (p[1] || 1) - 1, p[2] || 1)); }
+  toS(d) { return d.toISOString().slice(0, 10); }
+  isWD(d) { const w = d.getUTCDay(); return w >= 1 && w <= 5 && this.bankHolidays().indexOf(this.toS(d)) < 0; }
+  wdList(s, e) {
+    if (!s || !e) return [];
+    const a = this.toD(s), b = this.toD(e);
+    if (isNaN(a.getTime()) || isNaN(b.getTime()) || b < a) return [];
+    const out = []; const d = new Date(a.getTime());
+    while (d <= b && out.length < 400) { if (this.isWD(d)) out.push(this.toS(d)); d.setUTCDate(d.getUTCDate() + 1); }
+    return out;
+  }
+  addWD(s, n) { const d = this.toD(s); let c = 0; while (c < n) { d.setUTCDate(d.getUTCDate() + 1); if (this.isWD(d)) c++; } return this.toS(d); }
+  wdBetween(s, e) {
+    if (s === e) return 0;
+    if (e < s) return -this.wdBetween(e, s);
+    const d = this.toD(s); let c = 0;
+    while (this.toS(d) < e) { d.setUTCDate(d.getUTCDate() + 1); if (this.isWD(d)) c++; }
+    return c;
+  }
+  calDays(a, b) { return Math.round((this.toD(b) - this.toD(a)) / 86400000); }
+  fmt(s) {
+    if (!s) return '—';
+    const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const d = this.toD(s); if (isNaN(d.getTime())) return String(s);
+    return d.getUTCDate() + ' ' + M[d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+  }
+  fmtW(s) { const W = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; return W[this.toD(s).getUTCDay()] + ' ' + this.fmt(s); }
+  unpaidUsed(st, workerId, yr) {
+    return st.absences.filter(a => a.worker === workerId && (a.type === 'unpaid' || a.type === 'unauth') && a.start.slice(0, 4) === yr).reduce((s, a) => s + a.n, 0);
+  }
+  annualTaken(st, workerId, yr) {
+    return st.absences.filter(a => a.worker === workerId && a.type === 'annual' && a.start.slice(0, 4) === yr).reduce((s, a) => s + a.n, 0);
+  }
+  allowance(w) { return Math.round(5.6 * (Number(w.days) || 5) * 10) / 10; }
+
+  evalAbs(st, f) {
+    const w = st.workers.find(x => x.id === f.worker);
+    const t = this.types().find(x => x.id === f.type);
+    const days = this.wdList(f.start, f.end);
+    const n = days.length;
+    if (!w || !t || n === 0) return { valid: false, n: 0, report: false, title: 'Check the dates', detail: 'The end date must be on or after the start date and include at least one working day.' };
+    if (t.rule === 'unpaid') {
+      const yr = f.start.slice(0, 4);
+      const used = this.unpaidUsed(st, w.id, yr);
+      const limit = 4 * (Number(w.days) || 5);
+      const total = used + n;
+      if (total > limit) {
+        const trig = days[Math.min(days.length - 1, Math.max(0, limit - used))];
+        return { valid: true, n, report: true, trigger: trig, deadline: this.addWD(trig, 10), event: 'Unpaid leave over 4 weeks in ' + yr, title: 'Report to Home Office',
+          detail: 'Unpaid days in ' + yr + ': ' + used + ' already taken + ' + n + ' requested = ' + total + ', over the ' + limit + '-day limit (4 weeks). The limit is crossed on ' + this.fmt(trig) + '. Consider whether sponsorship must stop.' };
+      }
+      return { valid: true, n, report: false, title: 'No report needed', detail: 'Unpaid days in ' + yr + ': ' + used + ' + ' + n + ' = ' + total + ' of ' + limit + '. ' + (limit - total) + ' days left before a report is required.' };
+    }
+    if (t.rule === 'unauth') {
+      if (n >= 10) {
+        const trig = days[9];
+        return { valid: true, n, report: true, trigger: trig, deadline: this.addWD(trig, 10), event: 'Unauthorised absence reached 10 consecutive working days', title: 'Report to Home Office',
+          detail: n + ' consecutive working days of unauthorised absence. The 10-day threshold is reached on ' + this.fmt(trig) + '.' };
+      }
+      return { valid: true, n, report: false, title: 'No report yet', detail: n + ' of 10 consecutive working days. Keep trying to contact the employee and note each attempt. A report is needed on day 10.' };
+    }
+    let detail = t.label + ' is not reportable. It is kept in the absence log as evidence of attendance.';
+    if (t.id === 'sick_fit') detail += ' Upload the fit note.';
+    if (t.id === 'sick_self' && n > 7) detail = 'Self-certification only covers up to 7 days. Switch to "Sickness – fit note" and upload the fit note.';
+    return { valid: true, n, report: false, title: 'No report needed', detail };
+  }
+
+  renderVals() {
+    const st = this.state;
+    const TODAY = this.today();
+    const types = this.types(), cats = this.docCats(), bases = this.bases();
+    const biz = st.businesses.find(b => b.id === st.session.bizId) || st.businesses[0];
+    const W = st.workers.filter(w => w.bizId === biz.id);
+    const inW = id => W.some(w => w.id === id);
+    const wById = id => st.workers.find(x => x.id === id);
+    const wName = id => { const w = wById(id); return w ? w.name : '—'; };
+    const sName = id => { const s = st.sites.find(x => x.id === id); return s ? s.name : '—'; };
+    const taskById = id => st.tasks.find(t => t.id === id);
+    const catLabel = id => (cats.find(c => c.id === id) || {}).label || id;
+    const basisOf = id => bases.find(b => b.id === id) || bases[0];
+    const typeLabel = id => (types.find(t => t.id === id) || {}).label || id;
+    const B = 'display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; line-height: 18px; white-space: nowrap; border: 1px solid; ';
+    const RED = B + 'background: #FEF3F2; color: #B42318; border-color: #FECDCA';
+    const ORA = B + 'background: #FFFAEB; color: #B54708; border-color: #FEDF89';
+    const GRN = B + 'background: #ECFDF3; color: #067647; border-color: #ABEFC6';
+    const GRY = B + 'background: #F9FAFB; color: #344054; border-color: #EAECF0';
+    const NEU = B + 'background: #EEF4FF; color: #3538CD; border-color: #C7D7FE';
+    const tInfo = t => {
+      if (t.status === 'Reported') return { badge: 'Reported to Home Office', bs: GRN };
+      if (t.status === 'Not required') return { badge: 'Not required', bs: GRY };
+      const left = this.wdBetween(TODAY, t.deadline);
+      if (left < 0) return { badge: 'Overdue by ' + (-left) + ' working days', bs: RED };
+      if (left === 0) return { badge: 'Due today', bs: RED };
+      if (left <= 5) return { badge: 'Due in ' + left + ' working days', bs: ORA };
+      return { badge: left + ' working days left', bs: NEU };
+    };
+    const expBadge = s => {
+      if (!s) return { text: 'No time limit', bs: GRY };
+      const d = this.calDays(TODAY, s);
+      if (d < 0) return { text: 'Expired ' + this.fmt(s), bs: RED };
+      if (d <= 90) return { text: this.fmt(s) + ' · ' + d + ' days', bs: ORA };
+      return { text: this.fmt(s), bs: NEU };
+    };
+    const reqStatus = s => s === 'Approved' ? { t: 'Approved', bs: GRN } : s === 'Rejected' ? { t: 'Declined', bs: RED } : s === 'Awaiting employee' ? { t: 'Action needed', bs: ORA } : { t: 'Waiting for HR', bs: NEU };
+    const chgKinds = [
+      { id: 'address', label: 'Change of home address', field: 'New address and postcode', date: false },
+      { id: 'phone', label: 'Change of phone number', field: 'New phone number', date: false },
+      { id: 'email', label: 'Change of email', field: 'New email', date: false },
+      { id: 'name', label: 'Change of name', field: 'New full legal name', date: false },
+      { id: 'visa', label: 'New visa or visa extension', field: 'New visa expiry date', date: true },
+    ];
+    const kindLabel = r => r.kind === 'leave' ? 'Leave request' : r.kind === 'sickness' ? 'Sickness' : r.kind === 'increment' ? 'Pay review' : r.kind === 'docreq' ? 'Document' : r.kind === 'other' ? 'Other request' : ((chgKinds.find(k => k.id === r.changeKind) || {}).label || 'Change');
+    const reqSummary = r => {
+      if (r.kind === 'leave' || r.kind === 'sickness') { const n = this.wdList(r.start, r.end).length; return (r.kind === 'sickness' ? 'Sickness' : typeLabel(r.leaveType)) + ': ' + this.fmt(r.start) + ' – ' + this.fmt(r.end) + ' (' + n + ' working days)'; }
+      if (r.kind === 'docreq') return catLabel(r.docCat) + (r.fileName ? ': ' + r.fileName : '');
+      if (r.kind === 'increment') return 'Requested salary: ' + r.value;
+      if (r.kind === 'other') return r.value;
+      if (r.changeKind === 'visa') return 'New visa expiry: ' + this.fmt(r.value);
+      return r.value;
+    };
+
+    const msgKey = { form: 'saved', rep: 'repError', siteForm: 'siteMsg', moveForm: 'moveMsg', upload: 'uploadMsg', chg: 'chgMsg', ne: 'neErr', bizForm: 'bizMsg', pLeave: 'pLeaveMsg', pChg: 'pChgMsg', shareForm: 'shareMsg', noticeForm: 'noticeMsg', endForm: 'endMsg' };
+    const setIn = (group, key) => e => {
+      const v = e.target.value;
+      this.setState(s => { const o = {}; o[group] = Object.assign({}, s[group]); o[group][key] = v; const mk = msgKey[group]; if (mk) o[mk] = mk === 'saved' ? null : ''; if (group === 'pChg' && key === 'kind') o.pChg.value = ''; return o; });
+    };
+
+    // ---------- Login / platform ----------
+    const bizOpts = st.businesses.map(b => ({ id: b.id, name: b.name }));
+    const loginBiz = st.businesses.find(b => b.id === st.login.adminBiz) || st.businesses[0];
+    const loginEmpOpts = st.workers.filter(w => w.bizId === st.login.empBiz && !w.endDate).map(w => ({ id: w.id, name: w.name + ' – ' + w.role }));
+    const enterAdmin = bizId => {
+      const s = this.state; const fw = s.workers.find(w => w.bizId === bizId); const fs = s.sites.find(x => x.bizId === bizId);
+      this.setState({ screen: 'admin', session: { role: 'admin', bizId, empId: null }, tab: 'dash', selWorker: null, empTab: 'overview',
+        form: { worker: fw ? fw.id : '', type: 'annual', start: '2026-10-05', end: '2026-10-09', reason: '' },
+        moveForm: { worker: fw ? fw.id : '', site: fs ? fs.id : '' }, saved: null, editTask: null, siteMsg: '', moveMsg: '', neErr: '', neMsg: '', packMsg: '', classifying: null, ne: this.blankNe(fs ? fs.id : '') });
+    };
+    const lEmpBiz = e => { const v = e.target.value; const first = this.state.workers.find(w => w.bizId === v); this.setState(s => ({ login: Object.assign({}, s.login, { empBiz: v, empId: first ? first.id : '' }) })); };
+    const loginEmp = () => {
+      const s = this.state; const w = s.workers.find(x => x.id === s.login.empId); if (!w) return;
+      this.setState({ screen: 'portal', session: { role: 'employee', bizId: w.bizId, empId: w.id }, ptab: 'home', pLeaveMsg: '', pChgMsg: '', pDocMsg: '', pFiles: {} });
+    };
+    const bizRows = st.businesses.map(b => {
+      const ws = st.workers.filter(w => w.bizId === b.id);
+      const pr = st.tasks.filter(t => t.bizId === b.id && t.status === 'Pending').length;
+      return { name: b.name, licence: b.licence, ao: b.ao, email: b.adminEmail, created: this.fmt(b.created), staff: String(ws.length), sponsored: String(ws.filter(w => w.sponsored).length),
+        reports: pr ? pr + ' pending' : 'Up to date', repBs: pr ? RED : GRN, open: () => enterAdmin(b.id) };
+    });
+    const addBiz = () => {
+      const s = this.state; const f = s.bizForm;
+      if (!f.name.trim() || !f.email.trim()) { this.setState({ bizMsg: 'Enter the business name and HR admin email.' }); return; }
+      const id = s.nextId;
+      this.setState({
+        businesses: s.businesses.concat([{ id: 'b' + id, name: f.name.trim(), licence: f.licence.trim() || '[Licence number]', ao: f.ao.trim() || '[Authorising Officer]', adminEmail: f.email.trim(), created: TODAY }]),
+        sites: s.sites.concat([{ id: 's' + id, bizId: 'b' + id, name: 'Main site', address: '[Address, postcode]', taskId: null }]),
+        nextId: id + 1, bizForm: { name: '', licence: '', ao: '', email: '' },
+        bizMsg: f.name.trim() + ' created with its own HR admin login and separate data. An invite goes to ' + f.email.trim() + '.'
+      });
+    };
+
+    // ---------- Admin: tenant data ----------
+    const T = st.tasks.filter(t => t.bizId === biz.id);
+    const A = st.absences.filter(a => inW(a.worker));
+    const R = st.requests.filter(r => r.bizId === biz.id);
+    const pending = T.filter(t => t.status === 'Pending');
+    const urgent = pending.filter(t => this.wdBetween(TODAY, t.deadline) <= 5).length;
+    const reqPending = R.filter(r => r.status === 'Pending');
+    const myAlerts = st.alerts.filter(a => inW(a.worker));
+
+    const tabBase = 'display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 40px; padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; text-align: left; ';
+    const pill = 'min-width: 22px; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; text-align: center; ';
+    const mkTab = (label, count, on, go) => ({ label, count, hasCount: count > 0, go,
+      style: tabBase + (on ? 'background: #EEF2FF; color: #3730A3; font-weight: 600' : 'background: transparent; color: #344054; font-weight: 500'),
+      countStyle: pill + (on ? 'background: #4F46E5; color: #FFFFFF' : 'background: #FEE4E2; color: #B42318') });
+    const tabs = [['dash', 'Dashboard', myAlerts.length], ['emp', 'Employees', 0], ['log', 'Absence', 0], ['reports', 'Home Office reports', pending.length], ['requests', 'Requests', reqPending.length], ['sites', 'Settings', 0]]
+      .map(d => mkTab(d[1], d[2], st.tab === d[0] || (d[0] === 'log' && st.tab === 'record') || (d[0] === 'emp' && st.tab === 'add'), () => this.setState(d[0] === 'emp' ? { tab: 'emp', selWorker: null } : d[0] === 'add' ? { tab: 'add', neErr: '' } : { tab: d[0] })));
+
+    const openProfile = wid => () => this.setState({ tab: 'emp', selWorker: wid, empTab: 'overview', uploadMsg: '', chgMsg: '', packMsg: '', neMsg: '', showEnd: false, endMsg: '', shareMsg: '', msgDraft: '' });
+
+    // Record absence
+    const ev = this.evalAbs(st, st.form);
+    const typeObj = types.find(x => x.id === st.form.type) || types[0];
+    let evPanelStyle = 'border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 10px; ';
+    let evTitleStyle = 'font-family: Geist, system-ui, sans-serif; letter-spacing: -0.02em; font-size: 26px; font-weight: 600; ';
+    if (!ev.valid) { evPanelStyle += 'background: #FFFFFF; border: 1px solid #EAECF0'; evTitleStyle += 'color: #344054'; }
+    else if (ev.report) { evPanelStyle += 'background: #FEF3F2; border: 2px solid #D92D20'; evTitleStyle += 'color: #D92D20'; }
+    else { evPanelStyle += 'background: #ECFDF3; border: 2px solid #079455'; evTitleStyle += 'color: #079455'; }
+    const save = () => {
+      const s = this.state; const e2 = this.evalAbs(s, s.form);
+      if (!e2.valid) return;
+      const id = s.nextId; const f = s.form; const w = s.workers.find(x => x.id === f.worker);
+      const abs = { id: 'a' + id, worker: f.worker, type: f.type, start: f.start, end: f.end, n: e2.n, reason: f.reason || '—', taskId: null };
+      const tasks = s.tasks.slice();
+      if (e2.report) { const tid = 't' + id; tasks.unshift({ id: tid, bizId: w.bizId, level: 'Worker', worker: f.worker, event: e2.event, trigger: e2.trigger, deadline: e2.deadline, status: 'Pending', source: 'Absence log', reportedOn: '', by: '', ref: '' }); abs.taskId = tid; }
+      this.setState({ absences: [abs].concat(s.absences), tasks, nextId: id + 1, alerts: s.alerts.filter(a => a.id !== s.classifying), classifying: null,
+        saved: { report: e2.report, text: e2.report ? 'Saved. A Home Office report task was created, deadline ' + this.fmt(e2.deadline) + '.' : 'Saved to the absence log. No Home Office report needed.' } });
+    };
+
+    const absenceRows = A.slice().sort((a, b) => (a.start < b.start ? 1 : -1)).map(a => {
+      const t = types.find(x => x.id === a.type);
+      const tk = a.taskId ? taskById(a.taskId) : null;
+      let badge, bs;
+      if (!tk) { badge = 'No report needed'; bs = GRY; }
+      else if (tk.status === 'Reported') { badge = 'Reported to Home Office'; bs = GRN; }
+      else if (tk.status === 'Not required') { badge = 'Not required'; bs = GRY; }
+      else { badge = 'Report by ' + this.fmt(tk.deadline); bs = RED; }
+      return { wid: a.worker, who: wName(a.worker), type: t ? t.label : a.type, dates: a.start === a.end ? this.fmt(a.start) : this.fmt(a.start) + ' – ' + this.fmt(a.end),
+        n: String(a.n), pay: t ? t.pay : '', reason: a.reason, badge, bs, hasTask: !!tk && tk.status === 'Pending',
+        open: () => this.setState({ tab: 'reports', editTask: tk ? tk.id : null, rep: { date: TODAY, by: '', ref: '' }, repError: '' }) };
+    });
+
+    const sortedTasks = pending.slice().sort((a, b) => (a.deadline > b.deadline ? 1 : -1)).concat(T.filter(t => t.status !== 'Pending').sort((a, b) => (a.trigger < b.trigger ? 1 : -1)));
+    const taskRows = sortedTasks.map(t => {
+      const info = tInfo(t); const done = t.status !== 'Pending';
+      return { wid: t.worker, event: t.event, who: t.level === 'Company' ? 'Company' : wName(t.worker), source: t.source, trigger: this.fmt(t.trigger), deadline: this.fmt(t.deadline),
+        badge: info.badge, bs: info.bs, isPending: !done, isEditing: st.editTask === t.id, done,
+        doneText: t.status === 'Reported' ? 'On ' + this.fmt(t.reportedOn) + ' by ' + t.by + (t.ref ? ' · ' + t.ref : '') : (t.status === 'Not required' ? t.ref : ''),
+        edit: () => this.setState({ editTask: t.id, rep: { date: TODAY, by: '', ref: '' }, repError: '' }),
+        editFromProfile: () => this.setState({ tab: 'reports', editTask: t.id, rep: { date: TODAY, by: '', ref: '' }, repError: '' }) };
+    });
+    const confirmRep = () => {
+      const s = this.state;
+      if (!s.rep.by.trim()) { this.setState({ repError: 'Enter who reported it on the SMS.' }); return; }
+      this.setState({ tasks: s.tasks.map(t => t.id === s.editTask ? Object.assign({}, t, { status: 'Reported', reportedOn: s.rep.date, by: s.rep.by, ref: s.rep.ref }) : t), editTask: null });
+    };
+    const notReq = () => {
+      const s = this.state;
+      if (!s.rep.ref.trim()) { this.setState({ repError: 'Enter the reason it is not required in the notes field.' }); return; }
+      this.setState({ tasks: s.tasks.map(t => t.id === s.editTask ? Object.assign({}, t, { status: 'Not required', by: s.rep.by, ref: 'Reason: ' + s.rep.ref }) : t), editTask: null });
+    };
+
+    const alertRows = myAlerts.map(al => ({
+      who: wName(al.worker), date: this.fmtW(al.date),
+      classify: () => this.setState({ tab: 'record', classifying: al.id, saved: null, form: { worker: al.worker, type: 'unauth', start: al.date, end: al.date, reason: 'No clock-in and no contact' } }),
+      dismiss: () => this.setState(s => ({ alerts: s.alerts.filter(x => x.id !== al.id) }))
+    }));
+    const classAl = st.alerts.find(a => a.id === st.classifying);
+
+    let expiring = 0;
+    W.forEach(w => { if (!w.endDate && w.visa && this.calDays(TODAY, w.visa) <= 90) expiring++; });
+    const watchRows = W.filter(w => basisOf(w.basis).limited && !w.endDate).sort((a, b) => (a.visa > b.visa ? 1 : -1)).map(w => {
+      const eb = expBadge(w.visa);
+      return { name: w.name, status: w.sponsored ? 'Skilled Worker (sponsored)' : w.visaType, expiry: eb.text, bs: eb.bs, unpaid: this.unpaidUsed(st, w.id, '2026') + ' of ' + (4 * (Number(w.days) || 5)), open: openProfile(w.id) };
+    });
+    const num = 'font-family: \'Geist Mono\', ui-monospace, monospace; font-size: 30px; font-weight: 600; ';
+    const stats = [
+      { label: 'Home Office reports pending', value: String(pending.length), hint: 'Worker and company events', numStyle: num + 'color: #101828' },
+      { label: 'Due within 5 working days', value: String(urgent), hint: 'Including overdue', numStyle: num + (urgent > 0 ? 'color: #D92D20' : 'color: #101828') },
+      { label: 'Employee requests', value: String(reqPending.length), hint: 'Waiting for approval', numStyle: num + (reqPending.length > 0 ? 'color: #B54708' : 'color: #101828') },
+      { label: 'Visas expiring in 90 days', value: String(expiring), hint: 'Follow-up right-to-work checks', numStyle: num + (expiring > 0 ? 'color: #B54708' : 'color: #101828') }
+    ];
+
+    // Sites
+    const bizSites = st.sites.filter(s => s.bizId === biz.id);
+    const siteRows = bizSites.map(s => {
+      const tk = s.taskId ? taskById(s.taskId) : null;
+      let sms = 'Listed on SMS', bs = GRN;
+      if (tk && tk.status === 'Pending') { sms = 'Add to SMS by ' + this.fmt(tk.deadline); bs = RED; }
+      return { name: s.name, address: s.address, staff: W.filter(w => w.site === s.id).map(w => w.name).join(', ') || 'None', sms, bs };
+    });
+    const addSite = () => {
+      const s = this.state; const f = s.siteForm;
+      if (!f.name.trim() || !f.address.trim()) { this.setState({ siteMsg: 'Enter a site name and the full address.' }); return; }
+      const id = s.nextId; const dl = this.addWD(TODAY, 20);
+      this.setState({
+        sites: s.sites.concat([{ id: 's' + id, bizId: biz.id, name: f.name.trim(), address: f.address.trim(), taskId: 't' + id }]),
+        tasks: [{ id: 't' + id, bizId: biz.id, level: 'Company', worker: null, event: 'New work address added: ' + f.name.trim(), trigger: TODAY, deadline: dl, status: 'Pending', source: 'Work sites', reportedOn: '', by: '', ref: '' }].concat(s.tasks),
+        nextId: id + 1, siteForm: { name: '', address: '' }, siteMsg: 'Site added. A Home Office report task was created: add it to the SMS by ' + this.fmt(dl) + '.'
+      });
+    };
+    const moveWorker = () => {
+      const s = this.state; const m = s.moveForm; const w = s.workers.find(x => x.id === m.worker);
+      if (!w) return;
+      if (w.site === m.site) { this.setState({ moveMsg: w.name + ' already works at that site.' }); return; }
+      const id = s.nextId; const dl = this.addWD(TODAY, 10); const siteName = (s.sites.find(x => x.id === m.site) || {}).name || '';
+      const upd = { workers: s.workers.map(x => x.id === w.id ? Object.assign({}, x, { site: m.site }) : x), nextId: id + 1,
+        history: [{ id: 'h' + id, worker: w.id, date: TODAY, field: 'Work site', from: sName(w.site), to: siteName, by: '[HR admin]', taskId: w.sponsored ? 't' + id : null }].concat(s.history) };
+      if (w.sponsored) {
+        upd.tasks = [{ id: 't' + id, bizId: w.bizId, level: 'Worker', worker: w.id, event: 'Work location changed to ' + siteName, trigger: TODAY, deadline: dl, status: 'Pending', source: 'Work sites', reportedOn: '', by: '', ref: '' }].concat(s.tasks);
+        upd.moveMsg = w.name + ' moved. Sponsored worker: a Home Office report task was created, deadline ' + this.fmt(dl) + '.';
+      } else upd.moveMsg = w.name + ' moved and logged. Not a sponsored worker, so no Home Office report.';
+      this.setState(upd);
+    };
+
+    // ---------- Employees list / profile ----------
+    const docsHave = w => this.reqFor(w).filter(c => st.docs.some(d => d.worker === w.id && d.cat === c) || (c === 'payroll' && st.shared.some(x => x.worker === w.id && x.kind === 'payslip'))).length;
+    const pendFor = wid => pending.filter(t => t.worker === wid).length;
+    const statusLabel = w => w.endDate ? 'Left ' + this.fmt(w.endDate) : w.sponsored ? 'Skilled Worker (sponsored)' : basisOf(w.basis).limited ? w.visaType : basisOf(w.basis).label;
+    const empRows = W.map(w => {
+      const have = docsHave(w); const need = this.reqFor(w).length; const vb = w.endDate ? { text: 'Left', bs: GRY } : expBadge(w.visa); const pr = pendFor(w.id);
+      return { name: w.name, role: w.role, site: sName(w.site), status: statusLabel(w), visa: vb.text, visaBs: vb.bs,
+        docs: have + ' of ' + need, docsBs: have === need ? GRN : ORA, reports: pr ? pr + ' pending' : 'Up to date', repBs: pr ? RED : GRN, open: openProfile(w.id) };
+    });
+
+    const blankW = { id: '', bizId: biz.id, name: '', role: '', basis: 'british', days: 5, hours: '', site: '', visa: '', rtw: '', start: '' };
+    const sw = W.find(w => w.id === st.selWorker) || W[0] || blankW;
+    const inProfile = st.tab === 'emp' && !!st.selWorker && W.some(w => w.id === st.selWorker);
+    const b0 = basisOf(sw.basis);
+    const f = (label, value, badge) => ({ label, value: value || '—', hasBadge: !!badge, badge: badge ? badge.text : '', bs: badge ? badge.bs : '' });
+    const expOnly = s => { if (!s) return null; const d = this.calDays(TODAY, s); if (d > 90) return null; return { text: d < 0 ? 'Expired' : d + ' days left', bs: d < 0 ? RED : ORA }; };
+    const rtwFields = [f('Right-to-work basis', b0.label), f('Nationality', sw.nationality)];
+    if (b0.limited) rtwFields.push(f('Visa / status', sw.visaType), f('Visa start date', this.fmt(sw.visaStart)), f('Visa / permission expiry', this.fmt(sw.visa), expOnly(sw.visa)), f('Work restrictions', sw.restrictions || 'None recorded'));
+    else rtwFields.push(f('Permission', 'No time limit'));
+    rtwFields.push(f('Check method', sw.rtwMethod), f('Check date', this.fmt(sw.shareCheck)), f('Checked by', sw.rtwBy), f('Follow-up check due', b0.limited ? this.fmt(sw.rtw) : 'Not required', b0.limited ? expOnly(sw.rtw) : null));
+    const jobFields = [f('Sponsored worker', sw.sponsored ? 'Yes – Skilled Worker' : 'No')];
+    if (sw.sponsored) jobFields.push(f('CoS number', sw.cosNo), f('CoS assigned', this.fmt(sw.cosDate)), f('SOC code', sw.soc));
+    jobFields.push(f('Job title', sw.role), f(sw.sponsored ? 'Salary on CoS' : 'Salary', sw.salary), f('Contracted hours', sw.hours + ' per week'), f('Work site', sName(sw.site)));
+    const profSections = [
+      { title: 'Right to work and immigration', fields: rtwFields },
+      { title: sw.sponsored ? 'Sponsorship and job (must match the CoS)' : 'Job', fields: jobFields },
+      { title: 'Personal and contact', fields: [f('Date of birth', this.fmt(sw.dob)), f('Home address', sw.address), f('Phone', sw.phone), f('Email', sw.email), f('National Insurance number', sw.ni), f('Passport number', sw.passportNo), f('Passport expiry', this.fmt(sw.passportExp), expOnly(sw.passportExp))] },
+      { title: 'Employment and retention', fields: [f('Start date', this.fmt(sw.start)), f('Working pattern', sw.days + ' days per week'), f('Contract type', sw.contract), f('Employment end date', sw.endDate ? this.fmt(sw.endDate) + ' (' + sw.endReason + ')' : 'Still employed'), f('Employee portal', sw.portal ? 'Active' : 'No access'), f('Delete records after', sw.endDate ? this.fmt(this.addYears(sw.endDate, 1)) + ' (right-to-work evidence: ' + this.fmt(this.addYears(sw.endDate, 2)) + ')' : 'End date + 1 year (right-to-work: + 2 years)')] }
+    ];
+    const etBase = 'min-height: 44px; padding: 10px 12px; border: none; background: transparent; cursor: pointer; font-size: 15px; margin-bottom: -1px; border-bottom: 3px solid transparent; ';
+    const empTabs = [['overview', 'Details'], ['check', 'Compliance check'], ['docs', 'Documents'], ['abs', 'Absence'], ['rep', 'Home Office'], ['hist', 'History']].map(d => ({
+      label: d[1], style: etBase + (st.empTab === d[0] ? 'border-bottom-color: #4F46E5; color: #4F46E5; font-weight: 600' : 'color: #344054; font-weight: 500'),
+      go: () => this.setState(s => ({ empTab: d[0], shareMsg: '', messages: d[0] === 'msgs' ? s.messages.map(m => m.worker === s.selWorker && m.from === 'emp' ? Object.assign({}, m, { read: true }) : m) : s.messages })) }));
+    const reqSet = this.reqFor(sw);
+    const docRows = cats.map(c => {
+      const files = st.docs.filter(d => d.worker === sw.id && d.cat === c.id).map(d => {
+        const b = d.expiry ? expBadge(d.expiry) : null;
+        return { name: d.name, uploaded: this.fmt(d.uploaded), by: d.by, hasExpiry: !!b, expiry: b ? 'Expires ' + b.text : '', bs: b ? b.bs : '' };
+      });
+      const isReq = reqSet.indexOf(c.id) >= 0;
+      const openReq = st.requests.find(r => r.kind === 'docreq' && r.worker === sw.id && r.docCat === c.id && (r.status === 'Awaiting employee' || r.status === 'Pending'));
+      let status, bs;
+      if (files.length) { status = 'On file'; bs = GRN; }
+      else if (openReq) { status = openReq.status === 'Pending' ? 'Uploaded – review in requests' : 'Requested from employee'; bs = openReq.status === 'Pending' ? NEU : ORA; }
+      else if (isReq) { status = 'Missing'; bs = RED; } else { status = 'Optional'; bs = GRY; }
+      return { label: c.label, req: isReq ? 'Required' : 'Optional', status, bs, files, canRequest: !files.length && !openReq && isReq && !!sw.id,
+        request: () => { const s = this.state; const id = s.nextId; this.setState({ nextId: id + 1, requests: s.requests.concat([{ id: 'r' + id, bizId: biz.id, worker: sw.id, kind: 'docreq', docCat: c.id, fileName: '', status: 'Awaiting employee', submitted: TODAY }]) }); } };
+    });
+    const doUpload = () => {
+      const s = this.state; const u = s.upload;
+      if (!u.fileName) { this.setState({ uploadMsg: 'Choose a file first.' }); return; }
+      const id = s.nextId;
+      this.setState({ docs: s.docs.concat([{ id: 'd' + id, worker: s.selWorker, cat: u.cat, name: u.fileName, uploaded: TODAY, by: '[HR admin]', expiry: u.expiry }]), nextId: id + 1, upload: { cat: u.cat, expiry: '', fileName: '' }, uploadMsg: 'Uploaded to ' + catLabel(u.cat) + '.' });
+    };
+    const uFile = e => { const fl = e.target.files && e.target.files[0]; this.setState(s => ({ upload: Object.assign({}, s.upload, { fileName: fl ? fl.name : '' }), uploadMsg: '' })); };
+    const profAbsences = absenceRows.filter(r => r.wid === sw.id);
+    const profTasks = taskRows.filter(r => r.wid === sw.id);
+    const histRows = st.history.filter(h => h.worker === sw.id).map(h => {
+      const tk = h.taskId ? taskById(h.taskId) : null; const info = tk ? tInfo(tk) : { badge: 'Not reportable', bs: GRY };
+      return { date: this.fmt(h.date), field: h.field, from: h.from, to: h.to, by: h.by, badge: info.badge, bs: info.bs };
+    });
+    const chgDefs = this.chgFields();
+    const chgDef = chgDefs.find(c => c.id === st.chg.field) || chgDefs[0];
+    const chgReportable = chgDef.report && sw.sponsored;
+    const recordChange = () => {
+      const s = this.state; const c = s.chg; const w = s.workers.find(x => x.id === s.selWorker);
+      if (!w) return;
+      const val = c.value.trim();
+      if (!val) { this.setState({ chgMsg: 'Enter the new value.' }); return; }
+      const def = chgDefs.find(x => x.id === c.field) || chgDefs[0];
+      const from = w[def.prop]; const id = s.nextId; const upd = {}; upd[def.prop] = val;
+      const tasks = s.tasks.slice(); let taskId = null; let dl = '';
+      if (def.report && w.sponsored) { taskId = 't' + id; dl = this.addWD(TODAY, 10); tasks.unshift({ id: taskId, bizId: w.bizId, level: 'Worker', worker: w.id, event: def.event + ' (' + from + ' to ' + val + ')', trigger: TODAY, deadline: dl, status: 'Pending', source: 'Employee record', reportedOn: '', by: '', ref: '' }); }
+      this.setState({ workers: s.workers.map(x => x.id === w.id ? Object.assign({}, x, upd) : x),
+        history: [{ id: 'h' + id, worker: w.id, date: TODAY, field: def.label, from, to: val, by: '[HR admin]', taskId }].concat(s.history),
+        tasks, nextId: id + 1, chg: { field: c.field, value: '' },
+        chgMsg: taskId ? 'Saved and logged. Reportable: a Home Office task was created, deadline ' + this.fmt(dl) + '.' : 'Saved and logged in change history. No Home Office report needed.' });
+    };
+
+    // ---------- Add employee ----------
+    const ne = st.ne; const nb = basisOf(ne.basis);
+    const nationalities = ['British', 'Irish', 'Indian', 'Pakistani', 'Bangladeshi', 'Nigerian', 'Polish', 'Romanian', 'Filipino', 'Other'];
+    const neReqDocs = this.reqFor({ sponsored: ne.basis === 'sponsored' }).map(id => ({ label: catLabel(id) }));
+    const saveEmployee = () => {
+      const s = this.state; const n = s.ne; const b = basisOf(n.basis); const miss = [];
+      if (!n.name.trim()) miss.push('full name'); if (!n.email.trim()) miss.push('email'); if (!n.role.trim()) miss.push('job title');
+      if (!n.start) miss.push('start date'); if (!n.site) miss.push('work site'); if (!n.rtwDate) miss.push('check date'); if (!n.rtwBy.trim()) miss.push('checked by');
+      if (b.share && !n.shareCode.trim()) miss.push('share code');
+      if (b.limited && !n.visaEnd) miss.push('visa expiry'); if (b.limited && !n.visaStart) miss.push('visa start');
+      if (n.basis === 'sponsored') { if (!n.cosNo.trim()) miss.push('CoS number'); if (!n.cosDate) miss.push('CoS assigned date'); if (!n.soc.trim()) miss.push('SOC code'); if (!n.salary.trim()) miss.push('salary'); }
+      if (miss.length) { this.setState({ neErr: 'Please complete: ' + miss.join(', ') + '.' }); return; }
+      if (s.workers.filter(w => w.bizId === biz.id && !w.endDate).length >= s.plan.limit) { this.setState({ neErr: 'Your plan covers up to ' + s.plan.limit + ' employees. Contact us to add more.' }); return; }
+      if (n.rtwDate > n.start) { this.setState({ neErr: 'The right-to-work check must be done on or before the start date.' }); return; }
+      if (b.limited && n.visaEnd <= n.start) { this.setState({ neErr: 'The visa expires before the start date. They cannot start work.' }); return; }
+      const id = s.nextId; const wid = 'w' + id;
+      const worker = { id: wid, bizId: biz.id, name: n.name.trim(), role: n.role.trim(), basis: n.basis, sponsored: n.basis === 'sponsored', days: Number(n.days) || 5, hours: n.hours, site: n.site,
+        visaType: n.basis === 'sponsored' ? 'Skilled Worker' : n.basis === 'other' ? n.otherVisa : n.basis === 'presettled' ? 'EUSS pre-settled status' : '', visaStart: b.limited ? n.visaStart : '', visa: b.limited ? n.visaEnd : '', rtw: b.limited ? n.visaEnd : '',
+        restrictions: n.restrictions, nationality: n.nationality, dob: n.dob, passportNo: n.passportNo ? '•••• ' + n.passportNo.slice(-4) : '—', passportExp: n.passportExp, ni: n.ni ? '•••• ' + n.ni.replace(/\s/g, '').slice(-4) : '—',
+        address: n.address || '—', phone: n.phone || '—', email: n.email, rtwMethod: n.rtwMethod, shareCheck: n.rtwDate, rtwBy: n.rtwBy, cosNo: n.cosNo, cosDate: n.cosDate, soc: n.soc, salary: n.salary || '—', start: n.start, contract: n.contract, portal: n.invite === 'yes' };
+      const reqs = n.invite === 'yes' ? [{ id: 'r' + id, bizId: biz.id, worker: wid, kind: 'docreq', docCat: 'passport', fileName: '', status: 'Awaiting employee', submitted: TODAY }] : [];
+      this.setState({ workers: s.workers.concat([worker]), requests: s.requests.concat(reqs), nextId: id + 1,
+        history: [{ id: 'h' + id, worker: wid, date: TODAY, field: 'Employee record created', from: '—', to: b.label, by: '[HR admin]', taskId: null }].concat(s.history),
+        tab: 'emp', selWorker: wid, empTab: 'overview', ne: this.blankNe(n.site), neErr: '',
+        neMsg: worker.name + ' added.' + (n.invite === 'yes' ? ' Portal invite sent to ' + n.email + ', with a request to upload their passport / ID.' : '') + ' Upload the right-to-work check result under Documents.' });
+    };
+    const fillDemo = () => this.setState(s => ({ neErr: '', ne: Object.assign({}, s.ne, { name: 'Sara Ali', dob: '1997-05-14', nationality: 'Pakistani', email: 'sara.ali@example.com', phone: '[Phone]', ni: 'QQ 12 34 56 C', address: '[Home address, postcode]', passportNo: 'AB1234567', passportExp: '2032-02-01',
+      basis: 'sponsored', rtwMethod: 'Home Office online check (share code)', rtwDate: '2026-09-24', rtwBy: 'HR admin', shareCode: 'W7X 9KP 2QR', visaStart: '2026-09-28', visaEnd: '2029-09-30', restrictions: 'Only the sponsored job', cosNo: '[CoS number]', cosDate: '2026-08-12', soc: '[SOC code]', role: 'Sales Assistant', salary: '[Salary on CoS]', start: '2026-10-05', days: '5', hours: '37.5' }) }));
+
+    // ---------- Requests inbox ----------
+    const approve = r => () => {
+      const s = this.state; const w = s.workers.find(x => x.id === r.worker); if (!w) return;
+      const id = s.nextId; const upd = { nextId: id + 1 }; let hrNote = 'Approved';
+      if (r.kind === 'leave' || r.kind === 'sickness') {
+        const n = this.wdList(r.start, r.end).length;
+        const type = r.kind === 'sickness' ? (n > 7 ? 'sick_fit' : 'sick_self') : r.leaveType;
+        const e3 = this.evalAbs(s, { worker: w.id, type, start: r.start, end: r.end });
+        const abs = { id: 'a' + id, worker: w.id, type, start: r.start, end: r.end, n: e3.n, reason: r.detail || '—', taskId: null };
+        const tasks = s.tasks.slice();
+        if (e3.report) { const tid = 't' + id; tasks.unshift({ id: tid, bizId: w.bizId, level: 'Worker', worker: w.id, event: e3.event, trigger: e3.trigger, deadline: e3.deadline, status: 'Pending', source: 'Leave request', reportedOn: '', by: '', ref: '' }); abs.taskId = tid; hrNote = 'Approved. HR will report this to the Home Office.'; }
+        upd.absences = [abs].concat(s.absences); upd.tasks = tasks;
+        if (r.kind === 'sickness') hrNote = n > 7 ? 'Recorded. Please upload your fit note.' : 'Recorded. Get well soon.';
+      } else if (r.kind === 'change' || r.kind === 'increment') {
+        const map = { address: ['address', 'Home address'], phone: ['phone', 'Phone'], email: ['email', 'Email'], name: ['name', 'Name'], visa: ['visa', 'Visa / permission expiry'] };
+        const m = r.kind === 'increment' ? ['salary', 'Salary – increase'] : map[r.changeKind];
+        const from = w[m[0]]; const patch = {}; patch[m[0]] = r.value;
+        if (r.changeKind === 'visa') { patch.rtw = r.value; hrNote = 'Updated. HR will do a new right-to-work check with your share code.'; }
+        upd.workers = s.workers.map(x => x.id === w.id ? Object.assign({}, x, patch) : x);
+        upd.history = [{ id: 'h' + id, worker: w.id, date: TODAY, field: m[1], from: r.changeKind === 'visa' ? this.fmt(from) : from, to: r.changeKind === 'visa' ? this.fmt(r.value) : r.value, by: 'HR (employee request)', taskId: null }].concat(s.history);
+      } else if (r.kind === 'docreq') {
+        upd.docs = s.docs.concat([{ id: 'd' + id, worker: w.id, cat: r.docCat, name: r.fileName, uploaded: TODAY, by: w.name + ' (portal)', expiry: '' }]);
+        hrNote = 'Received and filed. Thank you.';
+      } else hrNote = 'Done.';
+      upd.requests = s.requests.map(x => x.id === r.id ? Object.assign({}, x, { status: 'Approved', decided: TODAY, hrNote }) : x);
+      this.setState(upd);
+    };
+    const reject = r => () => this.setState(s => ({ requests: s.requests.map(x => x.id === r.id ? Object.assign({}, x, { status: 'Rejected', decided: TODAY, hrNote: 'Declined – HR will contact you.' }) : x) }));
+    const reqRows = reqPending.slice().sort((a, b) => (a.submitted > b.submitted ? 1 : -1)).map(r => {
+      let hasPreview = false, preview = '', pbs = GRY;
+      if (r.kind === 'leave' || r.kind === 'sickness') {
+        const n = this.wdList(r.start, r.end).length;
+        const e4 = this.evalAbs(st, { worker: r.worker, type: r.kind === 'sickness' ? (n > 7 ? 'sick_fit' : 'sick_self') : r.leaveType, start: r.start, end: r.end });
+        hasPreview = true; preview = e4.report ? 'Approving needs a Home Office report: ' + e4.event.toLowerCase() : 'No Home Office report needed'; pbs = e4.report ? RED : GRY;
+      } else if (r.changeKind === 'visa') { hasPreview = true; preview = 'Do a new right-to-work check before approving'; pbs = ORA; }
+      else if (r.kind === 'increment') { hasPreview = true; preview = 'Salary increase – not reportable'; pbs = GRY; }
+      return { who: wName(r.worker), kind: kindLabel(r), submitted: this.fmt(r.submitted), summary: reqSummary(r), hasDetail: !!r.detail, detail: r.detail || '', hasPreview, preview, pbs, approve: approve(r), reject: reject(r) };
+    });
+    const awaitRows = R.filter(r => r.status === 'Awaiting employee').map(r => ({ who: wName(r.worker), summary: catLabel(r.docCat), submitted: this.fmt(r.submitted), bs: ORA }));
+    const decidedRows = R.filter(r => r.status === 'Approved' || r.status === 'Rejected').sort((a, b) => ((a.decided || '') < (b.decided || '') ? 1 : -1)).slice(0, 8).map(r => {
+      const rs = reqStatus(r.status); return { who: wName(r.worker), summary: kindLabel(r) + ' · ' + reqSummary(r), status: rs.t, bs: rs.bs, note: r.hrNote || '' };
+    });
+
+    // ---------- Employee portal ----------
+    const me = wById(st.session.empId) || W[0] || blankW;
+    const mb = basisOf(me.basis);
+    const myReq = st.requests.filter(r => r.worker === me.id);
+    const awaitingMine = myReq.filter(r => r.status === 'Awaiting employee');
+    const allowance = this.allowance(me);
+    const pendAnnual = myReq.filter(r => r.kind === 'leave' && r.leaveType === 'annual' && r.status === 'Pending').reduce((s2, r) => s2 + this.wdList(r.start, r.end).length, 0);
+    const annualLeft = Math.round((allowance - this.annualTaken(st, me.id, '2026') - pendAnnual) * 10) / 10;
+    const ptabs = [['home', 'Home', 0], ['docs', 'My documents', awaitingMine.length], ['leave', 'Leave and sickness', 0], ['change', 'Changes and requests', 0], ['myreq', 'My requests', 0], ['details', 'My details', 0]]
+      .map(d => mkTab(d[1], d[2], st.ptab === d[0], () => this.setState({ ptab: d[0], pLeaveMsg: '', pChgMsg: '', pDocMsg: '' })));
+    const vl = me.visa ? this.calDays(TODAY, me.visa) : null;
+    const meV = {
+      name: me.name, first: String(me.name || '').split(' ')[0], annualLeft: String(annualLeft), allowance: String(allowance),
+      docCount: String(awaitingMine.length), docNumStyle: 'font-family: \'Geist Mono\', ui-monospace, monospace; font-size: 32px; font-weight: 500; color: ' + (awaitingMine.length ? '#B54708' : '#101828'),
+      rtwTitle: mb.limited ? (me.visaType || 'Visa') + ' until ' + this.fmt(me.visa) : 'No time limit',
+      rtwNote: mb.limited ? (vl <= 90 ? 'Your permission ends in ' + vl + ' days. If you have applied to extend, tell HR under Changes and requests.' : 'Tell HR straight away if your visa changes or you apply to extend it.') : 'No action needed.'
+    };
+    const pLeaveTypes = [{ id: 'annual', label: 'Annual leave' }, { id: 'unpaid', label: 'Unpaid leave' }, { id: 'compassionate', label: 'Compassionate / bereavement leave' }, { id: 'training', label: 'Training / study leave' }, { id: 'sick', label: 'Report sickness' }];
+    const pl = st.pLeave; const plN = this.wdList(pl.start, pl.end).length;
+    let pLeaveInfo = plN ? plN + ' working days.' : 'Check the dates.';
+    if (plN && pl.type === 'annual') pLeaveInfo += ' You would have ' + (Math.round((annualLeft - plN) * 10) / 10) + ' days of annual leave left.';
+    let pLeaveNote = '';
+    if (pl.type === 'unpaid' && me.sponsored) pLeaveNote = 'Long periods of unpaid leave can affect your visa sponsorship. HR may need to discuss this with you before approving.';
+    if (pl.type === 'sick' && plN > 7) pLeaveNote = 'For more than 7 days off sick you need a fit note from your GP. Upload it under My documents.';
+    if (pl.type === 'annual' && plN > annualLeft) pLeaveNote = 'This is more annual leave than you have left.';
+    const submitLeave = () => {
+      const s = this.state; const p = s.pLeave; const n = this.wdList(p.start, p.end).length;
+      if (!n) { this.setState({ pLeaveMsg: 'Check the dates: the last day must be on or after the first day.' }); return; }
+      const id = s.nextId;
+      const r = p.type === 'sick' ? { id: 'r' + id, bizId: me.bizId, worker: me.id, kind: 'sickness', start: p.start, end: p.end, detail: p.reason, status: 'Pending', submitted: TODAY }
+        : { id: 'r' + id, bizId: me.bizId, worker: me.id, kind: 'leave', leaveType: p.type, start: p.start, end: p.end, detail: p.reason, status: 'Pending', submitted: TODAY };
+      this.setState({ requests: s.requests.concat([r]), nextId: id + 1, pLeaveMsg: 'Sent to HR. You can follow it under My requests.' });
+    };
+    const ck = chgKinds.find(k => k.id === st.pChg.kind) || chgKinds[0];
+    let pChgHint = '';
+    if (ck.id === 'visa') pChgHint = 'HR will ask for your new share code and do a new right-to-work check. Add the share code in the note.';
+    if (ck.id === 'address') pChgHint = 'Your employer must keep your current UK address on file.';
+    if (ck.id === 'increment') pChgHint = 'HR will review this with your manager.';
+    const submitChange = () => {
+      const s = this.state; const p = s.pChg;
+      if (!String(p.value).trim()) { this.setState({ pChgMsg: 'Please fill in ' + ck.field.toLowerCase() + '.' }); return; }
+      const id = s.nextId;
+      const base = { id: 'r' + id, bizId: me.bizId, worker: me.id, value: String(p.value).trim(), detail: p.note, status: 'Pending', submitted: TODAY };
+      const r = p.kind === 'increment' ? Object.assign(base, { kind: 'increment' }) : p.kind === 'other' ? Object.assign(base, { kind: 'other' }) : Object.assign(base, { kind: 'change', changeKind: p.kind });
+      this.setState({ requests: s.requests.concat([r]), nextId: id + 1, pChg: { kind: p.kind, value: '', note: '' }, pChgMsg: 'Sent to HR. You can follow it under My requests.' });
+    };
+    const pDocReqRows = awaitingMine.map(r => ({
+      label: catLabel(r.docCat), requested: this.fmt(r.submitted), inputId: 'pd-' + r.id,
+      pick: e => { const fl = e.target.files && e.target.files[0]; this.setState(s => { const pf = Object.assign({}, s.pFiles); pf[r.id] = fl ? fl.name : ''; return { pFiles: pf, pDocMsg: '' }; }); },
+      send: () => { const s = this.state; const fn = s.pFiles[r.id]; if (!fn) { this.setState({ pDocMsg: 'Choose a file first.' }); return; }
+        this.setState({ requests: s.requests.map(x => x.id === r.id ? Object.assign({}, x, { status: 'Pending', fileName: fn, submitted: TODAY }) : x), pDocMsg: 'Sent. HR will check it and file it.' }); }
+    }));
+    const pUpOpts = [{ id: 'passport', label: 'Passport / identity' }, { id: 'absence', label: 'Fit note or absence evidence' }, { id: 'other', label: 'Other document' }];
+    const puFile = e => { const fl = e.target.files && e.target.files[0]; this.setState(s => ({ pUp: Object.assign({}, s.pUp, { fileName: fl ? fl.name : '' }), pDocMsg: '' })); };
+    const puSend = () => { const s = this.state; if (!s.pUp.fileName) { this.setState({ pDocMsg: 'Choose a file first.' }); return; }
+      const id = s.nextId; this.setState({ requests: s.requests.concat([{ id: 'r' + id, bizId: me.bizId, worker: me.id, kind: 'docreq', docCat: s.pUp.cat, fileName: s.pUp.fileName, status: 'Pending', submitted: TODAY }]), nextId: id + 1, pUp: { cat: s.pUp.cat, fileName: '' }, pDocMsg: 'Sent. HR will check it and file it.' }); };
+    const myDocs = st.docs.filter(d => d.worker === me.id).map(d => ({ cat: catLabel(d.cat), name: d.name, uploaded: this.fmt(d.uploaded) }));
+    const myReqRows = myReq.slice().sort((a, b) => (a.submitted < b.submitted ? 1 : -1)).map(r => { const rs = reqStatus(r.status); return { kind: kindLabel(r), summary: reqSummary(r), submitted: this.fmt(r.submitted), status: rs.t, bs: rs.bs, note: r.hrNote || '—' }; });
+    const myAbs = st.absences.filter(a => a.worker === me.id && a.start.slice(0, 4) === '2026').sort((a, b) => (a.start < b.start ? 1 : -1)).map(a => ({ type: typeLabel(a.type), dates: this.fmt(a.start) + ' – ' + this.fmt(a.end), n: String(a.n) }));
+    const g = (label, value) => ({ label, value: value || '—' });
+    const mySections = [
+      { title: 'Personal', fields: [g('Name', me.name), g('Date of birth', this.fmt(me.dob)), g('Home address', me.address), g('Phone', me.phone), g('Email', me.email)] },
+      { title: 'Job', fields: [g('Job title', me.role), g('Work site', sName(me.site)), g('Contracted hours', me.hours + ' per week'), g('Start date', this.fmt(me.start))] },
+      { title: 'Right to work', fields: [g('Status', mb.limited ? me.visaType : mb.label), g('Expiry', mb.limited ? this.fmt(me.visa) : 'No time limit'), g('Last checked', this.fmt(me.shareCheck))] }
+    ];
+
+
+    // ---------- Payslips & letters, messages, notices, leavers, compliance check ----------
+    const sKinds = this.sharedKinds();
+    const sKindLabel = id => (sKinds.find(k => k.id === id) || {}).label || id;
+    const sharedFor = wid => st.shared.filter(x => x.worker === wid);
+    const sharedBadge = x => x.needsAck ? (x.ackOn ? { t: 'Acknowledged ' + this.fmt(x.ackOn), bs: GRN } : { t: 'Awaiting acknowledgement', bs: ORA }) : (x.seenOn ? { t: 'Seen ' + this.fmt(x.seenOn), bs: GRN } : { t: 'Shared, not opened', bs: NEU });
+    const sharedMeta = x => x.kind === 'payslip' ? 'Pay date ' + this.fmt(x.payDate) : x.kind === 'change' ? 'Takes effect ' + this.fmt(x.effective) : '';
+    const sharedRows = sharedFor(sw.id).slice().sort((a, b) => (a.sentOn < b.sentOn ? 1 : -1)).map(x => { const sb = sharedBadge(x); const m = sharedMeta(x); return { title: x.title, kind: sKindLabel(x.kind), sent: this.fmt(x.sentOn), meta: m, hasMeta: !!m, badge: sb.t, bs: sb.bs }; });
+    const sf = st.shareForm;
+    const sfKind = e => { const v = e.target.value; const k = sKinds.find(x => x.id === v) || sKinds[0]; this.setState(s => ({ shareForm: Object.assign({}, s.shareForm, { kind: v, ack: k.ack ? 'yes' : 'no' }), shareMsg: '' })); };
+    const sfFileH = e => { const fl = e.target.files && e.target.files[0]; this.setState(s => ({ shareForm: Object.assign({}, s.shareForm, { file: fl ? fl.name : '' }), shareMsg: '' })); };
+    let sfWarn = '';
+    if (sf.kind === 'change' && sf.effective && sf.effective < TODAY) sfWarn = 'This change has already taken effect. A written statement of change must be given on or before the date the change takes effect.';
+    else if (sf.kind === 'change' && sw.sponsored) sfWarn = 'Sponsored worker: if this changes job title, duties, salary, hours or work site, also record it under Change history so the Home Office report is created.';
+    else if (sf.kind === 'payslip' && sw.sponsored) sfWarn = 'Check gross pay on this payslip is not below the salary on the CoS (' + sw.salary + ').';
+    const sendShared = () => {
+      const s = this.state; const x = s.shareForm; const k = sKinds.find(q => q.id === x.kind) || sKinds[0];
+      if (!x.file) { this.setState({ shareMsg: 'Choose a file first.' }); return; }
+      if (x.kind === 'payslip' && (!x.period.trim() || !x.payDate)) { this.setState({ shareMsg: 'Enter the pay period and pay date.' }); return; }
+      if (x.kind === 'change' && !x.effective) { this.setState({ shareMsg: 'Enter the date the change takes effect.' }); return; }
+      const id = s.nextId; const title = x.title.trim() || (k.label + (x.period ? ' ' + x.period.trim() : ''));
+      this.setState({ shared: s.shared.concat([{ id: 'x' + id, worker: s.selWorker, kind: x.kind, title, file: x.file, period: x.period.trim(), payDate: x.payDate, effective: x.effective, sentOn: TODAY, needsAck: x.ack === 'yes', ackOn: '', seenOn: '' }]),
+        nextId: id + 1, shareForm: { kind: x.kind, title: '', file: '', period: '', payDate: '', effective: '', ack: x.ack },
+        shareMsg: title + ' shared. ' + (x.ack === 'yes' ? 'The employee will be asked to acknowledge it.' : 'The employee can see it in their portal.') });
+    };
+
+    // compliance check
+    const hasDoc = (w, cat) => st.docs.some(d => d.worker === w.id && d.cat === cat);
+    const checkFor = w => {
+      const rows = []; const b = basisOf(w.basis);
+      const add = (label, ok, detail, soft) => rows.push({ label, detail, badge: ok ? 'Done' : (soft ? 'Check' : 'Missing'), bs: ok ? GRN : (soft ? ORA : RED) });
+      add('Right-to-work check before the first day', hasDoc(w, 'rtw') && !!w.shareCheck && w.shareCheck <= w.start, hasDoc(w, 'rtw') ? 'Checked ' + this.fmt(w.shareCheck) + ' by ' + w.rtwBy + ' (' + w.rtwMethod + ')' : 'No check result on file');
+      if (b.limited && !w.endDate) { const d = this.calDays(TODAY, w.rtw); add('Follow-up right-to-work check', d > 90, d < 0 ? 'Overdue – permission may have ended' : 'Due by ' + this.fmt(w.rtw) + (d <= 90 ? ' (' + d + ' days)' : ''), d >= 0); }
+      add('Passport / ID copy on file', hasDoc(w, 'passport'), hasDoc(w, 'passport') ? 'On file' : 'Request it from the employee');
+      add('Current UK address and contact details', !!w.address && w.address !== '—', 'Employees update these through the portal');
+      add('Contract of employment on file', hasDoc(w, 'contract'), hasDoc(w, 'contract') ? 'On file' : 'Upload under Documents');
+      if (w.sponsored) {
+        add('Certificate of Sponsorship on file', hasDoc(w, 'cos'), hasDoc(w, 'cos') ? 'On file' : 'Upload under Documents');
+        add('Job description matches the CoS', hasDoc(w, 'jd'), hasDoc(w, 'jd') ? 'On file – job title ' + w.role + ', SOC ' + w.soc : 'Upload under Documents');
+        add('Recruitment evidence kept', hasDoc(w, 'recruit'), hasDoc(w, 'recruit') ? 'Advert and interview notes on file' : 'Keep the job advert, shortlist and interview notes');
+        const pay = st.docs.filter(d => d.worker === w.id && d.cat === 'payroll').sort((a, c) => (a.uploaded < c.uploaded ? 1 : -1))[0];
+        add('Recent payslips from your accountant', !!pay && this.calDays(pay.uploaded, TODAY) <= 35, pay ? 'Latest uploaded ' + this.fmt(pay.uploaded) : 'Upload payslips monthly as evidence of pay', !!pay);
+        rows.push({ label: 'Pay matches the CoS salary', detail: 'Compare each payslip with the CoS salary (' + w.salary + '). Sponsorship costs must not be deducted.', badge: 'Manual check', bs: NEU });
+        const od = st.tasks.filter(t => t.worker === w.id && t.status === 'Pending' && this.wdBetween(TODAY, t.deadline) < 0).length;
+        const pd = st.tasks.filter(t => t.worker === w.id && t.status === 'Pending').length;
+        add('Home Office reports up to date', pd === 0, pd === 0 ? 'Nothing pending' : (od ? od + ' overdue' : pd + ' pending – see Home Office tab'), od === 0);
+      }
+      return rows;
+    };
+    const checkRows = sw.id ? checkFor(sw) : [];
+    const issues = checkRows.filter(r => r.badge === 'Missing' || r.badge === 'Check').length;
+    const missingN = checkRows.filter(r => r.badge === 'Missing').length;
+
+    // messages
+    const M = st.messages.filter(m => m.bizId === biz.id);
+    const threadFor = wid => M.filter(m => m.worker === wid).sort((a, b) => a.n - b.n);
+    const bubble = (m, mine) => ({ text: m.text, meta: (m.from === 'hr' ? 'HR' : wName(m.worker)) + ' · ' + this.fmt(m.date),
+      style: 'max-width: 70%; padding: 12px 14px; border-radius: 12px; font-size: 14px; line-height: 1.5; ' + (mine ? 'align-self: flex-end; background: #4F46E5; color: #FFFFFF' : 'align-self: flex-start; background: #F2F4F7; color: #101828'),
+      metaStyle: 'font-size: 12px; color: #667085; ' + (mine ? 'align-self: flex-end' : 'align-self: flex-start') });
+    const sendHr = wid => () => {
+      const s = this.state; const t = s.msgDraft.trim(); if (!t || !wid) return; const id = s.nextId;
+      this.setState({ messages: s.messages.concat([{ id: 'm' + id, n: id, bizId: biz.id, worker: wid, from: 'hr', text: t, date: TODAY, read: false }]), nextId: id + 1, msgDraft: '' });
+    };
+    const mdSet = e => { const v = e.target.value; this.setState({ msgDraft: v }); };
+    const profThread = threadFor(sw.id).map(m => bubble(m, m.from === 'hr'));
+    const convW = W.slice().sort((a, b) => { const la = threadFor(a.id).slice(-1)[0], lb = threadFor(b.id).slice(-1)[0]; return (lb ? lb.n : 0) - (la ? la.n : 0); });
+    const selW = W.find(w => w.id === st.msgWorker) || convW[0] || blankW;
+    const convRows = convW.map(w => {
+      const th = threadFor(w.id); const last = th[th.length - 1]; const un = th.filter(m => m.from === 'emp' && !m.read).length; const on = w.id === selW.id;
+      return { name: w.name, last: last ? (last.from === 'hr' ? 'You: ' : '') + last.text : 'No messages yet', hasUnread: un > 0, unread: String(un),
+        style: 'display: flex; flex-direction: column; gap: 4px; width: 100%; min-height: 64px; padding: 12px 16px; border: none; border-bottom: 1px solid #F2F4F7; text-align: left; cursor: pointer; ' + (on ? 'background: #EEF2FF' : 'background: #FFFFFF'),
+        open: () => this.setState(s => ({ msgWorker: w.id, msgDraft: '', messages: s.messages.map(m => m.worker === w.id && m.from === 'emp' ? Object.assign({}, m, { read: true }) : m) })) };
+    });
+    const selThread = threadFor(selW.id).map(m => bubble(m, m.from === 'hr'));
+
+    // notices
+    const N = st.notices.filter(n => n.bizId === biz.id).sort((a, b) => (a.date < b.date ? 1 : -1));
+    const activeW = W.filter(w => !w.endDate);
+    const noticeRows = N.map(n => { const c = activeW.filter(w => n.acks[w.id]).length; return { title: n.title, body: n.body, date: this.fmt(n.date), ack: n.needsAck ? c + ' of ' + activeW.length + ' acknowledged' : 'For information', bs: n.needsAck ? (c === activeW.length ? GRN : ORA) : NEU }; });
+    const addNotice = () => {
+      const s = this.state; const x = s.noticeForm;
+      if (!x.title.trim() || !x.body.trim()) { this.setState({ noticeMsg: 'Enter a title and a message.' }); return; }
+      const id = s.nextId;
+      this.setState({ notices: s.notices.concat([{ id: 'n' + id, bizId: biz.id, title: x.title.trim(), body: x.body.trim(), date: TODAY, needsAck: x.ack === 'yes', acks: {} }]), nextId: id + 1, noticeForm: { title: '', body: '', ack: x.ack }, noticeMsg: 'Published to ' + activeW.length + ' employees.' });
+    };
+
+    // end of employment
+    const endReasons = [{ id: 'Resigned' }, { id: 'Dismissed' }, { id: 'Contract ended' }, { id: 'Redundancy' }, { id: 'Did not start' }, { id: 'Other' }];
+    const ef = st.endForm;
+    const endHint = sw.sponsored ? 'Sponsored worker: a Home Office report is due within 10 working days of their last day (or of the date they failed to start). Portal access stops. Records are kept for 1 year after (right-to-work evidence for 2 years).'
+      : 'Portal access stops. Records are kept for 1 year after (right-to-work evidence for 2 years).';
+    const endEmp = () => {
+      const s = this.state; const w = s.workers.find(x => x.id === s.selWorker); if (!w) return; const e = s.endForm;
+      if (!e.date) { this.setState({ endMsg: 'Enter the last working day.' }); return; }
+      const id = s.nextId;
+      const upd = { workers: s.workers.map(x => x.id === w.id ? Object.assign({}, x, { endDate: e.date, endReason: e.reason, portal: false }) : x), nextId: id + 1, showEnd: false,
+        history: [{ id: 'h' + id, worker: w.id, date: TODAY, field: 'Employment ended', from: 'Employed', to: e.reason + ' – last day ' + this.fmt(e.date), by: '[HR admin]', taskId: w.sponsored ? 't' + id : null }].concat(s.history) };
+      let msg = 'Employment ended. Records are kept until ' + this.fmt(this.addYears(e.date, 1)) + ' (right-to-work evidence until ' + this.fmt(this.addYears(e.date, 2)) + ').';
+      if (w.sponsored) { const dl = this.addWD(e.date, 10);
+        upd.tasks = [{ id: 't' + id, bizId: w.bizId, level: 'Worker', worker: w.id, event: e.reason === 'Did not start' ? 'Sponsored worker did not start work' : 'Sponsored worker stopped working (' + e.reason.toLowerCase() + ')', trigger: e.date, deadline: dl, status: 'Pending', source: 'End of employment', reportedOn: '', by: '', ref: '' }].concat(s.tasks);
+        msg = 'Sponsored worker: a Home Office report task was created, deadline ' + this.fmt(dl) + '. ' + msg; }
+      upd.endMsg = msg; this.setState(upd);
+    };
+
+    // portal: payslips, letters, notices, messages
+    const payKinds = ['payslip', 'p60', 'p45'];
+    const mineShared = st.shared.filter(x => x.worker === me.id).sort((a, b) => (a.sentOn < b.sentOn ? 1 : -1));
+    const myPay = mineShared.filter(x => payKinds.indexOf(x.kind) >= 0).map(x => ({ title: x.title, meta: (x.kind === 'payslip' ? 'Paid ' + this.fmt(x.payDate) : sKindLabel(x.kind) + ' · ' + this.fmt(x.sentOn)),
+      view: () => this.setState(s => ({ pPayMsg: 'In the live system this opens ' + x.file + '.', shared: s.shared.map(y => y.id === x.id && !y.seenOn ? Object.assign({}, y, { seenOn: TODAY }) : y) })) }));
+    const myLettersRaw = mineShared.filter(x => payKinds.indexOf(x.kind) < 0);
+    const myLetters = myLettersRaw.map(x => { const sb = sharedBadge(x); const m = sharedMeta(x); return { title: x.title, meta: sKindLabel(x.kind) + ' · sent ' + this.fmt(x.sentOn) + (m ? ' · ' + m : ''), badge: x.needsAck ? (x.ackOn ? 'Read ' + this.fmt(x.ackOn) : 'Please read') : 'For your records', bs: x.needsAck ? (x.ackOn ? GRN : ORA) : NEU,
+      canAck: x.needsAck && !x.ackOn, ack: () => this.setState(s => ({ shared: s.shared.map(y => y.id === x.id ? Object.assign({}, y, { ackOn: TODAY, seenOn: TODAY }) : y) })) }; });
+    const lettersToAck = myLettersRaw.filter(x => x.needsAck && !x.ackOn).length;
+    const myN = st.notices.filter(n => n.bizId === me.bizId).sort((a, b) => (a.date < b.date ? 1 : -1));
+    const noticesToAck = myN.filter(n => n.needsAck && !n.acks[me.id]).length;
+    const myNotices = myN.map(n => { const a = n.acks[me.id]; return { title: n.title, body: n.body, date: this.fmt(n.date), badge: n.needsAck ? (a ? 'Read ' + this.fmt(a) : 'Please read') : 'For information', bs: n.needsAck ? (a ? GRN : ORA) : NEU,
+      canAck: n.needsAck && !a, ack: () => this.setState(s => ({ notices: s.notices.map(y => { if (y.id !== n.id) return y; const acks = Object.assign({}, y.acks); acks[me.id] = TODAY; return Object.assign({}, y, { acks }); }) })) }; });
+    const myThreadRaw = st.messages.filter(m => m.worker === me.id).sort((a, b) => a.n - b.n);
+    const myThread = myThreadRaw.map(m => bubble(m, m.from === 'emp'));
+    const unreadHr = myThreadRaw.filter(m => m.from === 'hr' && !m.read).length;
+    const sendEmp = () => { const s = this.state; const t = s.pMsgDraft.trim(); if (!t) return; const id = s.nextId;
+      this.setState({ messages: s.messages.concat([{ id: 'm' + id, n: id, bizId: me.bizId, worker: me.id, from: 'emp', text: t, date: TODAY, read: false }]), nextId: id + 1, pMsgDraft: '' }); };
+    const ackTotal = lettersToAck + noticesToAck;
+    meV.ackCount = String(ackTotal);
+    meV.ackNumStyle = 'font-family: \'Geist Mono\', ui-monospace, monospace; font-size: 32px; font-weight: 500; color: ' + (ackTotal ? '#B54708' : '#101828');
+    const ptabsAll = [['home', 'Home', 0], ['docs', 'My documents', awaitingMine.length], ['leave', 'Leave and sickness', 0], ['change', 'Update my details', 0], ['myreq', 'My requests', 0], ['details', 'My details', 0]]
+      .map(d => mkTab(d[1], d[2], st.ptab === d[0], () => this.setState(s => ({ ptab: d[0], pLeaveMsg: '', pChgMsg: '', pDocMsg: '', pPayMsg: '', messages: d[0] === 'msgs' ? s.messages.map(m => m.worker === me.id && m.from === 'hr' ? Object.assign({}, m, { read: true }) : m) : s.messages }))));
+
+    // ---------- Sign-in (email first) ----------
+    const accounts = () => {
+      const s = this.state; const out = [];
+      s.businesses.forEach(b => out.push({ email: b.adminEmail.toLowerCase(), name: b.adminName || 'HR admin', role: 'admin', bizId: b.id, sub: b.name + ' · Admin' }));
+      s.workers.filter(w => !w.endDate && w.portal).forEach(w => { const b = s.businesses.find(x => x.id === w.bizId) || {}; out.push({ email: w.email.toLowerCase(), name: w.name, role: 'employee', bizId: w.bizId, empId: w.id, sub: (b.name || '') + ' · Employee' }); });
+      return out;
+    };
+    const au = st.auth;
+    const acctRaw = au.step === 'password' ? accounts().find(a => a.email === au.email.trim().toLowerCase()) : null;
+    const acct = acctRaw ? { name: acctRaw.name, email: acctRaw.email, sub: acctRaw.sub, initials: acctRaw.name.split(' ').map(x => x[0]).slice(0, 2).join('').toUpperCase() } : { name: '', email: '', sub: '', initials: '' };
+    const setAuth = o => this.setState(s => ({ auth: Object.assign({}, s.auth, o) }));
+    const authNext = () => {
+      const e = this.state.auth.email.trim().toLowerCase();
+      if (!e || e.indexOf('@') < 1) { setAuth({ err: 'Enter your email address.', info: '' }); return; }
+      const a = accounts().find(x => x.email === e);
+      if (!a) { setAuth({ err: 'We could not find an account with that email. Check it, or ask your employer to invite you.', info: '' }); return; }
+      setAuth({ step: 'password', err: '', info: '', pw: '' });
+    };
+    const signIn = () => {
+      const s = this.state; const a = accounts().find(x => x.email === s.auth.email.trim().toLowerCase());
+      if (!a) { setAuth({ step: 'email', err: 'Please enter your email again.' }); return; }
+      if (!s.auth.pw) { setAuth({ err: 'Enter your password.', info: '' }); return; }
+      const b = s.businesses.find(x => x.id === a.bizId);
+      if (b && b.status !== 'Active') { setAuth({ err: 'Access for ' + b.name + ' is paused. Please contact support to reactivate the subscription.', info: '' }); return; }
+      if (a.role === 'admin') { enterAdmin(a.bizId); this.setState(s2 => ({ auth: Object.assign({}, s2.auth, { pw: '', err: '' }) })); }
+      else this.setState(s2 => ({ screen: 'portal', session: { role: 'employee', bizId: a.bizId, empId: a.empId }, ptab: 'home', pLeaveMsg: '', pChgMsg: '', pDocMsg: '', pFiles: {}, auth: Object.assign({}, s2.auth, { pw: '', err: '' }) }));
+    };
+    const demoAccounts = [
+      { label: 'Business admin – Demo Retail Ltd', email: 'hr@demo-retail.example' },
+      { label: 'Employee – Aisha Rahman', email: 'aisha.rahman@demo-retail.example' },
+      { label: 'Business admin – Demo Catering Ltd', email: 'hr@demo-catering.example' },
+      { label: 'Suspended business – Demo Cafe Ltd', email: 'hr@demo-cafe.example' }
+    ].map(d => Object.assign(d, { fill: () => this.setState({ auth: { step: 'email', email: d.email, pw: '', err: '', info: '' } }) }));
+
+    // ---------- Settings ----------
+    const activeCount = W.filter(w => !w.endDate).length;
+    const pct = Math.min(100, Math.round(activeCount / st.plan.limit * 100));
+    const sub = { price: String(st.plan.price), limit: String(st.plan.limit), training: String(st.plan.training), used: String(activeCount),
+      status: biz.status || 'Active', bs: (biz.status || 'Active') === 'Active' ? GRN : RED, next: this.fmt(biz.next), method: biz.method || '—',
+      barStyle: 'height: 8px; border-radius: 4px; width: ' + pct + '%; background: ' + (pct >= 90 ? '#B54708' : '#4F46E5') };
+    const bizFields = [{ label: 'Business name', value: biz.name }, { label: 'Sponsor licence number', value: biz.licence }, { label: 'Authorising Officer', value: biz.ao }, { label: 'Admin login', value: (biz.adminName || '') + ' · ' + biz.adminEmail }];
+    const savedOk = st.saved && !st.saved.report;
+    return {
+      isLogin: st.screen === 'login', isPlatform: st.screen === 'platform', isAdmin: st.screen === 'admin', isPortal: st.screen === 'portal',
+      login: st.login, bizOpts, loginAdminEmail: loginBiz.adminEmail, loginEmpOpts,
+      lAdminBiz: setIn('login', 'adminBiz'), lEmpBiz, lEmp: setIn('login', 'empId'),
+      loginAdmin: () => enterAdmin(this.state.login.adminBiz), loginEmp, loginPlatform: () => this.setState({ screen: 'platform', bizMsg: '' }), logout: () => this.setState({ screen: 'login', auth: { step: 'email', email: '', pw: '', err: '', info: '' } }),
+      bizRows, bizForm: st.bizForm, bName: setIn('bizForm', 'name'), bLic: setIn('bizForm', 'licence'), bAo: setIn('bizForm', 'ao'), bEmail: setIn('bizForm', 'email'), addBiz, hasBizMsg: !!st.bizMsg, bizMsg: st.bizMsg,
+      biz, tabs,
+      isDash: st.tab === 'dash', isEmpList: st.tab === 'emp' && !inProfile, isProfile: inProfile, isAdd: st.tab === 'add', isRequests: st.tab === 'requests',
+      isRecord: st.tab === 'record', isLog: st.tab === 'log', isReports: st.tab === 'reports', isSites: st.tab === 'sites',
+      goReports: () => this.setState({ tab: 'reports' }), goRecord: () => this.setState({ tab: 'record', saved: null }), goAdd: () => this.setState({ tab: 'add', neErr: '' }),
+      stats, alertRows, noAlerts: myAlerts.length === 0, watchRows,
+      nextTasks: taskRows.filter(t => t.isPending).slice(0, 3), noPending: pending.length === 0,
+      form: st.form, workerOpts: W.filter(w => !w.endDate).map(w => ({ id: w.id, name: w.name })), typeOpts: types.map(t => ({ id: t.id, label: t.label })), siteOpts: bizSites.map(s => ({ id: s.id, name: s.name })),
+      fWorker: setIn('form', 'worker'), fType: setIn('form', 'type'), fStart: setIn('form', 'start'), fEnd: setIn('form', 'end'), fReason: setIn('form', 'reason'),
+      needsEvidence: st.form.type === 'sick_fit', ev, evPanelStyle, evTitleStyle, evDeadline: ev.report ? this.fmt(ev.deadline) + ' (10 working days from ' + this.fmt(ev.trigger) + ')' : '',
+      payLabel: typeObj.pay, authLabel: st.form.type === 'unauth' ? 'No' : 'Yes',
+      save, hasSaved: !!st.saved, savedText: st.saved ? st.saved.text : '',
+      savedStyle: 'padding: 12px 14px; border-radius: 8px; font-size: 14px; font-weight: 600; ' + (savedOk ? 'background: #ECFDF3; color: #067647' : 'background: #FEF3F2; color: #B42318'),
+      isClassifying: !!classAl, classifyingNote: classAl ? 'Classifying the unexplained absence for ' + wName(classAl.worker) + ' on ' + this.fmtW(classAl.date) + '. Change the type if they were sick or on leave, then save.' : '',
+      absenceRows, taskRows, noTasks: taskRows.length === 0,
+      rep: st.rep, rDate: setIn('rep', 'date'), rBy: setIn('rep', 'by'), rRef: setIn('rep', 'ref'), hasRepError: !!st.repError, repError: st.repError,
+      confirmRep, notReq, cancelRep: () => this.setState({ editTask: null, repError: '' }),
+      siteRows, siteForm: st.siteForm, sfName: setIn('siteForm', 'name'), sfAddr: setIn('siteForm', 'address'), addSite, hasSiteMsg: !!st.siteMsg, siteMsg: st.siteMsg,
+      moveForm: st.moveForm, mWorker: setIn('moveForm', 'worker'), mSite: setIn('moveForm', 'site'), moveWorker, hasMoveMsg: !!st.moveMsg, moveMsg: st.moveMsg,
+      empRows, noEmployees: W.length === 0, backToList: () => this.setState({ selWorker: null, neMsg: '' }),
+      hasNeMsg: !!st.neMsg && inProfile, neMsg: st.neMsg,
+      prof: { name: sw.name, role: sw.role, site: sName(sw.site), start: this.fmt(sw.start), status: statusLabel(sw), statusBs: sw.sponsored ? NEU : GRY,
+        docs: docsHave(sw) + ' of ' + this.reqFor(sw).length, docsBs: docsHave(sw) === this.reqFor(sw).length ? GRN : ORA,
+        visaText: expBadge(sw.visa).text, visaBs: expBadge(sw.visa).bs, reports: pendFor(sw.id) ? pendFor(sw.id) + ' pending' : 'up to date', repBs: pendFor(sw.id) ? RED : GRN,
+        unpaid: this.unpaidUsed(st, sw.id, '2026') + ' of ' + (4 * (Number(sw.days) || 5)) + ' days',
+        check: issues ? issues + ' to fix' : 'all done', checkBs: missingN ? RED : issues ? ORA : GRN,
+        isLeaver: !!sw.endDate, leftText: sw.endDate ? 'Left ' + this.fmt(sw.endDate) : '', leftBs: GRY, canEnd: !sw.endDate && !!sw.id, annualLeft: (Math.round((this.allowance(sw) - this.annualTaken(st, sw.id, '2026')) * 10) / 10) + ' of ' + this.allowance(sw) + ' days' },
+      exportPack: () => this.setState({ packMsg: 'In the live system this downloads one PDF for ' + sw.name + ': details, document list, absence log, change history and Home Office reports.' }),
+      hasPackMsg: !!st.packMsg && inProfile, packMsg: st.packMsg,
+      empTabs, empOverview: st.empTab === 'overview', empDocs: st.empTab === 'docs', empAbs: st.empTab === 'abs', empRep: st.empTab === 'rep', empHist: st.empTab === 'hist',
+      profSections, docRows, catOpts: cats.map(c => ({ id: c.id, label: c.label })),
+      upload: st.upload, uCat: setIn('upload', 'cat'), uExp: setIn('upload', 'expiry'), uFile, doUpload, hasUploadMsg: !!st.uploadMsg, uploadMsg: st.uploadMsg,
+      profAbsences, noProfAbs: profAbsences.length === 0, profTasks, noProfTasks: profTasks.length === 0,
+      recordForSel: () => this.setState({ tab: 'record', saved: null, classifying: null, form: Object.assign({}, this.state.form, { worker: sw.id }) }),
+      histRows, noHist: histRows.length === 0,
+      chg: st.chg, chgOpts: chgDefs.map(c => ({ id: c.id, label: c.label })), cField: setIn('chg', 'field'), cValue: setIn('chg', 'value'),
+      chgCurrent: String(sw[chgDef.prop] || ''),
+      chgHint: chgReportable ? 'Reportable for a sponsored worker: saving creates a Home Office task (10 working days).' : 'Not reportable: logged in change history only.',
+      chgHintStyle: 'padding: 10px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; ' + (chgReportable ? 'background: #FEF3F2; color: #B42318' : 'background: #F2F4F7; color: #344054'),
+      recordChange, hasChgMsg: !!st.chgMsg, chgMsg: st.chgMsg,
+      ne, natOpts: nationalities.map(x => ({ id: x, label: x })), basisOpts: bases.map(b => ({ id: b.id, label: b.label })),
+      otherVisaOpts: [{ id: 'Graduate' }, { id: 'Dependant' }, { id: 'Student' }, { id: 'Other' }],
+      methodOpts: [{ id: 'Home Office online check (share code)' }, { id: 'Manual check of original passport' }, { id: 'IDVT – certified identity provider' }],
+      contractOpts: [{ id: 'Permanent' }, { id: 'Fixed term' }, { id: 'Part-time permanent' }],
+      neIsOther: ne.basis === 'other', neLimited: nb.limited, neNeedsShare: nb.share, neSponsored: ne.basis === 'sponsored', neBasisHint: nb.hint,
+      neJobHeading: ne.basis === 'sponsored' ? '4. Job and pay (same as the CoS)' : '3. Job and pay', neDocs: neReqDocs,
+      nName: setIn('ne', 'name'), nDob: setIn('ne', 'dob'), nNat: setIn('ne', 'nationality'), nEmail: setIn('ne', 'email'), nPhone: setIn('ne', 'phone'), nNi: setIn('ne', 'ni'), nAddr: setIn('ne', 'address'),
+      nPno: setIn('ne', 'passportNo'), nPexp: setIn('ne', 'passportExp'), nBasis: setIn('ne', 'basis'), nOv: setIn('ne', 'otherVisa'), nMeth: setIn('ne', 'rtwMethod'), nRdate: setIn('ne', 'rtwDate'), nRby: setIn('ne', 'rtwBy'),
+      nShare: setIn('ne', 'shareCode'), nVs: setIn('ne', 'visaStart'), nVe: setIn('ne', 'visaEnd'), nRes: setIn('ne', 'restrictions'), nCos: setIn('ne', 'cosNo'), nCosd: setIn('ne', 'cosDate'), nSoc: setIn('ne', 'soc'),
+      nRole: setIn('ne', 'role'), nSal: setIn('ne', 'salary'), nStart: setIn('ne', 'start'), nSite: setIn('ne', 'site'), nDays: setIn('ne', 'days'), nHours: setIn('ne', 'hours'), nCt: setIn('ne', 'contract'), nInv: setIn('ne', 'invite'),
+      hasNeErr: !!st.neErr, neErr: st.neErr, saveEmployee, fillDemo,
+      reqRows, noReqRows: reqRows.length === 0, awaitRows, noAwaitRows: awaitRows.length === 0, decidedRows,
+      me: meV, ptHome: st.ptab === 'home', ptDocs: st.ptab === 'docs', ptLeave: st.ptab === 'leave', ptChange: st.ptab === 'change', ptMyReq: st.ptab === 'myreq', ptDetails: st.ptab === 'details',
+      goPDocs: () => this.setState({ ptab: 'docs', pDocMsg: '' }), goPLeave: () => this.setState(s => ({ ptab: 'leave', pLeaveMsg: '', pLeave: Object.assign({}, s.pLeave, { type: 'annual' }) })),
+      goPSick: () => this.setState(s => ({ ptab: 'leave', pLeaveMsg: '', pLeave: Object.assign({}, s.pLeave, { type: 'sick', start: TODAY, end: TODAY }) })),
+      goPChange: () => this.setState({ ptab: 'change', pChgMsg: '', pChg: { kind: 'address', value: '', note: '' } }),
+      goPIncrement: () => this.setState({ ptab: 'change', pChgMsg: '', pChg: { kind: 'increment', value: '', note: '' } }),
+      myReqRecent: myReqRows.slice(0, 3), myReqRows, noMyReq: myReqRows.length === 0,
+      pLeave: st.pLeave, pLeaveTypes, plType: setIn('pLeave', 'type'), plStart: setIn('pLeave', 'start'), plEnd: setIn('pLeave', 'end'), plReason: setIn('pLeave', 'reason'),
+      pLeaveInfo, hasPLeaveNote: !!pLeaveNote, pLeaveNote, submitLeave, hasPLeaveMsg: !!st.pLeaveMsg, pLeaveMsg: st.pLeaveMsg, myAbs, noMyAbs: myAbs.length === 0,
+      pChg: st.pChg, pChgKinds: chgKinds.map(k => ({ id: k.id, label: k.label })), pcKind: setIn('pChg', 'kind'), pcValue: setIn('pChg', 'value'), pcNote: setIn('pChg', 'note'),
+      pChgIsDate: ck.date, pChgIsText: !ck.date, pChgLabel: ck.field, pChgPh: ck.field, hasPChgHint: !!pChgHint, pChgHint, submitChange, hasPChgMsg: !!st.pChgMsg, pChgMsg: st.pChgMsg,
+      pDocReqRows, noPDocReq: pDocReqRows.length === 0, hasPDocMsg: !!st.pDocMsg, pDocMsg: st.pDocMsg, myDocs,
+      pUp: st.pUp, pUpOpts, puCat: setIn('pUp', 'cat'), puFile, puSend,
+      mySections,
+      auth: st.auth, authEmailStep: st.auth.step === 'email', authPwStep: st.auth.step === 'password', acct,
+      aEmail: e => { const v = e.target.value; setAuth({ email: v, err: '', info: '' }); }, aPw: e => { const v = e.target.value; setAuth({ pw: v, err: '' }); },
+      authNext, signIn, notYou: () => this.setState({ auth: { step: 'email', email: '', pw: '', err: '', info: '' } }),
+      forgot: () => setAuth({ info: 'In the live system we email a secure reset link to ' + (acct.email || 'your address') + '.', err: '' }),
+      hasAuthErr: !!st.auth.err, hasAuthInfo: !!st.auth.info, demoAccounts,
+      sub, bizFields, manageBilling: () => this.setState({ subMsg: 'In the live system this opens the secure Stripe or PayPal billing page.' }),
+      bookTraining: () => this.setState({ subMsg: 'Training request sent. We will email you to arrange a 1-to-1 session (£' + st.plan.training + ' per person).' }),
+      hasSubMsg: !!st.subMsg, subMsg: st.subMsg,
+      ptabs: ptabsAll,
+      empCheck: st.empTab === 'check', checkRows, empShared: st.empTab === 'shared', sharedRows, noShared: sharedRows.length === 0,
+      shareKindOpts: sKinds.map(k => ({ id: k.id, label: k.label })), shareForm: sf, sfKind, sfTitle: setIn('shareForm', 'title'), sfFileH,
+      sfIsPayslip: sf.kind === 'payslip', sfIsChange: sf.kind === 'change', sfPeriod: setIn('shareForm', 'period'), sfPay: setIn('shareForm', 'payDate'), sfEff: setIn('shareForm', 'effective'), sfAck: setIn('shareForm', 'ack'),
+      hasSfWarn: !!sfWarn, sfWarn, sendShared, hasShareMsg: !!st.shareMsg, shareMsg: st.shareMsg,
+      empMsgs: st.empTab === 'msgs', profThread, noProfThread: profThread.length === 0, msgDraft: st.msgDraft, mdSet, sendProf: sendHr(sw.id),
+      isMsgs: st.tab === 'msgs', convRows, selName: selW.name ? 'Conversation with ' + selW.name : 'No employees yet', selThread, noSelThread: selThread.length === 0, sendSel: sendHr(selW.id),
+      noticeRows, noNotices: noticeRows.length === 0, noticeForm: st.noticeForm, nfTitle: setIn('noticeForm', 'title'), nfBody: setIn('noticeForm', 'body'), nfAck: setIn('noticeForm', 'ack'), addNotice, hasNoticeMsg: !!st.noticeMsg, noticeMsg: st.noticeMsg,
+      showEndPanel: st.showEnd && inProfile, openEnd: () => this.setState({ showEnd: true, endMsg: '', endForm: { date: TODAY, reason: 'Resigned' } }), closeEnd: () => this.setState({ showEnd: false }),
+      endForm: ef, eDate: setIn('endForm', 'date'), eReason: setIn('endForm', 'reason'), endReasons, endHint, endEmp, hasEndMsg: !!st.endMsg && inProfile, endMsg: st.endMsg,
+      ptPay: st.ptab === 'pay', myPay, noMyPay: myPay.length === 0, hasPPayMsg: !!st.pPayMsg, pPayMsg: st.pPayMsg,
+      ptLetters: st.ptab === 'letters', myLetters, noMyLetters: myLetters.length === 0, goPLetters: () => this.setState({ ptab: 'letters' }),
+      ptMsgs: st.ptab === 'msgs', myNotices, noMyNotices: myNotices.length === 0, myThread, noMyThread: myThread.length === 0,
+      pMsgDraft: st.pMsgDraft, pmSet: e => { const v = e.target.value; this.setState({ pMsgDraft: v }); }, sendEmp
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SponsorSafe – Super admin</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F9FAFB}
+input,select,button{font:inherit}
+input,select,textarea{box-sizing:border-box;width:100%;min-height:44px;padding:10px 12px;border:1px solid #D0D5DD;border-radius:8px;background:#FFFFFF;color:#101828;font-size:15px;box-shadow:0 1px 2px rgba(16,24,40,.05)}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:none;box-shadow:0 0 0 4px #E0E7FF;border-color:#A5B4FC}
+label{font-size:14px;font-weight:500;color:#344054}
+button{transition:background-color .12s}button:hover{filter:brightness(.97)}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1024px; background: #F9FAFB; color: #101828; font-family: Geist, system-ui, sans-serif; overflow: hidden">
+
+<sc-if value="{{isLogin}}" hint-placeholder-val="{{true}}">
+<div style="width: 1440px; height: 1024px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; background: #101828">
+<div style="display: flex; align-items: center; gap: 10px"><span aria-hidden="true" style="width: 34px; height: 34px; border-radius: 9px; background: #4F46E5; display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF; font-size: 16px; font-weight: 700">S</span><span style="font-size: 18px; font-weight: 600; color: #FFFFFF">SponsorSafe · Super admin</span></div>
+<div style="width: 400px; box-sizing: border-box; background: #FFFFFF; border-radius: 14px; padding: 32px; display: flex; flex-direction: column; gap: 16px">
+<h1 style="margin: 0; font-size: 21px; font-weight: 600; letter-spacing: -0.02em">Restricted access</h1>
+<sc-if value="{{stepCreds}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="o-email">Email</label><input id="o-email" type="email" value="{{lg.email}}" onChange="{{lEmail}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="o-pw">Password</label><input id="o-pw" type="password" value="{{lg.pw}}" onChange="{{lPw}}"></div>
+<button type="button" onClick="{{toCode}}" style="min-height: 44px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; cursor: pointer">Continue</button>
+</sc-if>
+<sc-if value="{{stepCode}}" hint-placeholder-val="{{false}}">
+<div style="font-size: 14px; color: #475467">Enter the 6-digit code from your authenticator app.</div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="o-code">Authentication code</label><input id="o-code" type="text" inputmode="numeric" value="{{lg.code}}" onChange="{{lCode}}" placeholder="123 456"></div>
+<button type="button" onClick="{{verify}}" style="min-height: 44px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; cursor: pointer">Verify and sign in</button>
+</sc-if>
+<sc-if value="{{hasLgErr}}" hint-placeholder-val="{{false}}"><div style="padding: 10px 12px; border-radius: 8px; background: #FEF3F2; border: 1px solid #FECDCA; font-size: 14px; color: #B42318">{{lg.err}}</div></sc-if>
+</div>
+<div style="width: 400px; font-size: 13px; line-height: 1.6; color: #98A2B3; text-align: center">Private URL, never linked from the website or app. Allowed IP addresses only, 2FA required, every action logged. Prototype: any email, password and 6-digit code.</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isApp}}" hint-placeholder-val="{{false}}">
+<div style="width: 1440px; height: 1024px; display: flex; flex-direction: column">
+<header style="height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; background: #101828; color: #FFFFFF">
+<div style="display: flex; align-items: center; gap: 12px"><span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 8px; background: #4F46E5; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700">S</span><span style="font-size: 16px; font-weight: 600">Super admin</span><span style="padding: 2px 8px; border-radius: 999px; background: #1D2939; color: #D0D5DD; font-size: 12px">/ops-7f3k2 · 2FA verified</span></div>
+<button type="button" onClick="{{logout}}" style="min-height: 38px; padding: 0 14px; border-radius: 8px; border: 1px solid #344054; background: transparent; color: #FFFFFF; font-weight: 600; cursor: pointer">Log out</button>
+</header>
+<div style="flex-grow: 1; display: flex; min-height: 0">
+<nav aria-label="Super admin sections" style="width: 220px; flex-shrink: 0; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; background: #FFFFFF; border-right: 1px solid #EAECF0">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="4"><button type="button" onClick="{{t.go}}" style="{{t.style}}"><span>{{t.label}}</span><sc-if value="{{t.hasCount}}" hint-placeholder-val="{{false}}"><span style="min-width: 20px; padding: 1px 7px; border-radius: 999px; background: #FEE4E2; color: #B42318; font-size: 12px; font-weight: 600; text-align: center">{{t.count}}</span></sc-if></button></sc-for>
+</nav>
+<main style="flex-grow: 1; overflow-y: auto; padding: 32px 40px 56px">
+
+<sc-if value="{{tBiz}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 20px">
+<h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Businesses</h1>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+<sc-for list="{{stats}}" as="s" hint-placeholder-count="4"><div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 13px; color: #667085">{{s.label}}</span><span style="font-size: 28px; font-weight: 600">{{s.value}}</span></div></sc-for>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; overflow: hidden">
+<div style="display: grid; grid-template-columns: 1.4fr 1.5fr 90px 1fr 110px 110px 150px; gap: 12px; padding: 12px 20px; background: #F9FAFB; font-size: 13px; font-weight: 600; color: #475467"><span>Business</span><span>Admin</span><span>Staff</span><span>Payment</span><span>Next due</span><span>Status</span><span></span></div>
+<sc-for list="{{bizRows}}" as="b" hint-placeholder-count="4">
+<div style="display: grid; grid-template-columns: 1.4fr 1.5fr 90px 1fr 110px 110px 150px; gap: 12px; padding: 14px 20px; border-top: 1px solid #F2F4F7; font-size: 14px; align-items: center">
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600">{{b.name}}</span><span style="font-size: 12px; color: #667085">Joined {{b.joined}}</span></div>
+<div style="display: flex; flex-direction: column; gap: 2px"><span>{{b.admin}}</span><span style="font-size: 12px; color: #667085">{{b.email}}</span></div>
+<span style="font-family: 'Geist Mono', monospace">{{b.staff}}</span><span>{{b.method}}</span><span>{{b.next}}</span><span><span style="{{b.bs}}">{{b.status}}</span></span>
+<button type="button" onClick="{{b.toggle}}" style="{{b.btnStyle}}">{{b.btn}}</button>
+</div>
+</sc-for>
+</div>
+<sc-if value="{{hasBizMsg}}" hint-placeholder-val="{{false}}"><div style="font-size: 14px; font-weight: 600; color: #3730A3">{{bizMsg}}</div></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{tPrice}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 20px; max-width: 720px">
+<h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Plans and pricing</h1>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="p-price">Monthly price (£)</label><input id="p-price" type="text" value="{{pf.price}}" onChange="{{pPrice}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="p-limit">Employee limit</label><input id="p-limit" type="text" value="{{pf.limit}}" onChange="{{pLimit}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="p-train">1-to-1 training per person (£)</label><input id="p-train" type="text" value="{{pf.training}}" onChange="{{pTrain}}"></div>
+</div>
+<div style="font-size: 14px; line-height: 1.5; color: #475467">New prices show on the website straight away. Existing subscribers keep their current price until you move them, and are emailed 30 days before any change.</div>
+<div><button type="button" onClick="{{savePrice}}" style="min-height: 44px; padding: 0 18px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; cursor: pointer">Save pricing</button></div>
+<sc-if value="{{hasPriceMsg}}" hint-placeholder-val="{{false}}"><div style="font-size: 14px; font-weight: 600; color: #3730A3">{{priceMsg}}</div></sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{tPay}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 20px; max-width: 860px">
+<h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Payment gateways</h1>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; justify-content: space-between; align-items: center"><h2 style="margin: 0; font-size: 17px; font-weight: 600">Stripe</h2><span style="{{stripeBs}}">{{stripeStatus}}</span></div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="s-pk">Publishable key</label><input id="s-pk" type="text" value="{{gw.spk}}" onChange="{{gSpk}}" placeholder="pk_live_…"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="s-sk">Secret key</label><input id="s-sk" type="password" value="{{gw.ssk}}" onChange="{{gSsk}}" placeholder="sk_live_…"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="s-wh">Webhook signing secret</label><input id="s-wh" type="password" value="{{gw.swh}}" onChange="{{gSwh}}" placeholder="whsec_…"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="s-mode">Mode</label><select id="s-mode" value="{{gw.smode}}" onChange="{{gSmode}}"><option value="test">Test</option><option value="live">Live</option></select></div>
+</div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; justify-content: space-between; align-items: center"><h2 style="margin: 0; font-size: 17px; font-weight: 600">PayPal</h2><span style="{{paypalBs}}">{{paypalStatus}}</span></div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="pp-id">Client ID</label><input id="pp-id" type="text" value="{{gw.pid}}" onChange="{{gPid}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="pp-sec">Client secret</label><input id="pp-sec" type="password" value="{{gw.psec}}" onChange="{{gPsec}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="pp-plan">Subscription plan ID</label><input id="pp-plan" type="text" value="{{gw.pplan}}" onChange="{{gPplan}}" placeholder="P-…"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="pp-mode">Mode</label><select id="pp-mode" value="{{gw.pmode}}" onChange="{{gPmode}}"><option value="sandbox">Sandbox</option><option value="live">Live</option></select></div>
+</div>
+</div>
+<div style="display: flex; gap: 12px"><button type="button" onClick="{{saveGw}}" style="min-height: 44px; padding: 0 18px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; cursor: pointer">Save and test connections</button></div>
+<sc-if value="{{hasGwMsg}}" hint-placeholder-val="{{false}}"><div style="font-size: 14px; font-weight: 600; color: #3730A3">{{gwMsg}}</div></sc-if>
+<div style="font-size: 13px; line-height: 1.6; color: #667085">Secret keys are encrypted at rest and never shown again after saving; only the last 4 characters are displayed.</div>
+</div>
+</sc-if>
+
+<sc-if value="{{tEnq}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 20px">
+<h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">Enquiries and training</h1>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; overflow: hidden">
+<sc-for list="{{enqRows}}" as="q" hint-placeholder-count="3">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 20px; border-bottom: 1px solid #F2F4F7">
+<div style="display: flex; flex-direction: column; gap: 4px"><div style="display: flex; gap: 10px; align-items: center"><span style="font-size: 15px; font-weight: 600">{{q.name}}</span><span style="padding: 2px 8px; border-radius: 999px; background: #F2F4F7; font-size: 12px; font-weight: 500; color: #344054">{{q.topic}}</span><span style="font-size: 13px; color: #667085">{{q.date}}</span></div><span style="font-size: 14px; color: #475467">{{q.msg}}</span><span style="font-size: 13px; color: #667085">{{q.email}}</span></div>
+<div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0"><span style="{{q.bs}}">{{q.status}}</span><sc-if value="{{q.open}}" hint-placeholder-val="{{true}}"><button type="button" onClick="{{q.done}}" style="min-height: 38px; padding: 0 12px; border-radius: 8px; border: 1px solid #D0D5DD; background: #FFFFFF; color: #344054; font-weight: 600; cursor: pointer">Mark handled</button></sc-if></div>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{tChat}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 20px">
+<h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em">AI chat assistant</h1>
+<div style="display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 20px; align-items: start">
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="ai-on">Chat on website</label><select id="ai-on" value="{{ai.on}}" onChange="{{aiOn}}"><option value="on">On</option><option value="off">Off</option></select></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="ai-model">Model</label><select id="ai-model" value="{{ai.model}}" onChange="{{aiModel}}"><option value="fast">Fast and low-cost</option><option value="smart">Smarter, higher cost</option></select></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="ai-cap">Daily spending cap (£)</label><input id="ai-cap" type="text" value="{{ai.cap}}" onChange="{{aiCap}}"></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="ai-kb">What the assistant knows (FAQs and product facts)</label><textarea id="ai-kb" rows="9" value="{{ai.kb}}" onChange="{{aiKb}}" style="line-height: 1.5"></textarea></div>
+<div style="font-size: 13px; line-height: 1.5; color: #667085">Prices and the employee limit are added automatically from Plans and pricing. The assistant never gives legal advice on individual cases and offers to pass people to you when unsure.</div>
+<div><button type="button" onClick="{{saveAi}}" style="min-height: 44px; padding: 0 18px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; cursor: pointer">Save assistant settings</button></div>
+<sc-if value="{{hasAiMsg}}" hint-placeholder-val="{{false}}"><div style="font-size: 14px; font-weight: 600; color: #3730A3">{{aiMsg}}</div></sc-if>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+<sc-for list="{{aiStats}}" as="s" hint-placeholder-count="3"><div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #667085">{{s.label}}</span><span style="font-size: 22px; font-weight: 600">{{s.value}}</span></div></sc-for>
+</div>
+<h2 style="margin: 4px 0 0; font-size: 16px; font-weight: 600">Recent conversations</h2>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 12px; overflow: hidden">
+<sc-for list="{{convos}}" as="c" hint-placeholder-count="3">
+<div style="padding: 14px 16px; border-bottom: 1px solid #F2F4F7; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; justify-content: space-between; gap: 8px"><span style="font-size: 14px; font-weight: 600">{{c.first}}</span><span style="{{c.bs}}">{{c.outcome}}</span></div>
+<span style="font-size: 13px; color: #667085">{{c.when}} · {{c.count}} messages</span>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+</main>
+</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1024}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      screen: 'login', tab: 'biz',
+      lg: { step: 'creds', email: '', pw: '', code: '', err: '' },
+      businesses: [
+        { id: 'b1', name: 'Demo Retail Ltd', admin: 'Nadia Khan', email: 'hr@demo-retail.example', staff: 5, method: 'Stripe · card 4242', next: '10 Oct 2026', joined: '10 Jan 2026', status: 'Active' },
+        { id: 'b2', name: 'Demo Catering Ltd', admin: 'Mark Evans', email: 'hr@demo-catering.example', staff: 2, method: 'PayPal', next: '2 Oct 2026', joined: '2 May 2026', status: 'Active' },
+        { id: 'b3', name: 'Demo Cafe Ltd', admin: 'Leo Grant', email: 'hr@demo-cafe.example', staff: 3, method: 'Stripe · card 1881', next: '—', joined: '15 Mar 2026', status: 'Suspended' },
+        { id: 'b4', name: 'Demo Care Services Ltd', admin: 'Priya Shah', email: 'office@demo-care.example', staff: 12, method: 'Stripe · card 5100', next: '28 Sep 2026', joined: '20 Aug 2026', status: 'Active' }
+      ],
+      plan: { price: '20', limit: '15', training: '49' }, pf: { price: '20', limit: '15', training: '49' }, priceMsg: '', bizMsg: '',
+      gw: { spk: 'pk_test_••••••••3kQ9', ssk: '', swh: '', smode: 'test', pid: '', psec: '', pplan: '', pmode: 'sandbox' }, gwMsg: '', stripeOk: true, paypalOk: false,
+      enquiries: [
+        { id: 'q1', name: 'Imran Ali', email: 'imran@example.co.uk', topic: 'Book a free demo', msg: 'We have 6 staff, 3 sponsored. Can we see it working?', date: '23 Sep 2026', status: 'New' },
+        { id: 'q2', name: 'Priya Shah', email: 'office@demo-care.example', topic: '1-to-1 training', msg: 'Training for 2 people please (office manager and me).', date: '21 Sep 2026', status: 'New' },
+        { id: 'q4', name: 'Sara Begum', email: 'sara@example.co.uk', topic: 'From AI chat', msg: 'Asked about pricing for 4 staff, then requested a demo. Transcript attached.', date: '24 Sep 2026', status: 'New' },
+        { id: 'q3', name: 'Tom Hughes', email: 'tom@example.co.uk', topic: 'General question', msg: 'Does it work for Health and Care Worker visas?', date: '18 Sep 2026', status: 'Handled' }
+      ],
+      ai: { on: 'on', model: 'fast', cap: '5', kb: 'SponsorSafe is a UKVI compliance system for small UK sponsor licence holders (up to 15 employees).\nIt records right-to-work checks and reminds before follow-up checks.\nIt tracks absence and flags unpaid leave over 4 weeks and 10 days of unauthorised absence.\nIt creates Home Office reporting tasks with deadlines; the business reports on the SMS itself.\nIt is not payroll or accounts software; the accountant keeps running payroll.\nData is stored in the UK and encrypted.' }, aiMsg: ''
+    };
+  }
+  renderVals() {
+    const st = this.state;
+    const B = 'display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; border: 1px solid; ';
+    const GRN = B + 'background: #ECFDF3; color: #067647; border-color: #ABEFC6', RED = B + 'background: #FEF3F2; color: #B42318; border-color: #FECDCA', NEU = B + 'background: #EEF4FF; color: #3538CD; border-color: #C7D7FE', GRY = B + 'background: #F9FAFB; color: #344054; border-color: #EAECF0';
+    const set = (g, k, msgKey) => e => { const v = e.target.value; this.setState(s => { const o = {}; o[g] = Object.assign({}, s[g]); o[g][k] = v; if (msgKey) o[msgKey] = ''; if (g === 'lg') o.lg.err = ''; return o; }); };
+    const newEnq = st.enquiries.filter(q => q.status === 'New').length;
+    const tabBase = 'display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 40px; padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; text-align: left; ';
+    const tabs = [['biz', 'Businesses', 0], ['price', 'Plans and pricing', 0], ['pay', 'Payment gateways', 0], ['enq', 'Enquiries and training', newEnq], ['chat', 'AI chat assistant', 0]].map(t => ({ label: t[1], count: String(t[2]), hasCount: t[2] > 0,
+      style: tabBase + (st.tab === t[0] ? 'background: #EEF2FF; color: #3730A3; font-weight: 600' : 'background: transparent; color: #344054; font-weight: 500'), go: () => this.setState({ tab: t[0] }) }));
+    const active = st.businesses.filter(b => b.status === 'Active');
+    const stats = [
+      { label: 'Active businesses', value: String(active.length) },
+      { label: 'Suspended', value: String(st.businesses.length - active.length) },
+      { label: 'Monthly revenue', value: '£' + (active.length * Number(st.plan.price || 0)) },
+      { label: 'Employees managed', value: String(st.businesses.reduce((n, b) => n + b.staff, 0)) }
+    ];
+    const bizRows = st.businesses.map(b => {
+      const on = b.status === 'Active';
+      return { name: b.name, admin: b.admin, email: b.email, staff: b.staff + ' / ' + st.plan.limit, method: b.method, next: b.next, joined: b.joined, status: b.status, bs: on ? GRN : RED,
+        btn: on ? 'Suspend' : 'Activate', btnStyle: 'min-height: 36px; padding: 0 12px; border-radius: 8px; font-weight: 600; cursor: pointer; ' + (on ? 'border: 1px solid #FECDCA; background: #FFFFFF; color: #B42318' : 'border: none; background: #4F46E5; color: #FFFFFF'),
+        toggle: () => this.setState(s => ({ businesses: s.businesses.map(x => x.id === b.id ? Object.assign({}, x, { status: on ? 'Suspended' : 'Active' }) : x),
+          bizMsg: b.name + (on ? ' suspended. Their admin and employees can no longer sign in; data is kept.' : ' activated. Sign-in restored.') })) };
+    });
+    const savePrice = () => {
+      const p = this.state.pf; const n = [p.price, p.limit, p.training].map(Number);
+      if (n.some(x => !(x > 0))) { this.setState({ priceMsg: 'Enter numbers greater than zero.' }); return; }
+      this.setState({ plan: Object.assign({}, p), priceMsg: 'Saved: £' + p.price + '/month for up to ' + p.limit + ' employees; training £' + p.training + ' per person.' });
+    };
+    const saveGw = () => {
+      const g = this.state.gw; const stripeOk = !!g.spk && (!!g.ssk || this.state.stripeOk); const paypalOk = !!g.pid && !!g.psec;
+      this.setState({ stripeOk, paypalOk, gw: Object.assign({}, g, { ssk: g.ssk ? '••••••••' + g.ssk.slice(-4) : g.ssk, psec: g.psec ? '••••••••' + g.psec.slice(-4) : g.psec, swh: g.swh ? '••••••••' + g.swh.slice(-4) : g.swh }),
+        gwMsg: 'Saved. Stripe: ' + (stripeOk ? 'connected' : 'missing keys') + '. PayPal: ' + (paypalOk ? 'connected' : 'missing client ID or secret') + '.' });
+    };
+    return {
+      tChat: st.tab === 'chat', ai: st.ai, aiOn: set('ai', 'on', 'aiMsg'), aiModel: set('ai', 'model', 'aiMsg'), aiCap: set('ai', 'cap', 'aiMsg'), aiKb: set('ai', 'kb', 'aiMsg'),
+      saveAi: () => this.setState(s => ({ aiMsg: 'Saved. The assistant is ' + (s.ai.on === 'on' ? 'on' : 'off') + ' and will stop answering for the day if spend reaches £' + s.ai.cap + '.' })),
+      hasAiMsg: !!st.aiMsg, aiMsg: st.aiMsg,
+      aiStats: [{ label: 'Chats today', value: '14' }, { label: 'Leads captured', value: '3' }, { label: 'Spend today', value: '£0.42' }],
+      convos: [
+        { first: 'How much for 4 staff?', when: 'Today 11:20', count: 8, outcome: 'Lead captured', bs: GRN },
+        { first: 'Do you do payroll?', when: 'Today 09:05', count: 4, outcome: 'Answered', bs: GRY },
+        { first: 'Can I sponsor my cousin?', when: 'Yesterday', count: 3, outcome: 'Referred to adviser', bs: NEU }
+      ],
+      isLogin: st.screen === 'login', isApp: st.screen === 'app',
+      lg: st.lg, stepCreds: st.lg.step === 'creds', stepCode: st.lg.step === 'code', hasLgErr: !!st.lg.err,
+      lEmail: set('lg', 'email'), lPw: set('lg', 'pw'), lCode: set('lg', 'code'),
+      toCode: () => { const l = this.state.lg; if (!l.email || !l.pw) { this.setState({ lg: Object.assign({}, l, { err: 'Enter your email and password.' }) }); return; } this.setState({ lg: Object.assign({}, l, { step: 'code', err: '' }) }); },
+      verify: () => { const l = this.state.lg; if (!/^\d{6}$/.test(l.code.replace(/\s/g, ''))) { this.setState({ lg: Object.assign({}, l, { err: 'Enter the 6-digit code.' }) }); return; } this.setState({ screen: 'app', tab: 'biz', lg: { step: 'creds', email: '', pw: '', code: '', err: '' } }); },
+      logout: () => this.setState({ screen: 'login' }),
+      tabs, tBiz: st.tab === 'biz', tPrice: st.tab === 'price', tPay: st.tab === 'pay', tEnq: st.tab === 'enq',
+      stats, bizRows, hasBizMsg: !!st.bizMsg, bizMsg: st.bizMsg,
+      pf: st.pf, pPrice: set('pf', 'price', 'priceMsg'), pLimit: set('pf', 'limit', 'priceMsg'), pTrain: set('pf', 'training', 'priceMsg'), savePrice, hasPriceMsg: !!st.priceMsg, priceMsg: st.priceMsg,
+      gw: st.gw, gSpk: set('gw', 'spk', 'gwMsg'), gSsk: set('gw', 'ssk', 'gwMsg'), gSwh: set('gw', 'swh', 'gwMsg'), gSmode: set('gw', 'smode', 'gwMsg'), gPid: set('gw', 'pid', 'gwMsg'), gPsec: set('gw', 'psec', 'gwMsg'), gPplan: set('gw', 'pplan', 'gwMsg'), gPmode: set('gw', 'pmode', 'gwMsg'),
+      saveGw, hasGwMsg: !!st.gwMsg, gwMsg: st.gwMsg,
+      stripeStatus: st.stripeOk ? 'Connected' : 'Not connected', stripeBs: st.stripeOk ? GRN : GRY, paypalStatus: st.paypalOk ? 'Connected' : 'Not connected', paypalBs: st.paypalOk ? GRN : GRY,
+      enqRows: st.enquiries.map(q => ({ name: q.name, email: q.email, topic: q.topic, msg: q.msg, date: q.date, status: q.status, bs: q.status === 'New' ? NEU : GRY, open: q.status === 'New',
+        done: () => this.setState(s => ({ enquiries: s.enquiries.map(x => x.id === q.id ? Object.assign({}, x, { status: 'Handled' }) : x) })) }))
+    };
+  }
+}
+</script>
+</body>
+</html>

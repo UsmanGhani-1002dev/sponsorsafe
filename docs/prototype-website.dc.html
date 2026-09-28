@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SponsorSafe – UKVI compliance for sponsor licence holders</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFFFFF}
+input,select,textarea,button{font:inherit}
+input,select,textarea{box-sizing:border-box;width:100%;min-height:44px;padding:10px 12px;border:1px solid #D0D5DD;border-radius:8px;background:#FFFFFF;color:#101828;font-size:15px;box-shadow:0 1px 2px rgba(16,24,40,.05)}
+input[type=checkbox]{width:20px;min-height:20px;height:20px;padding:0;margin:0;box-shadow:none;accent-color:#4F46E5}
+input:focus,select:focus,textarea:focus,button:focus-visible,a:focus-visible{outline:none;box-shadow:0 0 0 4px #E0E7FF;border-color:#A5B4FC}
+label{font-size:14px;font-weight:500;color:#344054}
+a{color:#4F46E5;text-decoration:none}a:hover{color:#3730A3}
+button{transition:background-color .12s}button:hover{filter:brightness(.97)}
+</style>
+</helmet>
+<div style="width: 1440px; height: 4000px; display: flex; flex-direction: column; background: #FFFFFF; color: #101828; font-family: Geist, system-ui, sans-serif; overflow: hidden">
+
+<header style="height: 72px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 80px; border-bottom: 1px solid #EAECF0">
+<div style="display: flex; align-items: center; gap: 10px"><span aria-hidden="true" style="width: 32px; height: 32px; border-radius: 9px; background: #4F46E5; display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF; font-size: 16px; font-weight: 700">S</span><span style="font-size: 18px; font-weight: 600; letter-spacing: -0.02em">SponsorSafe</span></div>
+<nav aria-label="Main" style="display: flex; align-items: center; gap: 32px; font-size: 15px; font-weight: 500">
+<a href="#features" style="color: #344054">Features</a>
+<a href="#pricing" style="color: #344054">Pricing</a>
+<a href="#training" style="color: #344054">Training</a>
+<a href="#contact" style="color: #344054">Contact</a>
+</nav>
+<div style="display: flex; align-items: center; gap: 12px">
+<a href="Main.dc.html" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 8px; border: 1px solid #D0D5DD; color: #344054; font-weight: 600; font-size: 15px">Log in</a>
+<button type="button" onClick="{{startSignup}}" style="min-height: 40px; padding: 0 16px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; font-size: 15px; cursor: pointer">Start subscription</button>
+</div>
+</header>
+
+<section style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 64px; align-items: center; padding: 96px 80px 88px; background: #F9FAFB; border-bottom: 1px solid #EAECF0">
+<div style="display: flex; flex-direction: column; gap: 24px">
+<span style="align-self: flex-start; padding: 4px 12px; border-radius: 999px; background: #EEF2FF; border: 1px solid #C7D7FE; color: #3538CD; font-size: 13px; font-weight: 500">For UK sponsor licence holders</span>
+<h1 style="margin: 0; font-size: 54px; line-height: 1.08; font-weight: 600; letter-spacing: -0.035em">Keep your sponsor licence safe, without the paperwork.</h1>
+<p style="margin: 0; font-size: 19px; line-height: 1.55; color: #475467">Right-to-work checks, absence rules, Home Office reporting deadlines and every document a compliance officer asks for, in one simple place. Built for small employers.</p>
+<div style="display: flex; gap: 12px">
+<button type="button" onClick="{{startSignup}}" style="min-height: 48px; padding: 0 22px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; font-size: 16px; cursor: pointer">Start for £20 a month</button>
+<a href="#contact" style="display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 8px; border: 1px solid #D0D5DD; background: #FFFFFF; color: #344054; font-weight: 600; font-size: 16px">Book a free demo</a>
+</div>
+<div style="display: flex; gap: 24px; font-size: 14px; color: #475467"><span>✓ Up to 15 employees</span><span>✓ No setup fee</span><span>✓ Cancel any time</span></div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 16px; box-shadow: 0 20px 24px -4px rgba(16,24,40,0.08), 0 8px 8px -4px rgba(16,24,40,0.03); padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; justify-content: space-between; align-items: center"><span style="font-size: 15px; font-weight: 600">Dashboard</span><span style="font-size: 13px; color: #667085">Demo Retail Ltd</span></div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+<div style="border: 1px solid #EAECF0; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #667085">Reports due</span><span style="font-size: 26px; font-weight: 600; color: #B42318">1</span></div>
+<div style="border: 1px solid #EAECF0; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #667085">Visas expiring</span><span style="font-size: 26px; font-weight: 600; color: #B54708">1</span></div>
+<div style="border: 1px solid #EAECF0; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #667085">Documents</span><span style="font-size: 26px; font-weight: 600; color: #067647">96%</span></div>
+</div>
+<div style="display: flex; flex-direction: column; border: 1px solid #EAECF0; border-radius: 10px; overflow: hidden">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid #F2F4F7"><div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 600">Job title changed</span><span style="font-size: 12px; color: #667085">Rahul Mehta · report on the SMS</span></div><span style="padding: 2px 10px; border-radius: 999px; background: #FEF3F2; border: 1px solid #FECDCA; color: #B42318; font-size: 12px; font-weight: 500">Due today</span></div>
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid #F2F4F7"><div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 600">Follow-up right-to-work check</span><span style="font-size: 12px; color: #667085">Aisha Rahman · visa ends 10 Dec</span></div><span style="padding: 2px 10px; border-radius: 999px; background: #FFFAEB; border: 1px solid #FEDF89; color: #B54708; font-size: 12px; font-weight: 500">77 days</span></div>
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px"><div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 600">Annual leave, 12–16 Oct</span><span style="font-size: 12px; color: #667085">Kasia Nowak · from the employee app</span></div><span style="padding: 2px 10px; border-radius: 999px; background: #F9FAFB; border: 1px solid #EAECF0; color: #344054; font-size: 12px; font-weight: 500">No report needed</span></div>
+</div>
+</div>
+</section>
+
+<section id="features" style="padding: 96px 80px; display: flex; flex-direction: column; gap: 48px">
+<div style="display: flex; flex-direction: column; gap: 12px; max-width: 720px"><span style="font-size: 14px; font-weight: 600; color: #4F46E5">What it does</span><h2 style="margin: 0; font-size: 38px; font-weight: 600; letter-spacing: -0.03em">Everything your sponsor duties need. Nothing they don't.</h2></div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px">
+<sc-for list="{{features}}" as="f" hint-placeholder-count="6">
+<div style="border: 1px solid #EAECF0; border-radius: 14px; padding: 28px; display: flex; flex-direction: column; gap: 12px">
+<span aria-hidden="true" style="width: 44px; height: 44px; border-radius: 10px; background: #EEF2FF; display: inline-flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>
+<h3 style="margin: 0; font-size: 19px; font-weight: 600; letter-spacing: -0.01em">{{f.title}}</h3>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #475467">{{f.text}}</p>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section style="padding: 80px; background: #F9FAFB; border-top: 1px solid #EAECF0; border-bottom: 1px solid #EAECF0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 48px">
+<div style="display: flex; flex-direction: column; gap: 16px"><span style="font-size: 14px; font-weight: 600; color: #4F46E5">Who it's for</span><h2 style="margin: 0; font-size: 34px; font-weight: 600; letter-spacing: -0.03em">Small sponsors whose accountant runs payroll</h2>
+<p style="margin: 0; font-size: 17px; line-height: 1.6; color: #475467">Shops, restaurants, care providers and trades with a sponsor licence and a handful of staff. Your accountant keeps doing payroll. SponsorSafe keeps the Home Office side in order: you just upload the payslips they send you.</p></div>
+<div style="display: flex; flex-direction: column; gap: 14px; justify-content: center">
+<sc-for list="{{forList}}" as="x" hint-placeholder-count="4"><div style="display: flex; gap: 12px; align-items: flex-start; font-size: 16px; line-height: 1.5; color: #344054"><span aria-hidden="true" style="flex-shrink: 0; width: 24px; height: 24px; border-radius: 999px; background: #ECFDF3; color: #067647; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700">✓</span><span>{{x.t}}</span></div></sc-for>
+<div style="display: flex; gap: 12px; align-items: flex-start; font-size: 16px; line-height: 1.5; color: #344054"><span aria-hidden="true" style="flex-shrink: 0; width: 24px; height: 24px; border-radius: 999px; background: #F2F4F7; color: #667085; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700">–</span><span>Not a payroll or accounts package. Purely UKVI compliance.</span></div>
+</div>
+</section>
+
+<section id="pricing" style="padding: 96px 80px; display: flex; flex-direction: column; gap: 40px; align-items: center">
+<div style="display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center; max-width: 680px"><span style="font-size: 14px; font-weight: 600; color: #4F46E5">Pricing</span><h2 style="margin: 0; font-size: 38px; font-weight: 600; letter-spacing: -0.03em">One simple plan</h2><p style="margin: 0; font-size: 17px; color: #475467">No setup fee, no contract. Cancel whenever you like.</p></div>
+
+<sc-if value="{{showPlans}}" hint-placeholder-val="{{true}}">
+<div id="training" style="display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 24px; width: 1000px">
+<div style="border: 2px solid #4F46E5; border-radius: 16px; padding: 32px; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 12px 16px -4px rgba(16,24,40,0.08)">
+<div style="display: flex; justify-content: space-between; align-items: center"><span style="font-size: 18px; font-weight: 600">Sponsor plan</span><span style="padding: 2px 10px; border-radius: 999px; background: #EEF2FF; border: 1px solid #C7D7FE; color: #3538CD; font-size: 12px; font-weight: 500">Most small sponsors</span></div>
+<div style="display: flex; align-items: baseline; gap: 6px"><span style="font-size: 52px; font-weight: 600; letter-spacing: -0.03em">£{{plan.price}}</span><span style="font-size: 16px; color: #667085">per month · up to {{plan.limit}} employees</span></div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{planIncludes}}" as="x" hint-placeholder-count="6"><div style="display: flex; gap: 10px; font-size: 15px; color: #344054"><span aria-hidden="true" style="color: #4F46E5; font-weight: 700">✓</span><span>{{x.t}}</span></div></sc-for>
+</div>
+<button type="button" onClick="{{startSignup}}" style="min-height: 48px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; font-size: 16px; cursor: pointer">Start subscription</button>
+</div>
+<div style="border: 1px solid #EAECF0; border-radius: 16px; padding: 32px; display: flex; flex-direction: column; gap: 20px">
+<span style="font-size: 18px; font-weight: 600">1-to-1 training (optional)</span>
+<div style="display: flex; align-items: baseline; gap: 6px"><span style="font-size: 52px; font-weight: 600; letter-spacing: -0.03em">£{{plan.training}}</span><span style="font-size: 16px; color: #667085">per person</span></div>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #475467">A friendly one-to-one session online. We set up your business with you, add your first employees and show you exactly what to do each month. No technical knowledge needed.</p>
+<div style="flex-grow: 1"></div>
+<button type="button" onClick="{{askTraining}}" style="min-height: 48px; border-radius: 8px; border: 1px solid #D0D5DD; background: #FFFFFF; color: #344054; font-weight: 600; font-size: 16px; cursor: pointer">Ask about training</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{showSignup}}" hint-placeholder-val="{{false}}">
+<div style="width: 760px; box-sizing: border-box; border: 1px solid #EAECF0; border-radius: 16px; box-shadow: 0 12px 16px -4px rgba(16,24,40,0.08); padding: 32px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; justify-content: space-between; align-items: center"><h3 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.02em">Create your account</h3><span style="font-size: 15px; color: #667085">£{{plan.price}}/month · up to {{plan.limit}} employees</span></div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="su-biz">Business name</label><input id="su-biz" type="text" value="{{su.biz}}" onChange="{{suBiz}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="su-lic">Sponsor licence number</label><input id="su-lic" type="text" value="{{su.licence}}" onChange="{{suLic}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="su-name">Your name</label><input id="su-name" type="text" value="{{su.name}}" onChange="{{suName}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="su-email">Your email (this is your login)</label><input id="su-email" type="email" value="{{su.email}}" onChange="{{suEmail}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="su-phone">Phone</label><input id="su-phone" type="text" value="{{su.phone}}" onChange="{{suPhone}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="su-staff">Number of employees</label><select id="su-staff" value="{{su.staff}}" onChange="{{suStaff}}"><option value="1-5">1–5</option><option value="6-10">6–10</option><option value="11-15">11–15</option><option value="16+">More than 15</option></select></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px"><span style="font-size: 14px; font-weight: 500; color: #344054">Pay with</span>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<button type="button" onClick="{{payCard}}" aria-pressed="{{su.isCard}}" style="{{cardStyle}}">Card (Stripe)</button>
+<button type="button" onClick="{{payPaypal}}" aria-pressed="{{su.isPaypal}}" style="{{paypalStyle}}">PayPal</button>
+</div></div>
+<div style="display: flex; gap: 10px; align-items: center"><input id="su-agree" type="checkbox" checked="{{su.agree}}" onChange="{{suAgree}}"><label for="su-agree" style="font-weight: 400">I agree to the terms and privacy policy</label></div>
+<sc-if value="{{hasSuErr}}" hint-placeholder-val="{{false}}"><div style="padding: 10px 12px; border-radius: 8px; background: #FEF3F2; border: 1px solid #FECDCA; font-size: 14px; color: #B42318">{{su.err}}</div></sc-if>
+<div style="display: flex; gap: 12px"><button type="button" onClick="{{submitSignup}}" style="flex-grow: 1; min-height: 48px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; font-size: 16px; cursor: pointer">Continue to secure payment</button><button type="button" onClick="{{cancelSignup}}" style="min-height: 48px; padding: 0 20px; border-radius: 8px; border: 1px solid #D0D5DD; background: #FFFFFF; color: #344054; font-weight: 600; cursor: pointer">Back</button></div>
+<span style="font-size: 13px; color: #667085">You'll be taken to {{payName}} to pay £{{plan.price}}. Card details never touch our servers.</span>
+</div>
+</sc-if>
+
+<sc-if value="{{showDone}}" hint-placeholder-val="{{false}}">
+<div style="width: 760px; box-sizing: border-box; border: 1px solid #ABEFC6; background: #ECFDF3; border-radius: 16px; padding: 32px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start">
+<h3 style="margin: 0; font-size: 22px; font-weight: 600; color: #067647">You're all set, {{su.first}}</h3>
+<p style="margin: 0; font-size: 16px; line-height: 1.6; color: #344054">{{su.biz}} is now subscribed. We've emailed {{su.email}} a link to set your password. Then add your first employees in a few minutes.</p>
+<a href="Main.dc.html" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 8px; background: #4F46E5; color: #FFFFFF; font-weight: 600">Go to login</a>
+</div>
+</sc-if>
+</section>
+
+<section style="padding: 80px; background: #F9FAFB; border-top: 1px solid #EAECF0; border-bottom: 1px solid #EAECF0; display: flex; flex-direction: column; gap: 32px; align-items: center">
+<h2 style="margin: 0; font-size: 34px; font-weight: 600; letter-spacing: -0.03em">Questions</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; width: 1100px">
+<sc-for list="{{faqs}}" as="q" hint-placeholder-count="4"><div style="background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 8px"><h3 style="margin: 0; font-size: 17px; font-weight: 600">{{q.q}}</h3><p style="margin: 0; font-size: 15px; line-height: 1.6; color: #475467">{{q.a}}</p></div></sc-for>
+</div>
+</section>
+
+<section id="contact" style="padding: 96px 80px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 64px">
+<div style="display: flex; flex-direction: column; gap: 16px"><span style="font-size: 14px; font-weight: 600; color: #4F46E5">Contact</span><h2 style="margin: 0; font-size: 38px; font-weight: 600; letter-spacing: -0.03em">Talk to us</h2>
+<p style="margin: 0; font-size: 17px; line-height: 1.6; color: #475467">Questions, a free demo, or 1-to-1 training: send a message and we'll reply within one working day.</p>
+<div style="display: flex; flex-direction: column; gap: 8px; font-size: 16px; color: #344054; margin-top: 8px"><span>[support email]</span><span>[phone number]</span><span>Southampton, United Kingdom</span></div></div>
+<div style="border: 1px solid #EAECF0; border-radius: 16px; padding: 32px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 1px 3px rgba(16,24,40,0.08)">
+<sc-if value="{{contactOpen}}" hint-placeholder-val="{{true}}">
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="c-name">Name</label><input id="c-name" type="text" value="{{ct.name}}" onChange="{{cName}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="c-email">Email</label><input id="c-email" type="email" value="{{ct.email}}" onChange="{{cEmail}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="c-phone">Phone (optional)</label><input id="c-phone" type="text" value="{{ct.phone}}" onChange="{{cPhone}}"></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="c-topic">Topic</label><select id="c-topic" value="{{ct.topic}}" onChange="{{cTopic}}"><option value="General question">General question</option><option value="Book a free demo">Book a free demo</option><option value="1-to-1 training">1-to-1 training (£{{plan.training}} per person)</option><option value="Existing customer support">Existing customer support</option></select></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px"><label for="c-msg">Message</label><textarea id="c-msg" rows="5" value="{{ct.msg}}" onChange="{{cMsg}}"></textarea></div>
+<sc-if value="{{hasCtErr}}" hint-placeholder-val="{{false}}"><div style="padding: 10px 12px; border-radius: 8px; background: #FEF3F2; border: 1px solid #FECDCA; font-size: 14px; color: #B42318">{{ct.err}}</div></sc-if>
+<button type="button" onClick="{{sendContact}}" style="min-height: 48px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; font-size: 16px; cursor: pointer">Send message</button>
+</sc-if>
+<sc-if value="{{contactSent}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 8px"><h3 style="margin: 0; font-size: 20px; font-weight: 600; color: #067647">Thanks, {{ct.first}} – message sent</h3><p style="margin: 0; font-size: 15px; line-height: 1.6; color: #475467">We'll reply to {{ct.email}} within one working day.</p></div>
+</sc-if>
+</div>
+</section>
+
+
+<sc-if value="{{chatClosed}}" hint-placeholder-val="{{true}}">
+<button type="button" onClick="{{openChat}}" aria-label="Open chat" style="position: fixed; right: 24px; bottom: 24px; z-index: 50; display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 20px 0 16px; border-radius: 999px; border: none; background: #4F46E5; color: #FFFFFF; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 12px 16px -4px rgba(16,24,40,0.18)"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Ask a question</button>
+</sc-if>
+<sc-if value="{{chatOpen}}" hint-placeholder-val="{{false}}">
+<div role="dialog" aria-label="Chat with SponsorSafe assistant" style="position: fixed; right: 24px; bottom: 24px; z-index: 50; width: 390px; height: 580px; display: flex; flex-direction: column; background: #FFFFFF; border: 1px solid #EAECF0; border-radius: 16px; box-shadow: 0 24px 48px -12px rgba(16,24,40,0.25); overflow: hidden">
+<div style="flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #EAECF0">
+<div style="display: flex; align-items: center; gap: 10px"><span aria-hidden="true" style="width: 36px; height: 36px; border-radius: 999px; background: #4F46E5; display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF; font-size: 15px; font-weight: 700">S</span>
+<div style="display: flex; flex-direction: column; gap: 1px"><span style="font-size: 15px; font-weight: 600">SponsorSafe assistant</span><span style="font-size: 12px; color: #067647">● AI · replies in seconds</span></div></div>
+<button type="button" onClick="{{closeChat}}" aria-label="Close chat" style="width: 36px; height: 36px; border-radius: 8px; border: none; background: transparent; color: #667085; font-size: 20px; cursor: pointer">×</button>
+</div>
+<div style="flex-grow: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; background: #F9FAFB">
+<sc-for list="{{chatRows}}" as="m" hint-placeholder-count="2">
+<div style="{{m.wrap}}">
+<div style="{{m.style}}">{{m.text}}</div>
+<sc-if value="{{m.hasAction}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{m.act}}" style="align-self: flex-start; min-height: 36px; padding: 0 14px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-size: 14px; font-weight: 600; cursor: pointer">{{m.actionLabel}}</button></sc-if>
+</div>
+</sc-for>
+<sc-if value="{{typing}}" hint-placeholder-val="{{false}}"><div style="align-self: flex-start; padding: 10px 14px; border-radius: 14px; background: #FFFFFF; border: 1px solid #EAECF0; font-size: 14px; color: #667085">Typing…</div></sc-if>
+<sc-if value="{{showChips}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="4"><button type="button" onClick="{{c.ask}}" style="min-height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid #C7D7FE; background: #FFFFFF; color: #3538CD; font-size: 13px; font-weight: 500; cursor: pointer">{{c.q}}</button></sc-for>
+</div>
+</sc-if>
+</div>
+<div style="flex-shrink: 0; padding: 12px; border-top: 1px solid #EAECF0; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; gap: 8px"><label for="chat-in" style="position: absolute; left: -9999px">Your message</label><input id="chat-in" type="text" value="{{draft}}" onChange="{{setDraft}}" onKeyDown="{{chatKey}}" placeholder="{{chatPh}}"><button type="button" onClick="{{sendChat}}" style="min-height: 44px; padding: 0 16px; border-radius: 8px; border: none; background: #4F46E5; color: #FFFFFF; font-weight: 600; cursor: pointer">Send</button></div>
+<span style="font-size: 11px; color: #667085">AI assistant. General information only, not legal advice.</span>
+</div>
+</div>
+</sc-if>
+<footer style="flex-grow: 1; padding: 40px 80px; background: #101828; color: #D0D5DD; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; justify-content: space-between; align-items: center"><div style="display: flex; align-items: center; gap: 10px"><span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 8px; background: #4F46E5; display: inline-flex; align-items: center; justify-content: center; color: #FFFFFF; font-size: 14px; font-weight: 700">S</span><span style="font-size: 16px; font-weight: 600; color: #FFFFFF">SponsorSafe</span></div>
+<div style="display: flex; gap: 24px; font-size: 14px"><a href="#pricing" style="color: #D0D5DD">Pricing</a><a href="#contact" style="color: #D0D5DD">Contact</a><a href="Main.dc.html" style="color: #D0D5DD">Log in</a><span>Privacy</span><span>Terms</span></div></div>
+<p style="margin: 0; font-size: 13px; line-height: 1.6; color: #98A2B3">SponsorSafe helps you keep records and meet deadlines. It is not legal advice. Always check the current Home Office sponsor guidance. A service by Enovtec, Southampton.</p>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":4000}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      mode: 'plans',
+      su: { biz: '', licence: '', name: '', email: '', phone: '', staff: '1-5', pay: 'card', agree: false, err: '' },
+      ct: { name: '', email: '', phone: '', topic: 'General question', msg: '', err: '' }, ctSent: false,
+      chat: false, draft: '', typing: false, lead: null, leadName: '',
+      msgs: [{ from: 'bot', text: 'Hi! I can answer questions about SponsorSafe: what it does, pricing, training, or how it helps with your sponsor licence duties. What would you like to know?' }]
+    };
+  }
+  botReply(q, st) {
+    const t = q.toLowerCase();
+    if (st.lead === 'name') return { text: 'Thanks, ' + q.trim().split(' ')[0] + '. What is the best email address to reach you?', lead: 'email', leadName: q.trim() };
+    if (st.lead === 'email') {
+      if (q.indexOf('@') < 1) return { text: 'That does not look like an email address. Could you check it?', lead: 'email' };
+      return { text: 'Done. I have passed your details to the team, who will email ' + q.trim() + ' within one working day. Anything else I can help with?', lead: null, captured: true };
+    }
+    if (/(demo|human|person|call|speak|talk|contact|training|1-to-1|one to one)/.test(t)) return { text: (/training/.test(t) ? '1-to-1 training is £49 per person: an online session where we set up your business with you and add your first employees. ' : 'Happy to arrange that. ') + 'What is your name?', lead: 'name' };
+    if (/(can i sponsor|my cousin|my brother|my sister|my friend|my family|eligible|qualify|should i apply|my visa application)/.test(t)) return { text: 'I can only give general information, not advice on individual immigration cases. For that, please speak to a regulated immigration adviser or solicitor. I am happy to explain how SponsorSafe helps once someone is on your team.' };
+    if (/(accountant|payroll|payslip)/.test(t)) return { text: 'That is exactly who it is for. Your accountant keeps running payroll. You simply upload the payslips they send you, so you have evidence of pay if the Home Office visits. SponsorSafe does not do payroll or accounts.' };
+    if (/(price|cost|how much|£|pay by|paying|subscription|per month|a month)/.test(t)) return { text: 'It is £20 a month for up to 15 employees, with no setup fee and no contract. Optional 1-to-1 training is £49 per person. You can pay by card (Stripe) or PayPal.', action: 'signup' };
+    if (/(more than 15|over 15|16|20 staff|grow|bigger)/.test(t)) return { text: 'The plan covers up to 15 employees. If you have more, message us and we will set up a larger plan. Would you like me to pass your details to the team?' };
+    if (/(report|home office|sms|sponsor management)/.test(t)) return { text: 'SponsorSafe tells you what must be reported and by when (for example a job title change, 10 working days). You report it on the Sponsor Management System yourself, then tick it off here so you have a record.' };
+    if (/(secure|safe|data|gdpr|privacy|where.*stored)/.test(t)) return { text: 'Your data is stored in the UK and encrypted. Passport and visa documents are only visible to your admins, and every view is logged.' };
+    if (/(absence|leave|holiday|sick|unpaid)/.test(t)) return { text: 'You log leave and sickness (or staff request it from their phone). It automatically warns you when unpaid leave passes 4 weeks in a year, or unauthorised absence reaches 10 working days, as these must be reported for sponsored workers.' };
+    if (/(right to work|right-to-work|share code|visa|expiry)/.test(t)) return { text: 'You record each right-to-work check before the first day and store the result. For time-limited visas it reminds you before the follow-up check is due. For advice on a specific person\'s visa, please speak to an immigration adviser.' };
+    if (/(start|sign up|buy|subscribe|trial|get started)/.test(t)) return { text: 'Great! Sign-up takes about two minutes: your business details, then payment by card or PayPal.', action: 'signup' };
+    return { text: 'Good question. I can help with what SponsorSafe does, pricing, training, and how it supports your sponsor duties. For anything else I can pass you to the team. Would you like that?' };
+  }
+  renderVals() {
+    const st = this.state;
+    const plan = { price: '20', limit: '15', training: '49' };
+    const setG = (g, k) => e => { const v = e.target.type === 'checkbox' ? e.target.checked : e.target.value; this.setState(s => { const o = {}; o[g] = Object.assign({}, s[g], { err: '' }); o[g][k] = v; return o; }); };
+    const payBtn = on => 'min-height: 48px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 15px; ' + (on ? 'border: 2px solid #4F46E5; background: #EEF2FF; color: #3730A3' : 'border: 1px solid #D0D5DD; background: #FFFFFF; color: #344054');
+    const submitSignup = () => {
+      const s = this.state.su; const miss = [];
+      if (!s.biz.trim()) miss.push('business name'); if (!s.licence.trim()) miss.push('sponsor licence number'); if (!s.name.trim()) miss.push('your name'); if (!s.email.trim() || s.email.indexOf('@') < 1) miss.push('a valid email');
+      if (miss.length) { this.setState({ su: Object.assign({}, s, { err: 'Please add ' + miss.join(', ') + '.' }) }); return; }
+      if (s.staff === '16+') { this.setState({ su: Object.assign({}, s, { err: 'The plan covers up to 15 employees. Please contact us for a larger plan.' }) }); return; }
+      if (!s.agree) { this.setState({ su: Object.assign({}, s, { err: 'Please agree to the terms and privacy policy.' }) }); return; }
+      this.setState({ mode: 'done' });
+    };
+    const sendContact = () => {
+      const c = this.state.ct;
+      if (!c.name.trim() || !c.email.trim() || !c.msg.trim()) { this.setState({ ct: Object.assign({}, c, { err: 'Please add your name, email and a message.' }) }); return; }
+      this.setState({ ctSent: true });
+    };
+    const ask = q => {
+      const s0 = this.state; if (!q.trim() || s0.typing) return;
+      const r = this.botReply(q, s0);
+      this.setState(s => ({ msgs: s.msgs.concat([{ from: 'me', text: q.trim() }]), draft: '', typing: true }));
+      setTimeout(() => this.setState(s => ({ typing: false, lead: r.lead === undefined ? (s.lead === 'email' || s.lead === 'name' ? null : s.lead) : r.lead, leadName: r.leadName || s.leadName, msgs: s.msgs.concat([{ from: 'bot', text: r.text, action: r.action }]) })), 700);
+    };
+    const chatRows = st.msgs.map(m => ({ text: m.text,
+      wrap: 'display: flex; flex-direction: column; gap: 8px; ' + (m.from === 'me' ? 'align-items: flex-end' : 'align-items: flex-start'),
+      style: 'max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.5; ' + (m.from === 'me' ? 'background: #4F46E5; color: #FFFFFF; border-bottom-right-radius: 4px' : 'background: #FFFFFF; color: #101828; border: 1px solid #EAECF0; border-bottom-left-radius: 4px'),
+      hasAction: m.action === 'signup', actionLabel: 'Start subscription', act: () => this.setState({ mode: 'signup', chat: false }) }));
+    return {
+      chatOpen: st.chat, chatClosed: !st.chat, openChat: () => this.setState({ chat: true }), closeChat: () => this.setState({ chat: false }),
+      chatRows, typing: st.typing, showChips: st.msgs.length === 1,
+      chips: ['How much does it cost?', 'My accountant does payroll', 'Does it report to the Home Office?', 'Can I book a demo?'].map(q => ({ q, ask: () => ask(q) })),
+      draft: st.draft, setDraft: e => { const v = e.target.value; this.setState({ draft: v }); },
+      chatKey: e => { if (e.key === 'Enter') { e.preventDefault(); ask(this.state.draft); } }, sendChat: () => ask(this.state.draft),
+      chatPh: st.lead === 'name' ? 'Your name' : st.lead === 'email' ? 'Your email' : 'Type your question…',
+      plan,
+      features: [
+        { title: 'Right-to-work checks', text: 'Record every check before day one, store the result, and get reminded before each follow-up check is due.' },
+        { title: 'Absence rules built in', text: 'Log leave and sickness. We flag unpaid leave over 4 weeks and 10 days of unauthorised absence automatically.' },
+        { title: 'Home Office deadlines', text: 'Job, salary, hours, site and leaver changes create a reporting task with its 10 or 20 working-day deadline.' },
+        { title: 'Document vault', text: 'Passports, CoS, contracts, payslips from your accountant and recruitment evidence, encrypted and organised.' },
+        { title: 'Employee app', text: 'Staff upload documents, request leave, report sickness and update their address from their phone.' },
+        { title: 'Audit-ready in one click', text: 'Download a compliance pack per employee for a Home Office visit, with a checklist of anything missing.' }
+      ],
+      forList: [
+        { t: 'Up to 15 employees, sponsored or not' },
+        { t: 'Payroll and accounts handled by your accountant' },
+        { t: 'No HR department and no technical knowledge needed' },
+        { t: 'Works on phone, tablet and computer' }
+      ],
+      planIncludes: [
+        { t: 'Up to ' + plan.limit + ' employees' },
+        { t: 'Right-to-work checks and expiry reminders' },
+        { t: 'Absence tracking with Home Office rules' },
+        { t: 'Reporting tasks and deadlines' },
+        { t: 'Employee app for your staff' },
+        { t: 'Email support' }
+      ],
+      faqs: [
+        { q: 'Does it report to the Home Office for me?', a: 'No. It tells you exactly what to report and by when; you report on the Sponsor Management System and tick it off here.' },
+        { q: 'Do I need payroll software?', a: 'No. Your accountant keeps running payroll. You upload the payslips they send you as evidence of pay.' },
+        { q: 'Is our data safe?', a: 'Data is stored in the UK, encrypted, and only your admins can see documents. Every view is logged.' },
+        { q: 'What if we grow past 15 employees?', a: 'Contact us and we will move you to a larger plan.' }
+      ],
+      showPlans: st.mode === 'plans', showSignup: st.mode === 'signup', showDone: st.mode === 'done',
+      startSignup: () => this.setState({ mode: 'signup' }), cancelSignup: () => this.setState({ mode: 'plans' }),
+      askTraining: () => this.setState(s => ({ ct: Object.assign({}, s.ct, { topic: '1-to-1 training' }) })),
+      su: Object.assign({}, st.su, { isCard: st.su.pay === 'card', isPaypal: st.su.pay === 'paypal', first: st.su.name.trim().split(' ')[0] || 'there' }),
+      suBiz: setG('su', 'biz'), suLic: setG('su', 'licence'), suName: setG('su', 'name'), suEmail: setG('su', 'email'), suPhone: setG('su', 'phone'), suStaff: setG('su', 'staff'), suAgree: setG('su', 'agree'),
+      payCard: () => this.setState(s => ({ su: Object.assign({}, s.su, { pay: 'card' }) })), payPaypal: () => this.setState(s => ({ su: Object.assign({}, s.su, { pay: 'paypal' }) })),
+      cardStyle: payBtn(st.su.pay === 'card'), paypalStyle: payBtn(st.su.pay === 'paypal'), payName: st.su.pay === 'card' ? 'Stripe' : 'PayPal',
+      hasSuErr: !!st.su.err, submitSignup,
+      ct: Object.assign({}, st.ct, { first: st.ct.name.trim().split(' ')[0] || 'there' }),
+      cName: setG('ct', 'name'), cEmail: setG('ct', 'email'), cPhone: setG('ct', 'phone'), cTopic: setG('ct', 'topic'), cMsg: setG('ct', 'msg'),
+      hasCtErr: !!st.ct.err, sendContact, contactOpen: !st.ctSent, contactSent: st.ctSent
+    };
+  }
+}
+</script>
+</body>
+</html>
