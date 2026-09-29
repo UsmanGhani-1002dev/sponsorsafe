@@ -2,16 +2,22 @@
 
 namespace Database\Seeders;
 
+use App\Enums\AbsenceType;
 use App\Enums\DocumentCategory;
 use App\Enums\RightToWorkBasis as B;
 use App\Models\Business;
+use App\Models\Document;
 use App\Models\DocumentRequest;
 use App\Models\Employee;
 use App\Models\EmployeeChange;
 use App\Models\KeyPerson;
 use App\Models\SuperAdmin;
 use App\Models\User;
+use App\Services\AbsenceRecorder;
+use App\Services\DocumentVault;
 use Illuminate\Database\Seeder;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Demo data matching the agreed prototype. Every demo password is "password". Never run in production.
@@ -48,7 +54,7 @@ class DemoSeeder extends Seeder
             'cos_number' => 'C7M2P58820D', 'cos_assigned_on' => '2024-04-10', 'soc_code' => '7132', 'salary' => 42500, 'start_date' => '2024-06-03', 'contracted_hours' => 40,
             'address' => '8 Winchester Road, Southampton SO16 6TE', 'phone' => '07700 900102', 'ni_number' => 'QQ209871B', 'passport_number' => 'U71936244',
         ]);
-        $this->employee($retail, 'Second shop', 'James Carter', 'Stock Assistant', B::BritishIrish, [
+        $james = $this->employee($retail, 'Second shop', 'James Carter', 'Stock Assistant', B::BritishIrish, [
             'date_of_birth' => '1999-06-21', 'passport_expiry' => '2030-01-09', 'rtw_check_method' => self::MANUAL, 'rtw_check_date' => '2023-02-06',
             'salary' => 19800, 'start_date' => '2023-02-13', 'days_per_week' => 4, 'contracted_hours' => 30,
             'address' => '19 Bitterne Road West, Southampton SO18 1AR', 'phone' => '07700 900103', 'ni_number' => 'QQ553190C', 'passport_number' => '539210877',
@@ -58,7 +64,7 @@ class DemoSeeder extends Seeder
             'visa_start' => '2022-02-14', 'visa_expiry' => '2027-02-14', 'salary' => 23900, 'start_date' => '2025-03-10',
             'address' => '5 Lodge Road, Southampton SO14 6RG', 'phone' => '07700 900104', 'ni_number' => 'QQ661024D', 'passport_number' => 'EP7730412',
         ]);
-        $this->employee($retail, 'Main shop', 'Daniel Okafor', 'Part-time Sales Assistant', B::OtherVisa, [
+        $daniel = $this->employee($retail, 'Main shop', 'Daniel Okafor', 'Part-time Sales Assistant', B::OtherVisa, [
             'nationality' => 'Nigerian', 'date_of_birth' => '2000-01-28', 'passport_expiry' => '2030-10-11', 'rtw_check_method' => self::SHARE, 'rtw_check_date' => '2025-08-20',
             'visa_type' => 'Graduate', 'visa_start' => '2025-07-01', 'visa_expiry' => '2027-06-30', 'work_restrictions' => 'None on Graduate route',
             'salary' => 13400, 'start_date' => '2025-09-01', 'days_per_week' => 3, 'contracted_hours' => 20, 'contract_type' => 'Part-time permanent',
@@ -72,7 +78,7 @@ class DemoSeeder extends Seeder
             'cos_number' => 'C1B8T40672Q', 'cos_assigned_on' => '2024-08-01', 'soc_code' => '5434', 'salary' => 41800, 'start_date' => '2024-09-23', 'contracted_hours' => 40,
             'address' => '63 Millbrook Road East, Southampton SO15 1HN', 'phone' => '07700 900106', 'ni_number' => 'QQ824406B', 'passport_number' => 'EH0417726',
         ]);
-        $this->employee($catering, 'Central kitchen', 'Tom Richards', 'Kitchen Porter', B::BritishIrish, [
+        $tom = $this->employee($catering, 'Central kitchen', 'Tom Richards', 'Kitchen Porter', B::BritishIrish, [
             'date_of_birth' => '2002-12-05', 'passport_expiry' => '2033-03-18', 'rtw_check_method' => self::IDVT, 'rtw_check_date' => '2025-01-06',
             'salary' => 22100, 'start_date' => '2025-01-13',
             'address' => '2 Regents Park Road, Southampton SO15 8NY', 'phone' => '07700 900107', 'ni_number' => 'QQ390157C', 'passport_number' => '561038294',
@@ -96,7 +102,100 @@ class DemoSeeder extends Seeder
             ['business_id' => $retail->id, 'status' => DocumentRequest::STATUS_AWAITING, 'requested_by' => $retailAdmin->id],
         )->forceFill(['created_at' => '2026-09-15 10:00:00'])->save();
 
+        // Documents on file (prototype): [employee, category, file name, uploaded, expiry].
+        // Remove only this database's own demo files (never whole folders: another database,
+        // e.g. the test one, can use the same business IDs on the same disk).
+        Document::whereIn('business_id', [$retail->id, $catering->id])->each(function (Document $d) {
+            Storage::disk('local')->delete($d->path);
+            $d->delete();
+        });
+        $files = [
+            [$aisha, 'rtw', 'rtw-share-code-check.pdf', '2025-10-28'], [$aisha, 'passport', 'passport-scan.pdf', '2025-10-28', '2031-05-20'],
+            [$aisha, 'cos', 'certificate-of-sponsorship.pdf', '2025-09-15'], [$aisha, 'contract', 'employment-contract-signed.pdf', '2025-11-03'],
+            [$aisha, 'jd', 'job-description.pdf', '2025-11-03'], [$aisha, 'payroll', 'payslips-2026.pdf', '2026-09-01'],
+            [$rahul, 'rtw', 'rtw-share-code-check.pdf', '2024-05-28'], [$rahul, 'passport', 'passport-scan.pdf', '2024-05-28', '2029-08-14'],
+            [$rahul, 'cos', 'certificate-of-sponsorship.pdf', '2024-04-10'], [$rahul, 'contract', 'employment-contract-signed.pdf', '2024-06-03'],
+            [$rahul, 'jd', 'job-description-store-supervisor.pdf', '2026-09-10'], [$rahul, 'recruit', 'job-advert-and-interview-notes.pdf', '2024-04-02'],
+            [$rahul, 'payroll', 'payslips-2026.pdf', '2026-09-01'],
+            [$james, 'rtw', 'passport-check-copy-signed-dated.pdf', '2023-02-06'], [$james, 'passport', 'passport-scan.pdf', '2023-02-06', '2030-01-09'],
+            [$james, 'contract', 'employment-contract-signed.pdf', '2023-02-13'], [$james, 'jd', 'job-description.pdf', '2023-02-13'], [$james, 'payroll', 'payslips-2026.pdf', '2026-09-01'],
+            [$kasia, 'rtw', 'rtw-share-code-check.pdf', '2025-03-03'], [$kasia, 'contract', 'employment-contract-signed.pdf', '2025-03-10'],
+            [$kasia, 'jd', 'job-description.pdf', '2025-03-10'], [$kasia, 'payroll', 'payslips-2026.pdf', '2026-09-01'],
+            [$daniel, 'rtw', 'rtw-share-code-check.pdf', '2025-08-20'], [$daniel, 'passport', 'passport-scan.pdf', '2025-08-20', '2030-10-11'],
+            [$daniel, 'contract', 'employment-contract-signed.pdf', '2025-09-01'], [$daniel, 'jd', 'job-description.pdf', '2025-09-01'], [$daniel, 'payroll', 'payslips-2026.pdf', '2026-09-01'],
+            [$fatima, 'rtw', 'rtw-share-code-check.pdf', '2024-09-16'], [$fatima, 'passport', 'passport-scan.pdf', '2024-09-16', '2028-12-01'],
+            [$fatima, 'cos', 'certificate-of-sponsorship.pdf', '2024-08-01'], [$fatima, 'contract', 'employment-contract-signed.pdf', '2024-09-23'],
+            [$fatima, 'jd', 'job-description-chef.pdf', '2024-09-23'], [$fatima, 'recruit', 'job-advert-and-interview-notes.pdf', '2024-07-15'],
+            [$fatima, 'payroll', 'payslips-2026.pdf', '2026-09-01'],
+            [$tom, 'rtw', 'idvt-check-report.pdf', '2025-01-06'], [$tom, 'passport', 'passport-scan.pdf', '2025-01-06', '2033-03-18'],
+            [$tom, 'contract', 'employment-contract-signed.pdf', '2025-01-13'], [$tom, 'jd', 'job-description.pdf', '2025-01-13'], [$tom, 'payroll', 'payslips-2026.pdf', '2026-09-01'],
+        ];
+        foreach ($files as $f) {
+            $this->document($f[0], $f[1], $f[2], $f[3], $f[4] ?? null);
+        }
+
+        // Absences (prototype). Rahul's reported 10-day unauthorised absence arrives with Home Office tasks in Stage 4.
+        $absences = [
+            [$aisha, AbsenceType::Unpaid, '2026-03-02', '2026-03-09', 'Family matter'],
+            [$aisha, AbsenceType::Annual, '2026-08-10', '2026-08-14', 'Holiday'],
+            [$rahul, AbsenceType::SickSelf, '2026-09-14', '2026-09-15', 'Unwell'],
+            [$james, AbsenceType::Annual, '2026-07-20', '2026-07-24', 'Holiday'],
+            [$kasia, AbsenceType::Annual, '2026-04-07', '2026-04-10', 'Easter break'],
+            [$kasia, AbsenceType::SickFitNote, '2026-05-11', '2026-05-22', 'Fit note received', 'fit-note-may-2026.pdf'],
+            [$daniel, AbsenceType::Annual, '2026-09-07', '2026-09-08', 'Graduation'],
+            [$fatima, AbsenceType::Unpaid, '2026-02-02', '2026-02-13', 'Family visit abroad'],
+            [$fatima, AbsenceType::Annual, '2026-07-06', '2026-07-10', 'Holiday'],
+            [$tom, AbsenceType::Annual, '2026-08-17', '2026-08-21', 'Holiday'],
+        ];
+        $recorder = app(AbsenceRecorder::class);
+        foreach ($absences as $a) {
+            [$employee, $type, $start, $end, $reason] = $a;
+            $employee->absences()->delete();
+        }
+        foreach ($absences as $a) {
+            [$employee, $type, $start, $end, $reason] = $a;
+            $admin = $employee->business->admins()->first();
+            $fitNote = isset($a[5]) ? $this->upload($a[5], 'Fit note') : null;
+            $absence = $recorder->record($employee, $type, $start, $end, $reason, $fitNote, $admin);
+            $absence->fitNote?->forceFill(['created_at' => $end.' 16:00:00', 'updated_at' => $end.' 16:00:00'])->save();
+        }
+
         SuperAdmin::updateOrCreate(['email' => 'owner@sponsorsafe.example'], ['name' => 'Platform owner', 'password' => 'password']);
+    }
+
+    private function document(Employee $e, string $category, string $name, string $uploaded, ?string $expires): void
+    {
+        $admin = $e->business->admins()->first();
+        $doc = app(DocumentVault::class)->store($e, $this->upload($name, DocumentCategory::from($category)->label()), DocumentCategory::from($category), $expires, $admin);
+        $doc->forceFill(['created_at' => $uploaded.' 10:00:00', 'updated_at' => $uploaded.' 10:00:00'])->save();
+    }
+
+    /** A small real PDF, so demo documents open in the browser. */
+    private function upload(string $name, string $title): UploadedFile
+    {
+        $text = fn (string $s) => str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $s);
+        $stream = 'BT /F1 18 Tf 72 720 Td ('.$text($title).") Tj ET\nBT /F1 11 Tf 72 696 Td (".$text($name.' - demo document, SponsorSafe sample data').') Tj ET';
+        $objects = [
+            '<< /Type /Catalog /Pages 2 0 R >>',
+            '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+            '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+            '<< /Length '.strlen($stream)." >>\nstream\n{$stream}\nendstream",
+            '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+        ];
+        $pdf = "%PDF-1.4\n";
+        $offsets = [];
+        foreach ($objects as $i => $o) {
+            $offsets[] = strlen($pdf);
+            $pdf .= ($i + 1)." 0 obj\n{$o}\nendobj\n";
+        }
+        $xref = strlen($pdf);
+        $pdf .= "xref\n0 ".(count($objects) + 1)."\n0000000000 65535 f \n".implode('', array_map(fn ($o) => sprintf("%010d 00000 n \n", $o), $offsets));
+        $pdf .= 'trailer << /Size '.(count($objects) + 1)." /Root 1 0 R >>\nstartxref\n{$xref}\n%%EOF";
+
+        $path = tempnam(sys_get_temp_dir(), 'demo');
+        file_put_contents($path, $pdf);
+
+        return new UploadedFile($path, $name, 'application/pdf', null, true);
     }
 
     private function business(string $name, string $status, string $label, string $provider, ?string $next, string $adminName, string $adminEmail, array $sites, array $people): Business

@@ -12,7 +12,7 @@ import type { ReactNode } from 'react';
 const nav = [
     { label: 'Dashboard', href: '/app', icon: LayoutDashboard, ready: true },
     { label: 'Employees', href: '/app/employees', icon: Users, ready: true },
-    { label: 'Absence', href: '/app/absence', icon: ClipboardCheck, ready: false },
+    { label: 'Absence', href: '/app/absence', icon: ClipboardCheck, ready: true },
     { label: 'Home Office reports', href: '/app/reports', icon: FileWarning, ready: false },
     { label: 'Requests', href: '/app/requests', icon: Inbox, ready: false },
     { label: 'Settings', href: '/app/settings', icon: Settings, ready: true },

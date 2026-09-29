@@ -17,12 +17,23 @@ return [
     // Compliance rule defaults, copied into each business's settings on creation.
     'rules' => [
         'unpaid_limit_weeks' => 4,
+        'unpaid_leave_year' => 'calendar',      // calendar (resets 1 January) | rolling (12 months)
         'unauthorised_trigger_days' => 10,
         'worker_report_deadline_days' => 10,
         'company_report_deadline_days' => 20,
+        // Leave on reduced pay that is not a reportable salary change (compliance-rules §3).
+        'exempt_absence_types' => ['sick_self', 'sick_fit', 'family', 'jury'],
+        'self_cert_max_days' => 7,               // calendar days; longer sickness needs a fit note
         'expiry_alert_days' => [90, 60, 30],
         'payslip_freshness_days' => 35,
         'retention_years' => 1,
         'rtw_retention_years' => 2,
+        'annual_leave_weeks' => 5.6,             // pro rata to working days per week
+    ],
+
+    // Private document uploads.
+    'documents' => [
+        'max_kb' => 10240,
+        'mimes' => ['pdf', 'jpg', 'jpeg', 'png'],
     ],
 ];

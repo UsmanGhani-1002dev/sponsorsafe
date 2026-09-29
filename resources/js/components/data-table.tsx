@@ -19,6 +19,16 @@ export interface TableState {
     sort: string;
     dir: 'asc' | 'desc';
     filters: Record<string, string | null>;
+    from?: string | null;
+    to?: string | null;
+}
+
+/** The current table state as a query string, e.g. for export links that follow the same filters. */
+export function tableQuery(state: TableState): string {
+    const params = new URLSearchParams();
+    const all: Record<string, string | null | undefined> = { q: state.q, sort: state.sort, dir: state.dir, from: state.from, to: state.to, ...state.filters };
+    for (const [k, v] of Object.entries(all)) if (v) params.set(k, v);
+    return params.toString();
 }
 
 export interface Column<T> {
@@ -50,6 +60,8 @@ export function DataTable<T extends { id: number | string }>({
     columns,
     filters = [],
     searchLabel = 'Search',
+    dateRange = false,
+    toolbar,
     empty,
 }: {
     url: string;
@@ -59,6 +71,10 @@ export function DataTable<T extends { id: number | string }>({
     columns: Column<T>[];
     filters?: Filter[];
     searchLabel?: string;
+    /** Show "From" and "To" date filters (the server receives ?from=&to=). */
+    dateRange?: boolean;
+    /** Extra buttons on the right of the toolbar, e.g. exports. */
+    toolbar?: ReactNode;
     empty: ReactNode;
 }) {
     const [q, setQ] = useState(state.q);
@@ -66,8 +82,8 @@ export function DataTable<T extends { id: number | string }>({
 
     const visit = (changes: Record<string, string | number | null>) => {
         const params: Record<string, string | number> = {};
-        const merged: Record<string, string | number | null> = { q: state.q, sort: state.sort, dir: state.dir, ...state.filters, ...changes };
-        for (const [k, v] of Object.entries(merged)) if (v !== null && v !== '') params[k] = v;
+        const merged: Record<string, string | number | null | undefined> = { q: state.q, sort: state.sort, dir: state.dir, from: state.from, to: state.to, ...state.filters, ...changes };
+        for (const [k, v] of Object.entries(merged)) if (v !== null && v !== undefined && v !== '') params[k] = v;
         router.get(url, params, { only, preserveState: true, preserveScroll: true, replace: true });
     };
 
@@ -111,6 +127,19 @@ export function DataTable<T extends { id: number | string }>({
                         </Select>
                     </label>
                 ))}
+                {dateRange &&
+                    (['from', 'to'] as const).map((k) => (
+                        <label key={k} className="flex flex-col gap-1 text-[13px] font-medium text-ink-2">
+                            {k === 'from' ? 'From' : 'To'}
+                            <input
+                                type="date"
+                                value={state[k] ?? ''}
+                                onChange={(e) => visit({ [k]: e.target.value || null, page: null })}
+                                className="min-h-11 rounded-lg border border-line-strong bg-surface px-3 text-[15px] text-ink outline-none focus:border-indigo-300 focus:ring-4 focus:ring-accent-ring"
+                            />
+                        </label>
+                    ))}
+                {toolbar && <div className="ml-auto flex flex-wrap items-center gap-2">{toolbar}</div>}
             </div>
 
             {page.data.length === 0 ? (

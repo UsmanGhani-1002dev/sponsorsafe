@@ -13,8 +13,9 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
 ## Status
 
 - **Stage 1 (foundation): done and tested** — built in a Claude chat.
-- **Stage 2 (employees): done and tested** — 98 PHPUnit tests passing. Waiting for Shaf's review.
-- **Next: Stage 3 (documents + absence).** See "Build order" below.
+- **Stage 2 (employees): done and tested.**
+- **Stage 3 (documents + absence): done and tested** — 143 PHPUnit tests passing. Waiting for Shaf's review.
+- **Next: Stage 4 (Home Office reports).** See "Build order" below.
 - Local setup on this laptop is done (git repo, MySQL databases, PHP 8.4).
 
 ## Local setup (Windows)
@@ -138,7 +139,34 @@ Demo logins (password `password`, local only):
   not `bg-white`, and `bg-accent-fill` for solid indigo with white text.
   Pages are lazily loaded (one chunk each).
 - Not built yet (later stages): toasts (flash messages are banners), Ctrl+K palette,
-  dashboard count caching, rule settings (§9) in Settings.
+  dashboard count caching.
+
+## What Stage 3 built (follow these conventions)
+
+- Tables: `documents` (private, encrypted files), `absences` (with the stored Home Office
+  check: `check_status`, `report_trigger_on`, `report_deadline`, `report_event`);
+  `document_requests.document_id` + statuses awaiting/received/cancelled.
+- `App\Services\AbsenceRules` is compliance-rules §3 (pure, unit-tested): unpaid limit per
+  leave year (`unpaid_leave_year` calendar|rolling), unauthorised streak joined across
+  records, deadlines, warnings (self-cert > 7 calendar days, reduced pay on non-exempt
+  types), overlaps. Returns an `AbsenceCheck`. Reporting applies to sponsored workers only.
+- **Every absence is written through `AbsenceRecorder`** (re-runs the check at save time);
+  Stage 4 creates the report task there from the stored trigger/deadline/event.
+  The live check on "Record absence" is `GET /app/absence/check` (same PHP rules, JSON).
+- **Every file goes through `DocumentVault`**: stored at `documents/{business}/{employee}/`
+  on the `local` disk, contents encrypted with `Crypt`. Served only by
+  `DocumentController` (view/download), each audited. Uploads: PDF/JPG/PNG, 10 MB
+  (`config/sponsorsafe.php` → `documents`).
+- Rule settings (§9) are editable in Settings → Compliance rules and stored in
+  `businesses.settings`; always read them with `Business::rule()`.
+- Absence export: CSV (formula-injection safe) and PDF via barryvdh/laravel-dompdf
+  (`resources/views/pdf/absences.blade.php`). Exports are audited.
+- `DataTable` supports `dateRange` and a `toolbar` slot; `tableQuery(state)` builds export
+  links with the same filters. `Table::from(..., dir: 'desc')` sets the default order.
+- Decisions: calendar leave year by default; self-cert sickness counted in calendar days;
+  fit notes optional at save and flagged "Fit note missing"; no second trigger once a
+  limit or streak has already been passed (a warning instead).
+- Demo: Rahul's reported 10-day unauthorised absence is added in Stage 4 with its task.
 
 ## UI and performance rules ("modern and very fast")
 
@@ -180,7 +208,7 @@ Demo logins (password `password`, local only):
    Employees list; profile with Details tab; change history; encrypted fields;
    15-employee limit; employee gets a portal login (invite email via log mailer
    locally; set-password link). Sidebar: switch on Employees and Settings.
-3. Documents + absence: document categories (§2), private uploads with expiry
+3. ~~Documents + absence~~ — done: document categories (§2), private uploads with expiry
    dates, "Request from employee"; absence types (§3), absence log,
    `AbsenceRules` service (unpaid limit, unauthorised streak) with tests,
    record-absence screen with the live Home Office check.

@@ -8,6 +8,9 @@ import { Field, Input, Select } from '@/components/ui/field';
 import { PageHeader } from '@/components/ui/page-header';
 import { Tabs } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
+import { AbsenceTab } from '@/components/employee/absence-tab';
+import { DocumentsTab, type DocumentCategoryRow } from '@/components/employee/documents-tab';
+import type { AbsenceRow } from '@/components/absence';
 import { router, useForm } from '@inertiajs/react';
 import { History, Mail, Pencil } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
@@ -27,7 +30,16 @@ interface Props {
         portal: 'none' | 'invited' | 'active';
         email: string;
         left: boolean;
+        documents: { have: number; need: number };
     };
+    documents: DocumentCategoryRow[];
+    absence: {
+        year: string;
+        unpaid: { used: number; limit: string };
+        annual: { allowance: string; taken: number; left: string };
+        rows: AbsenceRow[];
+    };
+    upload: { maxMb: number; categories: { value: string; label: string }[] };
     sections: { title: string; fields: { label: string; value: string; badge: BadgeData }[] }[];
     history: { id: number; date: string; label: string; from: string | null; to: string | null; by: string; reportable: boolean }[];
     waitingFor: { label: string; since: string }[];
@@ -48,7 +60,10 @@ const portalBadge: Record<Props['employee']['portal'], { text: string; tone: Ton
 
 export default function ShowEmployee(props: Props) {
     const { employee } = props;
-    const [tab, setTab] = useState(() => (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'history' ? 'history' : 'details'));
+    const [tab, setTab] = useState(() => {
+        const wanted = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : null;
+        return wanted && ['docs', 'absence', 'history'].includes(wanted) ? wanted : 'details';
+    });
     const [confirmInvite, setConfirmInvite] = useState(false);
     const [sending, setSending] = useState(false);
 
@@ -77,6 +92,9 @@ export default function ShowEmployee(props: Props) {
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
                         <Badge tone={employee.sponsored ? 'blue' : 'grey'}>{employee.status}</Badge>
+                        <Badge tone={employee.documents.have === employee.documents.need ? 'green' : 'amber'}>
+                            Documents {employee.documents.have} of {employee.documents.need}
+                        </Badge>
                         <Badge tone={employee.expiry.tone}>Expiry: {employee.expiry.text}</Badge>
                         <Badge tone={portalBadge[employee.portal].tone}>{portalBadge[employee.portal].text}</Badge>
                     </div>
@@ -99,15 +117,18 @@ export default function ShowEmployee(props: Props) {
                 tabs={[
                     { id: 'details', label: 'Details' },
                     { id: 'check', label: 'Compliance check', soon: true },
-                    { id: 'docs', label: 'Documents', soon: true },
-                    { id: 'absence', label: 'Absence', soon: true },
+                    { id: 'docs', label: 'Documents' },
+                    { id: 'absence', label: 'Absence' },
                     { id: 'reports', label: 'Home Office', soon: true },
                     { id: 'history', label: 'History' },
                 ]}
             />
 
             <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
-                {tab === 'details' ? <Details {...props} /> : <HistoryTab {...props} />}
+                {tab === 'details' && <Details {...props} />}
+                {tab === 'docs' && <DocumentsTab employeeId={employee.id} employeeName={employee.name} hasPortal={employee.portal !== 'none'} categories={props.documents} upload={props.upload} />}
+                {tab === 'absence' && <AbsenceTab employeeId={employee.id} left={employee.left} absence={props.absence} />}
+                {tab === 'history' && <HistoryTab {...props} />}
             </div>
         </AppLayout>
     );

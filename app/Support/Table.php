@@ -19,11 +19,11 @@ class Table
     private array $allowedFilters = [];
 
     /** @param array<string, string> $sorts public sort key => column */
-    private function __construct(private Request $request, private array $sorts, private string $default) {}
+    private function __construct(private Request $request, private array $sorts, private string $default, private string $defaultDir) {}
 
-    public static function from(Request $request, array $sorts, string $default): self
+    public static function from(Request $request, array $sorts, string $default, string $dir = 'asc'): self
     {
-        return new self($request, $sorts, $default);
+        return new self($request, $sorts, $default, $dir);
     }
 
     /** @param array<string, list<string>> $allowed filter name => allowed values */
@@ -41,6 +41,14 @@ class Table
         return is_string($value) && in_array($value, $this->allowedFilters[$name] ?? [], true) ? $value : $default;
     }
 
+    /** A valid Y-m-d date from the query string, or null. */
+    public function date(string $name): ?string
+    {
+        $value = $this->request->query($name);
+
+        return is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) && strtotime($value) ? $value : null;
+    }
+
     public function search(Builder|Relation $query, array $columns): void
     {
         $term = $this->term();
@@ -51,9 +59,15 @@ class Table
         $query->where(fn ($q) => collect($columns)->each(fn ($c) => $q->orWhere($c, 'like', $like)));
     }
 
+    /** Apply the current sort (with a stable tie-break) without paginating, e.g. for exports. */
+    public function sorted(Builder|Relation $query): Builder|Relation
+    {
+        return $query->orderBy($this->sorts[$this->sortKey()], $this->direction())->orderBy($query->getModel()->qualifyColumn('id'));
+    }
+
     public function paginate(Builder|Relation $query, Closure $map): array
     {
-        $query->orderBy($this->sorts[$this->sortKey()], $this->direction())->orderBy('id');
+        $this->sorted($query);
         $page = $query->paginate(self::PER_PAGE)->withQueryString();
 
         return [
@@ -74,6 +88,8 @@ class Table
             'sort' => $this->sortKey(),
             'dir' => $this->direction(),
             'filters' => collect($this->allowedFilters)->keys()->mapWithKeys(fn ($f) => [$f => $this->filter($f)])->all(),
+            'from' => $this->date('from'),
+            'to' => $this->date('to'),
         ];
     }
 
@@ -91,6 +107,8 @@ class Table
 
     private function direction(): string
     {
-        return $this->request->query('dir') === 'desc' ? 'desc' : 'asc';
+        $dir = $this->request->query('dir');
+
+        return in_array($dir, ['asc', 'desc'], true) ? $dir : $this->defaultDir;
     }
 }

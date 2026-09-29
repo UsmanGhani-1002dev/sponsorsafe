@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DocumentCategory;
 use App\Enums\RightToWorkBasis;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -109,6 +110,31 @@ class Employee extends Model
     public function documentRequests(): HasMany
     {
         return $this->hasMany(DocumentRequest::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class);
+    }
+
+    public function absences(): HasMany
+    {
+        return $this->hasMany(Absence::class);
+    }
+
+    /** Required document categories for this person (§2): sponsored workers also need CoS and recruitment evidence. */
+    public function requiredDocuments(): array
+    {
+        return DocumentCategory::requiredFor($this->isSponsored());
+    }
+
+    /** "x of y" required categories on file. Needs the documents relation loaded. */
+    public function documentsOnFile(): array
+    {
+        $have = $this->documents->pluck('category')->map(fn ($c) => $c->value)->unique()->all();
+        $required = $this->requiredDocuments();
+
+        return ['have' => count(array_filter($required, fn ($c) => in_array($c->value, $have, true))), 'need' => count($required)];
     }
 
     /** Still employed (counts towards the plan's employee limit). */

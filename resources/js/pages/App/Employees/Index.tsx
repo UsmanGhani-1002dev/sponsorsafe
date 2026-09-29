@@ -15,6 +15,7 @@ interface Row {
     status: string;
     expiry: { text: string; tone: Tone };
     portal: 'none' | 'invited' | 'active';
+    documents: { have: number; need: number };
 }
 
 interface Props {
@@ -50,6 +51,15 @@ export default function EmployeesIndex({ employees, table, bases, plan }: Props)
         { key: 'job', label: 'Job title', sortable: true, render: (e) => e.jobTitle },
         { key: 'status', label: 'Right to work', render: (e) => e.status },
         { key: 'expiry', label: 'Expiry', sortable: true, render: (e) => <Badge tone={e.expiry.tone}>{e.expiry.text}</Badge> },
+        {
+            key: 'documents',
+            label: 'Documents',
+            render: (e) => (
+                <Badge tone={e.documents.have === e.documents.need ? 'green' : 'amber'}>
+                    {e.documents.have} of {e.documents.need}
+                </Badge>
+            ),
+        },
         { key: 'portal', label: 'Portal', render: (e) => <Badge tone={portal[e.portal].tone}>{portal[e.portal].text}</Badge> },
     ];
 

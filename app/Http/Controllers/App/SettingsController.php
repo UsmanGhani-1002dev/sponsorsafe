@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\App;
 
+use App\Enums\AbsenceType;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\KeyPerson;
@@ -47,6 +48,16 @@ class SettingsController extends Controller
                 'staff' => $s->employees->pluck('full_name'),
             ]),
             'employees' => $employees->map(fn (Employee $e) => ['id' => $e->id, 'name' => $e->full_name, 'siteId' => $e->work_site_id]),
+            'rules' => [
+                'values' => [
+                    ...collect(['unpaid_limit_weeks', 'unpaid_leave_year', 'unauthorised_trigger_days', 'worker_report_deadline_days', 'company_report_deadline_days',
+                        'self_cert_max_days', 'payslip_freshness_days', 'retention_years', 'rtw_retention_years', 'annual_leave_weeks'])
+                        ->mapWithKeys(fn ($k) => [$k => (string) $business->rule($k)])->all(),
+                    'exempt_absence_types' => array_values((array) $business->rule('exempt_absence_types')),
+                    'expiry_alert_days' => implode(', ', (array) $business->rule('expiry_alert_days')),
+                ],
+                'reducedPayTypes' => array_values(array_map(fn ($t) => ['value' => $t->value, 'label' => $t->label()], array_filter(AbsenceType::cases(), fn ($t) => $t->mayReducePay()))),
+            ],
         ]);
     }
 
@@ -135,6 +146,44 @@ class SettingsController extends Controller
         Audit::log('key_person.removed', $person, ['role' => $person->role, 'name' => $person->name]);
 
         return back()->with('success', "{$person->name} removed as ".$person->roleLabel().'. Update the Sponsor Management System to match.');
+    }
+
+    /** Compliance rule settings (compliance-rules §9). Stored per business; defaults come from config. */
+    public function updateRules(Request $request): RedirectResponse
+    {
+        $business = $request->user()->business;
+        $data = $request->validate([
+            'unpaid_limit_weeks' => ['required', 'numeric', 'min:1', 'max:12'],
+            'unpaid_leave_year' => ['required', Rule::in(['calendar', 'rolling'])],
+            'unauthorised_trigger_days' => ['required', 'integer', 'min:1', 'max:30'],
+            'worker_report_deadline_days' => ['required', 'integer', 'min:1', 'max:30'],
+            'company_report_deadline_days' => ['required', 'integer', 'min:1', 'max:60'],
+            'exempt_absence_types' => ['array'],
+            'exempt_absence_types.*' => [Rule::in(array_map(fn ($t) => $t->value, array_filter(AbsenceType::cases(), fn ($t) => $t->mayReducePay())))],
+            'self_cert_max_days' => ['required', 'integer', 'min:1', 'max:28'],
+            'expiry_alert_days' => ['required', 'string', 'regex:/^\s*\d{1,3}(\s*,\s*\d{1,3})*\s*$/'],
+            'payslip_freshness_days' => ['required', 'integer', 'min:7', 'max:90'],
+            'retention_years' => ['required', 'integer', 'min:1', 'max:10'],
+            'rtw_retention_years' => ['required', 'integer', 'min:1', 'max:10'],
+            'annual_leave_weeks' => ['required', 'numeric', 'min:0', 'max:10'],
+        ], ['expiry_alert_days.regex' => 'Enter days as numbers separated by commas, like 90, 60, 30.']);
+
+        $data['expiry_alert_days'] = collect(explode(',', $data['expiry_alert_days']))->map(fn ($d) => (int) trim($d))->unique()->sortDesc()->values()->all();
+        $data['exempt_absence_types'] = array_values($data['exempt_absence_types'] ?? []);
+        foreach (['unpaid_limit_weeks', 'annual_leave_weeks'] as $f) {
+            $data[$f] = (float) $data[$f];
+        }
+        foreach (['unauthorised_trigger_days', 'worker_report_deadline_days', 'company_report_deadline_days', 'self_cert_max_days', 'payslip_freshness_days', 'retention_years', 'rtw_retention_years'] as $f) {
+            $data[$f] = (int) $data[$f];
+        }
+
+        $changed = collect($data)->filter(fn ($v, $k) => $v != $business->rule($k))->map(fn ($v, $k) => ['from' => $business->rule($k), 'to' => $v])->all();
+        if ($changed) {
+            $business->update(['settings' => [...($business->settings ?? []), ...$data]]);
+            Audit::log('business.rules_changed', $business, $changed);
+        }
+
+        return back()->with('success', $changed ? 'Compliance rules saved. New checks use them from now on.' : 'Nothing changed.');
     }
 
     private function validatePerson(Request $request): array

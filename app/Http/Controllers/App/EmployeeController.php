@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\App;
 
+use App\Enums\AbsenceType;
 use App\Enums\ChangeType;
 use App\Enums\DocumentCategory;
 use App\Enums\RightToWorkBasis;
@@ -9,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Business;
 use App\Models\DocumentRequest;
 use App\Models\Employee;
+use App\Services\AbsenceRules;
 use App\Services\EmployeeRecorder;
 use App\Services\EmployeeRules;
 use App\Services\PasswordLinks;
@@ -31,7 +33,7 @@ class EmployeeController extends Controller
         $table = Table::from($request, sorts: ['name' => 'full_name', 'job' => 'job_title', 'start' => 'start_date', 'expiry' => 'visa_expiry'], default: 'name')
             ->filters(['status' => ['current', 'left', 'all'], 'basis' => array_column(RightToWorkBasis::cases(), 'value')]);
 
-        $query = $business->employees()->with('workSite', 'user');
+        $query = $business->employees()->with(['workSite', 'user', 'documents:id,employee_id,category']);
         $table->search($query, ['full_name', 'job_title', 'email']);
         match ($table->filter('status', 'current')) {
             'current' => $query->current(),
@@ -49,6 +51,7 @@ class EmployeeController extends Controller
             'status' => $e->ended_on ? 'Left '.Employee::formatDate($e->ended_on) : $e->statusLabel(),
             'expiry' => $e->ended_on ? ['text' => 'Left', 'tone' => 'grey'] : Badges::expiry($e->visa_expiry),
             'portal' => $e->portalStatus(),
+            'documents' => $e->documentsOnFile(),
         ]);
 
         return Inertia::render('App/Employees/Index', [
@@ -97,7 +100,11 @@ class EmployeeController extends Controller
 
     public function show(Request $request, int $employee): Response
     {
-        $e = $this->find($request, $employee)->load(['workSite', 'user', 'changes.changedBy', 'documentRequests' => fn ($q) => $q->where('status', DocumentRequest::STATUS_AWAITING)]);
+        $e = $this->find($request, $employee)->load([
+            'workSite', 'user', 'changes.changedBy', 'documents.uploader', 'absences' => fn ($q) => $q->orderByDesc('start_date'),
+            'documentRequests' => fn ($q) => $q->where('status', DocumentRequest::STATUS_AWAITING),
+        ]);
+        $e->absences->each->setRelation('employee', $e);
 
         return Inertia::render('App/Employees/Show', [
             'employee' => [
@@ -112,7 +119,11 @@ class EmployeeController extends Controller
                 'portal' => $e->portalStatus(),
                 'email' => $e->email,
                 'left' => $e->ended_on !== null,
+                'documents' => $e->documentsOnFile(),
             ],
+            'documents' => $this->documentCategories($e),
+            'absence' => $this->absenceSummary($e),
+            'upload' => ['maxMb' => config('sponsorsafe.documents.max_kb') / 1024, 'categories' => array_map(fn ($c) => ['value' => $c->value, 'label' => $c->label()], DocumentCategory::cases())],
             'sections' => $this->sections($e),
             'history' => $e->changes->map(fn ($c) => [
                 'id' => $c->id,
@@ -199,6 +210,58 @@ class EmployeeController extends Controller
         $used = $business->employees()->current()->count();
 
         return ['used' => $used, 'limit' => $business->employee_limit, 'reached' => $used >= $business->employee_limit];
+    }
+
+    /** Documents tab: every category with its status, files and any open request (§2). */
+    private function documentCategories(Employee $e): array
+    {
+        $required = array_map(fn ($c) => $c->value, $e->requiredDocuments());
+
+        return array_map(function (DocumentCategory $c) use ($e, $required) {
+            $files = $e->documents->where('category', $c)->sortByDesc('created_at')->values();
+            $request = $e->documentRequests->firstWhere('category', $c);
+            $isRequired = in_array($c->value, $required, true);
+            $status = match (true) {
+                $files->isNotEmpty() => ['text' => 'On file', 'tone' => 'green'],
+                $request !== null => ['text' => 'Requested from employee', 'tone' => 'amber'],
+                $isRequired => ['text' => 'Missing', 'tone' => 'red'],
+                default => ['text' => 'Optional', 'tone' => 'grey'],
+            };
+
+            return [
+                'value' => $c->value,
+                'label' => $c->label(),
+                'required' => $isRequired,
+                'status' => $status,
+                'request' => $request ? ['id' => $request->id, 'since' => Employee::formatDate($request->created_at)] : null,
+                'files' => $files->map(fn ($d) => [
+                    'id' => $d->id,
+                    'name' => $d->original_name,
+                    'size' => $d->humanSize(),
+                    'uploaded' => Employee::formatDate($d->created_at),
+                    'by' => $d->uploaded_via === 'portal' ? $e->full_name.' (portal)' : ($d->uploader?->name ?? 'Unknown'),
+                    'expiry' => $d->expires_on ? ['text' => 'Expires '.Badges::expiry($d->expires_on)['text'], 'tone' => Badges::expiry($d->expires_on)['tone']] : null,
+                ])->all(),
+            ];
+        }, DocumentCategory::cases());
+    }
+
+    /** Absence tab: unpaid days against the limit, annual leave left and this person's absences. */
+    private function absenceSummary(Employee $e): array
+    {
+        $year = (string) today()->year;
+        $usage = AbsenceRules::forBusiness($e->business)->unpaidUsage(today()->format('Y-m-d'), (float) $e->days_per_week, $e->absences->map->forRules());
+        // Statutory 5.6 weeks pro rata, capped at 28 days.
+        $allowance = min(28, round((float) $e->business->rule('annual_leave_weeks') * (float) $e->days_per_week, 1));
+        $taken = $e->absences->filter(fn ($a) => $a->type === AbsenceType::Annual && $a->start_date->format('Y') === $year)->sum('working_days');
+        $num = fn ($n) => rtrim(rtrim(number_format((float) $n, 1, '.', ''), '0'), '.');
+
+        return [
+            'year' => $year,
+            'unpaid' => ['used' => $usage['used'], 'limit' => $num($usage['limit'])],
+            'annual' => ['allowance' => $num($allowance), 'taken' => $taken, 'left' => $num($allowance - $taken)],
+            'rows' => $e->absences->map(fn ($a) => AbsenceController::row($a))->values(),
+        ];
     }
 
     /** The Details tab, laid out as in the prototype. */

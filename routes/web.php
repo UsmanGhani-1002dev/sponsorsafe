@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\App\AbsenceController;
 use App\Http\Controllers\App\DashboardController;
+use App\Http\Controllers\App\DocumentController;
 use App\Http\Controllers\App\EmployeeController;
 use App\Http\Controllers\App\SettingsController;
 use App\Http\Controllers\Auth\LoginController;
@@ -44,7 +46,26 @@ Route::middleware(['auth:web', 'business.active', 'role:admin'])->prefix('app')-
     Route::post('/employees/{employee}/changes', [EmployeeController::class, 'recordChange'])->whereNumber('employee')->name('employees.changes');
     Route::post('/employees/{employee}/invite', [EmployeeController::class, 'invite'])->whereNumber('employee')->name('employees.invite');
 
+    // Documents: private files, every view and download audited.
+    Route::post('/employees/{employee}/documents', [DocumentController::class, 'store'])->whereNumber('employee')->name('documents.store');
+    Route::post('/employees/{employee}/document-requests', [DocumentController::class, 'requestFromEmployee'])->whereNumber('employee')->name('documents.request');
+    Route::post('/document-requests/{documentRequest}/cancel', [DocumentController::class, 'cancelRequest'])->whereNumber('documentRequest')->name('documents.request.cancel');
+    Route::get('/documents/{document}', [DocumentController::class, 'show'])->whereNumber('document')->name('documents.show');
+    Route::get('/documents/{document}/download', [DocumentController::class, 'download'])->whereNumber('document')->name('documents.download');
+    Route::delete('/documents/{document}', [DocumentController::class, 'destroy'])->whereNumber('document')->name('documents.destroy');
+
+    // Absence (compliance-rules §3).
+    Route::get('/absence', [AbsenceController::class, 'index'])->name('absence.index');
+    Route::get('/absence/create', [AbsenceController::class, 'create'])->name('absence.create');
+    Route::get('/absence/check', [AbsenceController::class, 'check'])->middleware('throttle:120,1')->name('absence.check');
+    Route::post('/absence', [AbsenceController::class, 'store'])->name('absence.store');
+    Route::get('/absence/export.csv', [AbsenceController::class, 'exportCsv'])->name('absence.export.csv');
+    Route::get('/absence/export.pdf', [AbsenceController::class, 'exportPdf'])->name('absence.export.pdf');
+    Route::delete('/absence/{absence}', [AbsenceController::class, 'destroy'])->whereNumber('absence')->name('absence.destroy');
+    Route::post('/absence/{absence}/fit-note', [AbsenceController::class, 'fitNote'])->whereNumber('absence')->name('absence.fit-note');
+
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
+    Route::put('/settings/rules', [SettingsController::class, 'updateRules'])->name('rules.update');
     Route::post('/settings/people', [SettingsController::class, 'storePerson'])->name('people.store');
     Route::put('/settings/people/{person}', [SettingsController::class, 'updatePerson'])->whereNumber('person')->name('people.update');
     Route::delete('/settings/people/{person}', [SettingsController::class, 'destroyPerson'])->whereNumber('person')->name('people.destroy');

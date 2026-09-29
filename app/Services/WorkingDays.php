@@ -73,6 +73,17 @@ class WorkingDays
         return $d->format('Y-m-d');
     }
 
+    /** The last working day before $date. */
+    public function previous(DateTimeInterface|string $date): string
+    {
+        $d = self::day($date)->modify('-1 day');
+        while (! $this->isWorkingDay($d)) {
+            $d = $d->modify('-1 day');
+        }
+
+        return $d->format('Y-m-d');
+    }
+
     /** Working days from $from (exclusive) to $to (inclusive); negative if $to is earlier. */
     public function until(DateTimeInterface|string $from, DateTimeInterface|string $to): int
     {

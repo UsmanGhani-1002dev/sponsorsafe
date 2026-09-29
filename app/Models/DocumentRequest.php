@@ -10,8 +10,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class DocumentRequest extends Model
 {
     public const STATUS_AWAITING = 'awaiting_employee';
+    public const STATUS_RECEIVED = 'received';
+    public const STATUS_CANCELLED = 'cancelled';
 
-    protected $fillable = ['business_id', 'employee_id', 'category', 'status', 'requested_by'];
+    protected $fillable = ['business_id', 'employee_id', 'category', 'status', 'document_id', 'requested_by'];
 
     protected function casts(): array
     {

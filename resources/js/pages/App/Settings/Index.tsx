@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { RulesForm, type RulesProps } from '@/components/settings/rules-form';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Field, Input, Select } from '@/components/ui/field';
 import { PageHeader } from '@/components/ui/page-header';
@@ -32,11 +33,12 @@ interface Props {
     plan: { price: string; limit: number; used: number; nextPayment: string | null; method: string | null };
     sites: Site[];
     employees: { id: number; name: string; siteId: number | null }[];
+    rules: RulesProps;
 }
 
 const opts = { preserveScroll: true, preserveState: true } as const;
 
-export default function Settings({ business, people, roles, plan, sites, employees }: Props) {
+export default function Settings({ business, people, roles, plan, sites, employees, rules }: Props) {
     const pct = Math.min(100, Math.round((plan.used / plan.limit) * 100));
 
     return (
@@ -85,6 +87,9 @@ export default function Settings({ business, people, roles, plan, sites, employe
 
             <KeyPersonnel people={people} roles={roles} />
             <WorkSites sites={sites} employees={employees} />
+
+            <SectionTitle title="Compliance rules" description="The thresholds and deadlines behind every Home Office check. Changes apply to checks from now on; past records keep their result." />
+            <RulesForm {...rules} />
         </AppLayout>
     );
 }
