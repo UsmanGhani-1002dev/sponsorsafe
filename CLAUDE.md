@@ -55,7 +55,11 @@ Demo logins (password `password`, local only):
 
 ## Reference material
 
-- `docs/compliance-rules.md` — every rule, threshold and deadline. Source of truth.
+- `docs/product-decisions.md` — **every product decision from the design chat**:
+  scope, sign-in, plans and billing, website, AI chat, each area's screens and
+  menus, design, security/GDPR, and open questions. Read it before each stage.
+- `docs/compliance-rules.md` — every rule, threshold, deadline, alert and the
+  go-live acceptance tests. Source of truth for rules.
 - `docs/prototype-website.dc.html`, `docs/prototype-app.dc.html`,
   `docs/prototype-superadmin.dc.html` — the clickable prototype Shaf approved. The
   `<script type="text/x-dc">` block in each holds working JavaScript for the rules
@@ -106,6 +110,18 @@ Demo logins (password `password`, local only):
 - Seeders: `BankHolidaySeeder` always; `DemoSeeder` only outside production
   (Demo Retail Ltd, Demo Catering Ltd, suspended Demo Cafe Ltd, demo super admin).
 
+## UI and performance rules ("modern and very fast")
+
+- Build shared pieces once and reuse them: DataTable (server-side sort, filter,
+  paginate), form fields, status Badge, page header, empty states, confirm dialog,
+  toasts.
+- Inertia link prefetch on hover; partial reloads (`only`) for tables and counts;
+  optimistic UI for ticks; code-split per area.
+- Eager-load; `Model::preventLazyLoading()` outside production. Cache dashboard
+  counts per business for a short TTL and bust on write.
+- Ctrl+K command palette (employees, screens, actions). Light and dark mode.
+- Target: page changes feel instant; table requests under 200 ms server time.
+
 ## Non-negotiables
 
 - Passport number, NI number, share code: `encrypted` casts; UI shows last 4 only.
@@ -118,6 +134,11 @@ Demo logins (password `password`, local only):
   workers only; for everyone else, log only.
 - Enforce the plan's employee limit (default 15) when adding employees.
 - Tests for every rule in compliance-rules.md before the UI that uses it.
+- Business admins must use 2FA (authenticator app, set up on first sign-in);
+  optional for employees. Self-service password reset by email.
+- No medical detail stored: absence reasons are short text, fit notes are files.
+- Retention: delete-after dates when employment ends (end + 1 year; right-to-work
+  evidence end + 2 years) and a monthly "due for deletion" review.
 - UK English. Dates shown as "24 Sep 2026". Accessible: real labels, focus rings,
   44px targets. No N+1 queries (eager-load).
 
@@ -160,6 +181,28 @@ Demo logins (password `password`, local only):
   transcript. Super admin controls: on/off, model, daily spend cap, knowledge
   text, recent conversations. Rate limits, bot protection, 90-day transcript
   retention.
+
+### Also planned (fit into the stages above)
+
+- Stage 2: invite emails with set-password link, self-service password reset,
+  2FA for business admins, key personnel (Authorising Officer, Key Contact,
+  Level 1 User) in Settings.
+- Stage 3: absence export (CSV/PDF by employee, date range, type).
+- Stage 4: manual "Create Home Office report" button; key-personnel and company
+  changes create company-level tasks.
+- Stage 7: failed-payment grace period, then suspension; price changes emailed
+  30 days ahead to existing subscribers.
+- Stage 8: alerts in compliance-rules §12; unexplained-absence alerts (§11) with
+  the clock-in import stubbed.
+- Before go-live: every acceptance test in compliance-rules §13 passes, and Shaf
+  checks the rule defaults against current gov.uk sponsor guidance.
+
+### Open questions (ask Shaf when the stage needs them)
+
+1. Unpaid-leave year: calendar year from 1 January (default) or rolling 12 months?
+   Build it as a setting either way.
+2. Grace period after a failed payment (suggest 7 days).
+3. Final product name and domain ("SponsorSafe" is a working name).
 
 ## Working agreement
 

@@ -55,6 +55,9 @@ HR can "Request from employee" for any missing category → appears in the porta
 Unpaid limit: trigger date = the working day on which the limit is crossed.
 Unauthorised: trigger date = the 10th consecutive working day.
 Deadline = trigger + 10 working days. Show the check live before saving/approving.
+Warn before approving a booking that would push unpaid days over the limit.
+Any leave paid below the CoS salary that is not an exempt type shows: "Reduced pay
+may be a reportable salary change". Paid leave of any length at full salary is fine.
 
 ## 4. Home Office report tasks (sponsored workers; company-level for business events)
 
@@ -124,3 +127,38 @@ types, expiry alert lead times (90/60/30 days), payslip freshness (35 days), ret
 Last working day + reason (Resigned, Dismissed, Contract ended, Redundancy, Did not
 start, Other). Sponsored → task (10 working days). Portal access off. Set delete-after
 dates. Prompt HR to share P45 and final payslip. Monthly "due for deletion" review.
+
+## 11. Unexplained absences (clock-in link)
+
+The absence log, not the clock-in system, is the compliance record. Clock-in data is
+used for one check only: each evening, a scheduled working day with no clock-in and
+no absence entry becomes an "Unexplained absence" alert on the dashboard. The admin
+classifies it (sickness, leave, unauthorised, or "Worked – clock-in missed").
+Alerts unclassified after 2 working days turn red. The clock-in import is a later
+integration: build the alert model and screens, stub the import interface.
+
+## 12. Alerts and reminders (email + dashboard)
+
+| Item | When |
+| --- | --- |
+| Visa / permission expiry | 90, 60 and 30 days before |
+| Right-to-work follow-up check | 30 days before due |
+| Passport expiry | 90 days before |
+| Home Office task deadline | 5 working days before, and when overdue |
+| Unexplained absence | Next morning, red after 2 working days |
+
+## 13. Acceptance tests (must pass before go-live)
+
+- [ ] 21 unpaid days in one year for a 5-day worker: warning before approval and a report task on approval.
+- [ ] 10 consecutive working days of unauthorised absence across a weekend and a bank holiday: task created on the right day.
+- [ ] Adding a new work site creates a company task with a 20-working-day deadline.
+- [ ] Moving a sponsored worker to another site creates a worker task with a 10-working-day deadline; moving a non-sponsored worker only logs it.
+- [ ] Reducing salary below the CoS salary creates a report task; an increase does not.
+- [ ] "Mark reported" requires date and reported-by, and turns the absence badge green.
+- [ ] A scheduled day with no clock-in and no absence creates an unexplained-absence alert.
+- [ ] Visa expiry alerts fire at 90, 60 and 30 days.
+- [ ] Adding a 16th active employee is blocked.
+- [ ] An employee cannot open the admin area; an admin of one business cannot see another business's data.
+- [ ] Documents cannot be opened by URL without signing in; every view and download is in the audit log.
+- [ ] Passport and NI numbers are stored encrypted and shown as last 4 only.
+- [ ] Compliance pack PDF exports correctly for one worker.
