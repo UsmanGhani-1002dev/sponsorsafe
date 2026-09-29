@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Support\Audit;
+use App\Services\PasswordLinks;
+use App\Support\SignIn;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -63,7 +65,7 @@ class LoginController extends Controller
 
     public function reset(Request $request): RedirectResponse
     {
-        $request->session()->forget('login.email');
+        $request->session()->forget(['login.email', SignIn::PENDING]);
 
         return redirect()->route('login');
     }
@@ -81,26 +83,35 @@ class LoginController extends Controller
             throw ValidationException::withMessages(['password' => 'Too many attempts. Please try again in '.RateLimiter::availableIn($key).' seconds.']);
         }
 
-        if (! Auth::guard('web')->attempt(['email' => $email, 'password' => $request->input('password'), 'active' => true], $request->boolean('remember'))) {
+        $user = User::with('business')->where('email', $email)->where('active', true)->first();
+        if (! $user || ! Hash::check((string) $request->input('password'), $user->password)) {
             RateLimiter::hit($key, 60);
             throw ValidationException::withMessages(['password' => 'That password is not right. Try again or reset it.']);
         }
         RateLimiter::clear($key);
 
-        /** @var User $user */
-        $user = Auth::guard('web')->user();
         if (! $user->business?->isActive()) {
-            $name = $user->business?->name;
-            Auth::guard('web')->logout();
-            throw ValidationException::withMessages(['password' => "Access for {$name} is paused. Please contact support to reactivate the subscription."]);
+            throw ValidationException::withMessages(['password' => "Access for {$user->business?->name} is paused. Please contact support to reactivate the subscription."]);
         }
 
-        $request->session()->regenerate();
-        $request->session()->forget('login.email');
-        $user->forceFill(['last_login_at' => now()])->save();
-        Audit::log('auth.login', $user, actor: $user);
+        return SignIn::afterPassword($request, $user, $request->boolean('remember'));
+    }
 
-        return redirect()->intended($user->homeRoute());
+    /** "Forgot password?" on the password step: emails a reset link to the account being signed in to. */
+    public function forgot(Request $request, PasswordLinks $links): RedirectResponse
+    {
+        $email = $request->session()->get('login.email');
+        if (! $email) {
+            return redirect()->route('login');
+        }
+        $key = 'password-reset:'.$email;
+        if (RateLimiter::tooManyAttempts($key, 3)) {
+            return back()->with('error', 'We have already sent a link. Check your inbox and spam folder, or try again in a few minutes.');
+        }
+        RateLimiter::hit($key, 600);
+        $links->reset($email);
+
+        return back()->with('success', "We have emailed a link to {$email} to choose a new password. It expires in ".PasswordLinks::RESET_MINUTES.' minutes.');
     }
 
     public function destroy(Request $request): RedirectResponse

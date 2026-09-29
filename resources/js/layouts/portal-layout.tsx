@@ -1,5 +1,6 @@
 import { Flash } from '@/components/flash';
 import { Logo } from '@/components/logo';
+import { ThemeToggle } from '@/components/theme-toggle';
 import type { SharedProps } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
@@ -9,11 +10,12 @@ export default function PortalLayout({ title, children }: { title: string; child
     return (
         <div className="min-h-screen">
             <Head title={title} />
-            <header className="flex h-16 items-center justify-between border-b border-line bg-white px-4 sm:px-6">
+            <header className="flex h-16 items-center justify-between border-b border-line bg-surface px-4 sm:px-6">
                 <Logo />
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                     <span className="hidden text-sm text-ink-2 sm:inline">{auth.user?.name}</span>
-                    <button onClick={() => router.post('/logout')} className="min-h-10 rounded-lg border border-line-strong bg-white px-3 text-sm font-semibold text-ink-2 hover:bg-canvas">
+                    <ThemeToggle />
+                    <button onClick={() => router.post('/logout')} className="min-h-10 rounded-lg border border-line-strong bg-surface px-3 text-sm font-semibold text-ink-2 hover:bg-canvas">
                         Log out
                     </button>
                 </div>

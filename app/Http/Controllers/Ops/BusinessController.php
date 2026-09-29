@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Ops;
 
 use App\Http\Controllers\Controller;
 use App\Models\Business;
-use App\Models\User;
 use App\Support\Audit;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -15,7 +14,7 @@ class BusinessController extends Controller
     public function index(): Response
     {
         $businesses = Business::query()
-            ->withCount(['users as employees_count' => fn ($q) => $q->where('role', User::ROLE_EMPLOYEE)->where('active', true)])
+            ->withCount(['employees as employees_count' => fn ($q) => $q->current()])
             ->with(['admins' => fn ($q) => $q->orderBy('id')])
             ->orderBy('name')
             ->get()

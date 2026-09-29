@@ -10,9 +10,9 @@ export default function OpsLogin({ base }: { base: string }) {
         form.post(`${base}/login`, { onFinish: () => form.reset('password') });
     };
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center gap-5 bg-ink px-4">
+        <div className="flex min-h-screen flex-col items-center justify-center gap-5 bg-[#101828] px-4">
             <Head title="Restricted" />
-            <form onSubmit={submit} noValidate className="flex w-full max-w-[400px] flex-col gap-4 rounded-2xl bg-white p-8">
+            <form onSubmit={submit} noValidate className="flex w-full max-w-[400px] flex-col gap-4 rounded-2xl bg-surface p-8">
                 <h1 className="text-[21px] font-semibold">Restricted access</h1>
                 <Field id="email" label="Email" error={form.errors.email}>
                     <Input id="email" type="email" autoComplete="username" value={form.data.email} onChange={(e) => form.setData('email', e.target.value)} invalid={!!form.errors.email} />

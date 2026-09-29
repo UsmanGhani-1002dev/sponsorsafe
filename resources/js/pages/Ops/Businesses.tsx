@@ -73,8 +73,8 @@ export default function Businesses({ base, businesses, stats }: { base: string; 
                                         onClick={() => toggle(b)}
                                         className={
                                             b.status === 'active'
-                                                ? 'min-h-9 rounded-lg border border-red-200 bg-white px-3 text-sm font-semibold text-red-700 hover:bg-red-50'
-                                                : 'min-h-9 rounded-lg bg-accent px-3 text-sm font-semibold text-white hover:bg-accent-strong'
+                                                ? 'min-h-9 rounded-lg border border-red-200 bg-surface px-3 text-sm font-semibold text-red-700 hover:bg-red-50'
+                                                : 'min-h-9 rounded-lg bg-accent-fill px-3 text-sm font-semibold text-white hover:bg-accent-strong'
                                         }
                                     >
                                         {b.status === 'active' ? 'Suspend' : 'Activate'}

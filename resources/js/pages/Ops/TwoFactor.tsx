@@ -10,9 +10,9 @@ export default function TwoFactor({ base, setup }: { base: string; setup: { secr
         form.post(`${base}/verify`, { onFinish: () => form.reset('code') });
     };
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center gap-5 bg-ink px-4">
+        <div className="flex min-h-screen flex-col items-center justify-center gap-5 bg-[#101828] px-4">
             <Head title="Verify" />
-            <form onSubmit={submit} noValidate className="flex w-full max-w-[440px] flex-col gap-4 rounded-2xl bg-white p-8">
+            <form onSubmit={submit} noValidate className="flex w-full max-w-[440px] flex-col gap-4 rounded-2xl bg-surface p-8">
                 <h1 className="text-[21px] font-semibold">{setup ? 'Set up your authenticator app' : 'Enter your code'}</h1>
                 {setup ? (
                     <div className="flex flex-col gap-2 text-sm text-ink-2">

@@ -5,22 +5,48 @@
 @source '../views';
 @source '../js';
 
+/* Dark mode follows a "dark" class on <html>, set before first paint (see app.blade.php). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Design tokens agreed in the prototype: white surfaces, grey-50 canvas, one indigo accent. */
 @theme {
     --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
     --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
 
     --color-canvas: #f9fafb;
+    --color-surface: #ffffff;
+    --color-subtle: #f2f4f7;
     --color-line: #eaecf0;
     --color-line-strong: #d0d5dd;
     --color-ink: #101828;
     --color-ink-2: #344054;
     --color-muted: #667085;
 
-    --color-accent: #4f46e5;
+    --color-accent: #4f46e5;        /* accent text and borders */
     --color-accent-strong: #3730a3;
     --color-accent-soft: #eef2ff;
     --color-accent-ring: #e0e7ff;
+    --color-accent-fill: #4f46e5;   /* solid backgrounds with white text (same in both themes) */
+    --color-accent-fill-hover: #3730a3;
+}
+
+/* Dark: same roles, re-pointed. Components use the tokens, so they follow automatically. */
+.dark {
+    --color-canvas: #0c111d;
+    --color-surface: #161b26;
+    --color-subtle: #1f242f;
+    --color-line: #1f242f;
+    --color-line-strong: #333741;
+    --color-ink: #f5f5f6;
+    --color-ink-2: #cecfd2;
+    --color-muted: #94969c;
+
+    --color-accent: #a5b4fc;
+    --color-accent-strong: #c7d2fe;
+    --color-accent-soft: #1e1b4b;
+    --color-accent-ring: #3730a3;
+    --color-accent-fill-hover: #6366f1;
+    color-scheme: dark;
 }
 
 @layer base {
@@ -28,4 +54,5 @@
     body { @apply bg-canvas text-ink font-sans; }
     h1, h2, h3 { letter-spacing: -0.02em; }
     :focus-visible { outline: none; box-shadow: 0 0 0 4px var(--color-accent-ring); }
+    select { @apply bg-surface text-ink; }
 }

@@ -34,6 +34,27 @@ class Business extends Model
         return $this->users()->where('role', User::ROLE_ADMIN);
     }
 
+    public function employees(): HasMany
+    {
+        return $this->hasMany(Employee::class);
+    }
+
+    public function keyPersonnel(): HasMany
+    {
+        return $this->hasMany(KeyPerson::class);
+    }
+
+    public function workSites(): HasMany
+    {
+        return $this->hasMany(WorkSite::class);
+    }
+
+    /** Current employees count towards the plan limit; leavers do not. */
+    public function employeeLimitReached(): bool
+    {
+        return $this->employees()->current()->count() >= $this->employee_limit;
+    }
+
     public function isActive(): bool
     {
         return $this->status === 'active';

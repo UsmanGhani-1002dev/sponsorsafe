@@ -12,11 +12,10 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
 
 ## Status
 
-- **Stage 1 (foundation): done and tested** — built in a Claude chat, 20 PHPUnit tests passing.
-- **Next: Stage 2 (employees).** See "Build order" below.
-- On the very first session on this laptop: complete "Local setup" below, run the
-  tests, then `git init` and commit everything as "Stage 1 baseline" before
-  changing any code.
+- **Stage 1 (foundation): done and tested** — built in a Claude chat.
+- **Stage 2 (employees): done and tested** — 98 PHPUnit tests passing. Waiting for Shaf's review.
+- **Next: Stage 3 (documents + absence).** See "Build order" below.
+- Local setup on this laptop is done (git repo, MySQL databases, PHP 8.4).
 
 ## Local setup (Windows)
 
@@ -39,16 +38,19 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
 4. From the project root:
    ```
    composer run setup
-   php artisan test
+   php vendor/bin/phpunit
    ```
+   (`php artisan test` needs the `nunomaduro/collision` package, which is not installed.)
    `composer run setup` installs packages, creates `.env`, runs migrations with
    demo data, and builds the frontend.
 5. Run the app: `php artisan serve` in one terminal and `npm run dev` in another
    (or `composer run dev`). Open http://127.0.0.1:8000/login
 
 Demo logins (password `password`, local only):
-- hr@demo-retail.example — business admin (Demo Retail Ltd)
-- aisha.rahman@demo-retail.example — employee
+- hr@demo-retail.example — business admin (Demo Retail Ltd). Admins need 2FA: the
+  first sign-in shows a setup key for an authenticator app. `migrate:fresh --seed`
+  resets it, so the key must be added again after a reseed.
+- aisha.rahman@demo-retail.example — employee (no 2FA)
 - hr@demo-cafe.example — suspended business (shows the paused message)
 - Super admin: http://127.0.0.1:8000/ops-local/login — owner@sponsorsafe.example.
   First sign-in shows a key for an authenticator app (Google/Microsoft Authenticator).
@@ -110,6 +112,34 @@ Demo logins (password `password`, local only):
 - Seeders: `BankHolidaySeeder` always; `DemoSeeder` only outside production
   (Demo Retail Ltd, Demo Catering Ltd, suspended Demo Cafe Ltd, demo super admin).
 
+## What Stage 2 built (follow these conventions)
+
+- Tables: `work_sites`, `employees` (a person; `user_id` is their portal login, if any),
+  `employee_changes` (change history), `document_requests`, `key_personnel`; users
+  gained `password_token*`, `invited_at`, `two_factor_*`.
+- `App\Enums\RightToWorkBasis` is compliance-rules §1 (time-limited, share code,
+  sponsored, hint); the Add employee form takes its options from it.
+  `DocumentCategory` is §2, `ChangeType` is §5.
+- `App\Services\EmployeeRules` validates Add employee (§1), "Correct personal
+  details" (name, DOB, nationality, NI, passport only) and "Record a change" (§5).
+  Job, pay, hours, site and right-to-work change only through Record a change or
+  Settings → Move employee, so reportable changes are never silent.
+- **Every write to an employee goes through `App\Services\EmployeeRecorder`**: it logs
+  each changed field (old, new, who, when, masked for secrets) and audits it.
+  Stage 4 hooks report-task creation in here (`employee_changes.report_task_id`).
+- `App\Services\PasswordLinks`: single-use set-password links (hashed): portal invite
+  7 days, password reset 60 minutes. `App\Support\SignIn` finishes every sign-in;
+  admins (and employees who opted in) pass `/login/verify` (TOTP) first.
+- `Model::preventLazyLoading()` is on outside production: eager-load, or it throws.
+- Shared UI: `components/data-table.tsx` + `App\Support\Table` (server-side sort,
+  search, filters, pagination via partial reloads), `PageHeader`, `EmptyState`,
+  `ConfirmDialog`, `Tabs` (unbuilt tabs show "Soon"), `Field/Input/Select/Textarea`.
+  Colours are CSS tokens with a `.dark` override (`ThemeToggle`); use `bg-surface`,
+  not `bg-white`, and `bg-accent-fill` for solid indigo with white text.
+  Pages are lazily loaded (one chunk each).
+- Not built yet (later stages): toasts (flash messages are banners), Ctrl+K palette,
+  dashboard count caching, rule settings (§9) in Settings.
+
 ## UI and performance rules ("modern and very fast")
 
 - Build shared pieces once and reuse them: DataTable (server-side sort, filter,
@@ -145,7 +175,7 @@ Demo logins (password `password`, local only):
 ## Build order (one stage at a time; stop for Shaf's review after each)
 
 1. ~~Foundation~~ — done.
-2. **Employees**: work sites (Settings → Work sites); "Add employee" form driven by
+2. ~~Employees~~ — done: work sites (Settings → Work sites); "Add employee" form driven by
    right-to-work basis (compliance-rules.md §1, prototype "Add employee" screen);
    Employees list; profile with Details tab; change history; encrypted fields;
    15-employee limit; employee gets a portal login (invite email via log mailer

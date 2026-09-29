@@ -3,7 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\Business;
+use App\Models\Employee;
 use App\Models\User;
+use App\Notifications\PasswordReset;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
+use PragmaRX\Google2FA\Google2FA;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -37,12 +42,84 @@ class LoginTest extends TestCase
         $this->get('/login')->assertInertia(fn (Assert $p) => $p->where('account', null));
     }
 
-    public function test_admin_signs_in_to_the_business_area(): void
+    public function test_admin_sets_up_an_authenticator_on_first_sign_in(): void
     {
-        User::factory()->admin()->create(['email' => 'hr@demo.example', 'password' => 'secret123']);
+        $admin = User::factory()->admin()->create(['email' => 'hr@demo.example', 'password' => 'secret123']);
         $this->post('/login/lookup', ['email' => 'hr@demo.example']);
-        $this->post('/login', ['password' => 'secret123'])->assertRedirect('/app');
+        $this->post('/login', ['password' => 'secret123'])->assertRedirect('/login/verify');
+        $this->assertGuest('web');
+
+        $this->get('/login/verify')->assertInertia(fn (Assert $p) => $p->component('Auth/TwoFactor')->has('setup.secret'));
+        $secret = $admin->fresh()->two_factor_secret;
+
+        $this->post('/login/verify', ['code' => '000000'])->assertSessionHasErrors('code');
+        $this->post('/login/verify', ['code' => (new Google2FA)->getCurrentOtp($secret)])->assertRedirect('/app');
+        $this->assertAuthenticatedAs($admin);
+        $this->assertNotNull($admin->fresh()->two_factor_confirmed_at);
         $this->get('/app')->assertOk()->assertInertia(fn (Assert $p) => $p->component('App/Dashboard'));
+    }
+
+    public function test_admin_with_an_authenticator_enters_a_code_without_setup(): void
+    {
+        $g2fa = new Google2FA;
+        $secret = $g2fa->generateSecretKey(32);
+        User::factory()->admin()->create(['email' => 'hr@demo.example', 'password' => 'secret123', 'two_factor_secret' => $secret, 'two_factor_confirmed_at' => now()]);
+        $this->post('/login/lookup', ['email' => 'hr@demo.example']);
+        $this->post('/login', ['password' => 'secret123'])->assertRedirect('/login/verify');
+
+        $this->get('/login/verify')->assertInertia(fn (Assert $p) => $p->where('setup', null));
+        $this->post('/login/verify', ['code' => $g2fa->getCurrentOtp($secret)])->assertRedirect('/app');
+    }
+
+    public function test_the_code_page_needs_the_password_step_first(): void
+    {
+        $this->get('/login/verify')->assertRedirect('/login');
+        $this->post('/login/verify', ['code' => '123456'])->assertRedirect('/login');
+    }
+
+    public function test_forgot_password_emails_a_reset_link_to_the_account_being_signed_in(): void
+    {
+        Notification::fake();
+        $user = User::factory()->create(['email' => 'aisha@demo.example']);
+        $this->post('/login/lookup', ['email' => 'aisha@demo.example']);
+
+        $this->post('/login/forgot')->assertSessionHas('success');
+        Notification::assertSentTo($user, PasswordReset::class, function (PasswordReset $n) {
+            $this->post("/set-password/{$n->token}", ['password' => 'brand-new-pass', 'password_confirmation' => 'brand-new-pass'])->assertRedirect('/me');
+
+            return true;
+        });
+        $this->assertTrue(Hash::check('brand-new-pass', $user->fresh()->password));
+    }
+
+    public function test_reset_links_expire_after_an_hour(): void
+    {
+        Notification::fake();
+        $user = User::factory()->create(['email' => 'aisha@demo.example']);
+        $this->post('/login/lookup', ['email' => 'aisha@demo.example']);
+        $this->post('/login/forgot');
+
+        $this->travel(61)->minutes();
+        Notification::assertSentTo($user, PasswordReset::class, function (PasswordReset $n) {
+            $this->get("/set-password/{$n->token}")->assertInertia(fn (Assert $p) => $p->where('account', null));
+
+            return true;
+        });
+    }
+
+    public function test_an_admin_resetting_their_password_still_needs_their_code(): void
+    {
+        Notification::fake();
+        $admin = User::factory()->admin()->create(['email' => 'hr@demo.example']);
+        $this->post('/login/lookup', ['email' => 'hr@demo.example']);
+        $this->post('/login/forgot');
+
+        Notification::assertSentTo($admin, PasswordReset::class, function (PasswordReset $n) {
+            $this->post("/set-password/{$n->token}", ['password' => 'brand-new-pass', 'password_confirmation' => 'brand-new-pass'])->assertRedirect('/login/verify');
+
+            return true;
+        });
+        $this->assertGuest('web');
     }
 
     public function test_employee_signs_in_to_the_portal_and_cannot_open_the_admin_area(): void
@@ -81,8 +158,9 @@ class LoginTest extends TestCase
     public function test_admin_only_sees_their_own_business(): void
     {
         $mine = User::factory()->admin()->create();
-        User::factory()->count(3)->create(['business_id' => $mine->business_id]);
-        User::factory()->count(5)->create(); // other businesses
+        Employee::factory()->count(3)->create(['business_id' => $mine->business_id]);
+        Employee::factory()->left()->create(['business_id' => $mine->business_id]); // leavers are not counted
+        Employee::factory()->count(5)->create(); // other businesses
 
         $this->actingAs($mine)->get('/app')->assertInertia(fn (Assert $p) => $p
             ->where('business.name', $mine->business->name)
