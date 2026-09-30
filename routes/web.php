@@ -5,13 +5,18 @@ use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\DocumentController;
 use App\Http\Controllers\App\EmployeeController;
 use App\Http\Controllers\App\ReportTaskController;
+use App\Http\Controllers\App\RequestController;
 use App\Http\Controllers\App\SettingsController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\SetPasswordController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Ops\BusinessController;
 use App\Http\Controllers\Ops\OpsAuthController;
+use App\Http\Controllers\Portal\DetailsController;
+use App\Http\Controllers\Portal\DocumentController as PortalDocumentController;
 use App\Http\Controllers\Portal\HomeController;
+use App\Http\Controllers\Portal\LeaveController;
+use App\Http\Controllers\Portal\RequestController as PortalRequestController;
 use Illuminate\Support\Facades\Route;
 
 // Public website arrives in Stage 7; until then the root goes to sign-in.
@@ -47,6 +52,11 @@ Route::middleware(['auth:web', 'business.active', 'role:admin'])->prefix('app')-
     Route::post('/employees/{employee}/changes', [EmployeeController::class, 'recordChange'])->whereNumber('employee')->name('employees.changes');
     Route::post('/employees/{employee}/invite', [EmployeeController::class, 'invite'])->whereNumber('employee')->name('employees.invite');
     Route::post('/employees/{employee}/end', [EmployeeController::class, 'end'])->whereNumber('employee')->name('employees.end');
+
+    // Requests from the employee portal (compliance-rules §6).
+    Route::get('/requests', [RequestController::class, 'index'])->name('requests.index');
+    Route::post('/requests/{employeeRequest}/approve', [RequestController::class, 'approve'])->whereNumber('employeeRequest')->name('requests.approve');
+    Route::post('/requests/{employeeRequest}/decline', [RequestController::class, 'decline'])->whereNumber('employeeRequest')->name('requests.decline');
 
     // Home Office reports (compliance-rules §4).
     Route::get('/reports', [ReportTaskController::class, 'index'])->name('reports.index');
@@ -87,6 +97,19 @@ Route::middleware(['auth:web', 'business.active', 'role:admin'])->prefix('app')-
 // ---- Employee portal ----
 Route::middleware(['auth:web', 'business.active', 'role:employee'])->prefix('me')->name('portal.')->group(function () {
     Route::get('/', HomeController::class)->name('home');
+    Route::get('/documents', [PortalDocumentController::class, 'index'])->name('documents');
+    Route::post('/documents', [PortalDocumentController::class, 'store'])->middleware('throttle:20,1')->name('documents.store');
+    Route::get('/documents/{document}', [PortalDocumentController::class, 'show'])->whereNumber('document')->name('documents.show');
+    Route::get('/leave', [LeaveController::class, 'index'])->name('leave');
+    Route::get('/leave/check', [LeaveController::class, 'check'])->middleware('throttle:120,1')->name('leave.check');
+    Route::post('/leave', [LeaveController::class, 'store'])->middleware('throttle:20,1')->name('leave.store');
+    Route::get('/update-details', [DetailsController::class, 'editChange'])->name('change');
+    Route::post('/update-details', [DetailsController::class, 'storeChange'])->middleware('throttle:20,1')->name('change.store');
+    Route::get('/requests', PortalRequestController::class)->name('requests');
+    Route::get('/details', [DetailsController::class, 'show'])->name('details');
+    Route::post('/security/two-factor', [DetailsController::class, 'startTwoFactor'])->name('two-factor.start');
+    Route::post('/security/two-factor/confirm', [DetailsController::class, 'confirmTwoFactor'])->middleware('throttle:10,1')->name('two-factor.confirm');
+    Route::delete('/security/two-factor', [DetailsController::class, 'disableTwoFactor'])->middleware('throttle:10,1')->name('two-factor.disable');
 });
 
 // ---- Super admin: secret path, IP allow-list, password + authenticator code ----

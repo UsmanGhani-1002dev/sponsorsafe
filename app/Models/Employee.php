@@ -125,6 +125,12 @@ class Employee extends Model
         return $this->hasMany(Absence::class);
     }
 
+    /** Requests sent from the employee portal. */
+    public function requests(): HasMany
+    {
+        return $this->hasMany(EmployeeRequest::class);
+    }
+
     public function reportTasks(): HasMany
     {
         return $this->hasMany(ReportTask::class);
@@ -139,7 +145,7 @@ class Employee extends Model
     /** "x of y" required categories on file. Needs the documents relation loaded. */
     public function documentsOnFile(): array
     {
-        $have = $this->documents->pluck('category')->map(fn ($c) => $c->value)->unique()->all();
+        $have = $this->documents->reject->isPendingReview()->pluck('category')->map(fn ($c) => $c->value)->unique()->all();
         $required = $this->requiredDocuments();
 
         return ['have' => count(array_filter($required, fn ($c) => in_array($c->value, $have, true))), 'need' => count($required)];

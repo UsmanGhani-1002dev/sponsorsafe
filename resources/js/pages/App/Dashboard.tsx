@@ -10,7 +10,7 @@ import { CheckCircle2, ShieldCheck } from 'lucide-react';
 
 interface Props {
     business: { name: string; employees: number; limit: number };
-    stats: { pending: number; urgent: number; expiring: number; employees: number };
+    stats: { pending: number; urgent: number; requests: number; expiring: number; employees: number };
     watchlist: { id: number; name: string; status: string; expiry: { text: string; tone: Tone }; unpaid: string }[];
     year: string;
     deadlines: TaskRow[];
@@ -20,7 +20,7 @@ export default function Dashboard({ business, stats, watchlist, year, deadlines 
     const tiles = [
         { label: 'Home Office reports pending', value: stats.pending, hint: 'Worker and company events', href: '/app/reports?status=pending', alert: false },
         { label: 'Due within 5 working days', value: stats.urgent, hint: 'Including overdue', href: '/app/reports?status=pending', alert: stats.urgent > 0 },
-        { label: 'Employee requests', value: null, hint: 'Arrives with the employee portal', href: null, alert: false },
+        { label: 'Employee requests', value: stats.requests, hint: 'Waiting for approval', href: '/app/requests', alert: stats.requests > 0 },
         { label: 'Visas expiring in 90 days', value: stats.expiring, hint: 'Follow-up right-to-work checks', href: '/app/employees?sort=expiry', alert: stats.expiring > 0 },
     ];
 
@@ -33,7 +33,7 @@ export default function Dashboard({ business, stats, watchlist, year, deadlines 
                     const body = (
                         <>
                             <p className="text-sm text-muted">{t.label}</p>
-                            <p className={cn('mt-1 font-mono text-3xl font-semibold', t.alert && (t.label.startsWith('Visas') ? 'text-amber-700 dark:text-amber-300' : 'text-red-700 dark:text-red-300'))}>{t.value ?? '—'}</p>
+                            <p className={cn('mt-1 font-mono text-3xl font-semibold', t.alert && (t.label.startsWith('Visas') || t.label.startsWith('Employee') ? 'text-amber-700 dark:text-amber-300' : 'text-red-700 dark:text-red-300'))}>{t.value ?? '—'}</p>
                             <p className="mt-1 text-[13px] text-muted">{t.hint}</p>
                         </>
                     );

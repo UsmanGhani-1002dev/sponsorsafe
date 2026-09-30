@@ -38,16 +38,33 @@ class DocumentVault
                 'expires_on' => $expiresOn,
                 'uploaded_by' => $by->id,
                 'uploaded_via' => $via,
+                // Portal uploads wait for HR to approve them in Requests before they count as on file.
+                'review_status' => $via === 'portal' ? Document::PENDING_REVIEW : null,
             ]);
+            Audit::log('document.uploaded', $document, ['employee_id' => $employee->id, 'category' => $category->value, 'name' => $document->original_name, 'via' => $via], $by);
 
-            // Anything HR asked the employee for in this category is now received.
-            $employee->documentRequests()->where('category', $category->value)->where('status', DocumentRequest::STATUS_AWAITING)
-                ->update(['status' => DocumentRequest::STATUS_RECEIVED, 'document_id' => $document->id]);
-
-            Audit::log('document.uploaded', $document, ['employee_id' => $employee->id, 'category' => $category->value, 'name' => $document->original_name], $by);
+            if ($via !== 'portal') {
+                $this->fulfilRequests($document);
+            }
 
             return $document;
         });
+    }
+
+    /** HR accepted a portal upload: it is now on file, and any request for it is received. */
+    public function file(Document $document, User $by): void
+    {
+        $document->update(['review_status' => null]);
+        $this->fulfilRequests($document);
+        Audit::log('document.filed', $document, ['employee_id' => $document->employee_id, 'category' => $document->category->value], $by);
+    }
+
+    /** Anything HR asked the employee for in this category is now received. */
+    private function fulfilRequests(Document $document): void
+    {
+        DocumentRequest::where('employee_id', $document->employee_id)->where('category', $document->category->value)
+            ->where('status', DocumentRequest::STATUS_AWAITING)
+            ->update(['status' => DocumentRequest::STATUS_RECEIVED, 'document_id' => $document->id]);
     }
 
     /** Decrypted file contents. Callers must write the audit entry (view or download). */

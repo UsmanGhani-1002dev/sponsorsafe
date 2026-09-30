@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\AbsenceType;
 use App\Enums\DocumentCategory;
 use App\Models\Absence;
+use App\Models\Document;
 use App\Models\Employee;
 use App\Models\User;
 use App\Support\Audit;
@@ -33,7 +34,7 @@ class AbsenceRecorder
     /**
      * @throws ValidationException when the dates are not valid for this employee
      */
-    public function record(Employee $employee, AbsenceType $type, string $start, string $end, ?string $reason, ?UploadedFile $fitNote, User $by, string $source = 'hr'): Absence
+    public function record(Employee $employee, AbsenceType $type, string $start, string $end, ?string $reason, UploadedFile|Document|null $fitNote, User $by, string $source = 'hr'): Absence
     {
         $check = $this->check($employee, $type, $start, $end);
         if (! $check->valid()) {
@@ -41,7 +42,12 @@ class AbsenceRecorder
         }
 
         return DB::transaction(function () use ($employee, $type, $start, $end, $reason, $fitNote, $by, $source, $check) {
-            $note = $fitNote ? $this->vault->store($employee, $fitNote, DocumentCategory::Absence, null, $by) : null;
+            // A fit note sent with a portal request is already stored; HR approving the absence files it.
+            $note = match (true) {
+                $fitNote instanceof Document => tap($fitNote, fn ($d) => $d->isPendingReview() ? $this->vault->file($d, $by) : null),
+                $fitNote instanceof UploadedFile => $this->vault->store($employee, $fitNote, DocumentCategory::Absence, null, $by),
+                default => null,
+            };
             $absence = $employee->absences()->create([
                 'business_id' => $employee->business_id,
                 'type' => $type,

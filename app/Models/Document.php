@@ -9,7 +9,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /** A private file on the employee's record. Served only through DocumentController (audited). */
 class Document extends Model
 {
-    protected $fillable = ['business_id', 'employee_id', 'category', 'original_name', 'path', 'mime', 'size', 'expires_on', 'uploaded_by', 'uploaded_via'];
+    public const PENDING_REVIEW = 'pending';
+
+    protected $fillable = ['business_id', 'employee_id', 'category', 'original_name', 'path', 'mime', 'size', 'expires_on', 'uploaded_by', 'uploaded_via', 'review_status'];
 
     protected $hidden = ['path'];
 
@@ -26,6 +28,18 @@ class Document extends Model
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
+    /** Sent from the portal and not yet accepted by HR. */
+    public function isPendingReview(): bool
+    {
+        return $this->review_status === self::PENDING_REVIEW;
+    }
+
+    /** Employees can see their own documents, except recruitment evidence (it may mention other candidates). */
+    public function visibleToEmployee(): bool
+    {
+        return $this->category !== DocumentCategory::Recruitment;
     }
 
     /** "1.2 MB", "340 KB" */

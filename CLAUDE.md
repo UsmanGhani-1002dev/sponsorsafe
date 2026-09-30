@@ -15,8 +15,9 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
 - **Stage 1 (foundation): done and tested** — built in a Claude chat.
 - **Stage 2 (employees): done and tested.**
 - **Stage 3 (documents + absence): done and tested.**
-- **Stage 4 (Home Office reports + end of employment): done and tested** — 163 PHPUnit tests passing. Waiting for Shaf's review.
-- **Next: Stage 5 (employee portal + Requests inbox).** See "Build order" below.
+- **Stage 4 (Home Office reports + end of employment): done and tested.**
+- **Stage 5 (employee portal + Requests inbox): done and tested** — 182 PHPUnit tests passing. Waiting for Shaf's review.
+- **Next: Stage 6 (Compliance check tab, compliance pack PDF, retention review).** See "Build order" below.
 - Local setup on this laptop is done (git repo, MySQL databases, PHP 8.4).
 
 ## Local setup (Windows)
@@ -196,6 +197,29 @@ Demo logins (password `password`, local only):
   dates, open document requests cancelled, P45 reminder. Stage 6 still has the
   Compliance check tab, the PDF pack and the monthly "due for deletion" review.
 
+## What Stage 5 built (follow these conventions)
+
+- `employee_requests` (compliance-rules §6): kind leave|sickness|change|document, dates or
+  new value, employee note, linked upload, status pending|approved|declined, HR note, the
+  absence created on approval. Employees see "Waiting for HR / Approved / Declined", plus
+  "Action needed" for documents HR requested (`document_requests` still awaiting).
+- **`App\Services\EmployeeRequests`** submits, previews and decides. Approving runs through
+  the usual recorders (`AbsenceRecorder`, `EmployeeRecorder`, `DocumentVault`), so absences,
+  change history, audit and Home Office tasks behave exactly as when HR enters them.
+  The inbox shows `preview()` first (e.g. "Approving needs a Home Office report…").
+- Portal uploads are stored with `documents.review_status = pending`; they do not count as
+  on file until HR approves (`DocumentVault::file`). Declining deletes the file and HR's
+  original request goes back to "Action needed".
+- Sickness from the portal: over `self_cert_max_days` calendar days becomes fit-note
+  sickness; an attached fit note is filed on approval. Visa change: updates visa expiry and
+  follow-up check and reminds HR to do a new right-to-work check (time-limited bases only).
+- Portal controllers extend `Portal\PortalController` (`employee()` = the signed-in user's
+  own record; 403 if none). Employees see their own documents except recruitment evidence;
+  every view is audited. `App\Support\LeaveBalance` = annual leave allowance/taken/pending.
+- Employees can opt in to two-step sign-in under My details (turning it off needs the
+  password). Dashboard "Employee requests" tile is live.
+- Out of scope, not built: pay reviews and free-text "other" requests from the prototype.
+
 ## UI and performance rules ("modern and very fast")
 
 - Build shared pieces once and reuse them: DataTable (server-side sort, filter,
@@ -243,7 +267,7 @@ Demo logins (password `password`, local only):
 4. ~~Home Office reports~~ — done (plus End employment from Stage 6): task model, auto-creation from absences, reportable record
    changes, site changes and leavers (§4); "Mark reported" / "Not required";
    dashboard counts and deadlines.
-5. Employee portal: home, my documents, leave and sickness, update my details,
+5. ~~Employee portal~~ — done: home, my documents, leave and sickness, update my details,
    my requests, my details; admin "Requests" inbox with approve/decline side
    effects (§6).
 6. End of employment, Compliance check tab (§8), compliance pack PDF.

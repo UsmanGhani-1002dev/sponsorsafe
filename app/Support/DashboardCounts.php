@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Business;
+use App\Models\EmployeeRequest;
 use App\Services\WorkingDays;
 use Illuminate\Support\Facades\Cache;
 
@@ -22,6 +23,7 @@ class DashboardCounts
                 'pending' => $deadlines->count(),
                 // Due within 5 working days, including overdue.
                 'urgent' => $deadlines->filter(fn ($d) => $wd->until($today, $d->format('Y-m-d')) <= 5)->count(),
+                'requests' => EmployeeRequest::where('business_id', $business->id)->pending()->count(),
                 'expiring' => $business->employees()->current()->whereNotNull('visa_expiry')->where('visa_expiry', '<=', today()->addDays(90))->count(),
                 'employees' => $business->employees()->current()->count(),
                 'day' => $today,

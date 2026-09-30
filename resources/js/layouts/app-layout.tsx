@@ -14,7 +14,7 @@ const nav = [
     { label: 'Employees', href: '/app/employees', icon: Users, ready: true },
     { label: 'Absence', href: '/app/absence', icon: ClipboardCheck, ready: true },
     { label: 'Home Office reports', href: '/app/reports', icon: FileWarning, ready: true },
-    { label: 'Requests', href: '/app/requests', icon: Inbox, ready: false },
+    { label: 'Requests', href: '/app/requests', icon: Inbox, ready: true },
     { label: 'Settings', href: '/app/settings', icon: Settings, ready: true },
 ];
 

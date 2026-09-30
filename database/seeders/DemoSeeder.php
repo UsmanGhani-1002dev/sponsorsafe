@@ -15,7 +15,9 @@ use App\Models\KeyPerson;
 use App\Models\SuperAdmin;
 use App\Models\User;
 use App\Models\ReportTask;
+use App\Models\EmployeeRequest;
 use App\Services\AbsenceRecorder;
+use App\Services\EmployeeRequests;
 use App\Services\ReportTasks;
 use App\Services\DocumentVault;
 use Illuminate\Database\Seeder;
@@ -171,6 +173,26 @@ class DemoSeeder extends Seeder
         $promotion = $rahul->changes()->where('field', 'job_title')->sole();
         ReportTasks::forChange($rahul->setRelation('business', $retail), $promotion, ChangeType::JobTitle, $retailAdmin, '2026-09-10');
         ReportTasks::manual($catering, ReportTask::COMPANY, null, 'Registered or trading address changed', '2026-09-01', $cateringAdmin);
+
+        // Employee portal requests waiting in HR's inbox (prototype).
+        EmployeeRequest::whereIn('business_id', [$retail->id, $catering->id])->delete();
+        $requests = app(EmployeeRequests::class);
+        $sent = [
+            ['2026-09-21', fn () => $requests->leave($kasia, AbsenceType::Annual, '2026-10-12', '2026-10-16', 'Family visit', $kasia->user)],
+            ['2026-09-22', fn () => $requests->change($rahul, 'address', '22 Portswood Road, Southampton SO17 2EY', 'Moving on 1 October', $rahul->user)],
+            ['2026-09-23', fn () => $requests->change($aisha, 'visa', '2029-12-10', 'Extension granted. New share code: W8K 2PQ 7RT', $aisha->user)],
+            ['2026-09-20', fn () => $requests->leave($fatima, AbsenceType::Unpaid, '2026-10-19', '2026-11-06', 'Family wedding abroad', $fatima->user)],
+        ];
+        foreach ($sent as [$date, $send]) {
+            $send()->forceFill(['created_at' => $date.' 09:15:00', 'updated_at' => $date.' 09:15:00'])->save();
+        }
+        // An earlier request, already approved: Aisha's August holiday.
+        EmployeeRequest::forceCreate([
+            'business_id' => $retail->id, 'employee_id' => $aisha->id, 'kind' => 'leave', 'leave_type' => AbsenceType::Annual,
+            'start_date' => '2026-08-10', 'end_date' => '2026-08-14', 'note' => 'Holiday', 'status' => EmployeeRequest::APPROVED,
+            'hr_note' => 'Approved', 'decided_by' => $retailAdmin->id, 'decided_at' => '2026-07-22 14:00:00',
+            'absence_id' => $aisha->absences()->where('start_date', '2026-08-10')->value('id'), 'created_at' => '2026-07-20 08:30:00',
+        ]);
 
         SuperAdmin::updateOrCreate(['email' => 'owner@sponsorsafe.example'], ['name' => 'Platform owner', 'password' => 'password']);
     }

@@ -34,7 +34,7 @@ class EmployeeController extends Controller
         $table = Table::from($request, sorts: ['name' => 'full_name', 'job' => 'job_title', 'start' => 'start_date', 'expiry' => 'visa_expiry'], default: 'name')
             ->filters(['status' => ['current', 'left', 'all'], 'basis' => array_column(RightToWorkBasis::cases(), 'value')]);
 
-        $query = $business->employees()->with(['workSite', 'user', 'documents:id,employee_id,category'])->withCount(['reportTasks as pending_tasks' => fn ($q) => $q->pending()]);
+        $query = $business->employees()->with(['workSite', 'user', 'documents:id,employee_id,category,review_status'])->withCount(['reportTasks as pending_tasks' => fn ($q) => $q->pending()]);
         $table->search($query, ['full_name', 'job_title', 'email']);
         match ($table->filter('status', 'current')) {
             'current' => $query->current(),
@@ -258,7 +258,8 @@ class EmployeeController extends Controller
             $request = $e->documentRequests->firstWhere('category', $c);
             $isRequired = in_array($c->value, $required, true);
             $status = match (true) {
-                $files->isNotEmpty() => ['text' => 'On file', 'tone' => 'green'],
+                $files->contains(fn ($d) => ! $d->isPendingReview()) => ['text' => 'On file', 'tone' => 'green'],
+                $files->isNotEmpty() => ['text' => 'Uploaded – review in Requests', 'tone' => 'blue'],
                 $request !== null => ['text' => 'Requested from employee', 'tone' => 'amber'],
                 $isRequired => ['text' => 'Missing', 'tone' => 'red'],
                 default => ['text' => 'Optional', 'tone' => 'grey'],
@@ -277,6 +278,7 @@ class EmployeeController extends Controller
                     'uploaded' => Employee::formatDate($d->created_at),
                     'by' => $d->uploaded_via === 'portal' ? $e->full_name.' (portal)' : ($d->uploader?->name ?? 'Unknown'),
                     'expiry' => $d->expires_on ? ['text' => 'Expires '.Badges::expiry($d->expires_on)['text'], 'tone' => Badges::expiry($d->expires_on)['tone']] : null,
+                    'pendingReview' => $d->isPendingReview(),
                 ])->all(),
             ];
         }, DocumentCategory::cases());
