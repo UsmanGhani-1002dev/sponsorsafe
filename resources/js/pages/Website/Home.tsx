@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Field, Input, Select, Textarea } from '@/components/ui/field';
 import WebsiteLayout from '@/layouts/website-layout';
+import { cn } from '@/lib/cn';
 import type { SharedProps } from '@/types';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import { Check, Mail, MapPin, Minus } from 'lucide-react';
@@ -266,13 +267,13 @@ function DashboardPreview() {
             </div>
             <div className="mt-4 grid grid-cols-3 gap-3">
                 {[
-                    ['Reports due', '1'],
-                    ['Visas expiring', '1'],
-                    ['Documents', '96%'],
-                ].map(([l, v]) => (
-                    <div key={l} className="rounded-lg border border-line p-3">
+                    ['Reports due', '1', true],
+                    ['Visas expiring', '1', true],
+                    ['Documents', '96%', false],
+                ].map(([l, v, urgent]) => (
+                    <div key={String(l)} className="rounded-lg border border-line p-3">
                         <p className="text-[12px] text-muted">{l}</p>
-                        <p className="font-mono text-xl font-semibold">{v}</p>
+                        <p className={cn('font-mono text-xl font-semibold', urgent && 'text-[#B42318] dark:text-red-300')}>{v}</p>
                     </div>
                 ))}
             </div>

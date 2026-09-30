@@ -15,7 +15,7 @@ export default function WebsiteLayout({ title, signedIn, children }: { title: st
     const [open, setOpen] = useState(false);
 
     return (
-        <div className="flex min-h-screen flex-col bg-surface">
+        <div data-website className="flex min-h-screen flex-col bg-surface">
             <Head title={title} />
             <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-surface focus:px-3 focus:py-2">
                 Skip to content

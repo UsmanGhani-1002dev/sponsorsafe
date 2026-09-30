@@ -51,6 +51,10 @@
 
 @layer base {
     html { -webkit-font-smoothing: antialiased; }
+    /* Website only: menu links (#features, #pricing…) glide to their section. */
+    @media (prefers-reduced-motion: no-preference) {
+        html:has([data-website]) { scroll-behavior: smooth; }
+    }
     body { @apply bg-canvas text-ink font-sans; }
     h1, h2, h3 { letter-spacing: -0.02em; }
     :focus-visible { outline: none; box-shadow: 0 0 0 4px var(--color-accent-ring); }
