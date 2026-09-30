@@ -4,7 +4,49 @@ import { Card } from '@/components/ui/card';
 import { Field, Input, Select } from '@/components/ui/field';
 import OpsLayout from '@/layouts/ops-layout';
 import { useForm } from '@inertiajs/react';
-import type { FormEvent } from 'react';
+import { Lock } from 'lucide-react';
+import { useState, type FormEvent } from 'react';
+
+/**
+ * A saved key shows as a locked box ("••••vMy2", Saved) with Replace; the full key is never sent back
+ * to the browser. Replace opens an empty field; Keep saved key closes it again without changing anything.
+ */
+function KeyInput({ id, saved, secret, placeholder, value, onChange, invalid }: { id: string; saved: string | null; secret?: boolean; placeholder: string; value: string; onChange: (v: string) => void; invalid: boolean }) {
+    const [editing, setEditing] = useState(!saved || invalid);
+
+    if (!editing) {
+        return (
+            <div className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-line bg-canvas px-3">
+                <span className="inline-flex min-w-0 items-center gap-2 text-[15px]">
+                    <Lock size={14} aria-hidden className="shrink-0 text-muted" />
+                    <span className="font-mono">{saved}</span>
+                    <Badge tone="green">Saved</Badge>
+                </span>
+                <button id={id} type="button" onClick={() => setEditing(true)} className="min-h-9 shrink-0 rounded-md px-2 text-sm font-semibold text-accent hover:bg-accent-soft">
+                    Replace
+                </button>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex flex-col gap-1.5">
+            <Input id={id} type={secret ? 'password' : 'text'} autoComplete={secret ? 'new-password' : 'off'} spellCheck={false} autoFocus={!!saved} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} invalid={invalid} />
+            {saved && (
+                <button
+                    type="button"
+                    onClick={() => {
+                        onChange('');
+                        setEditing(false);
+                    }}
+                    className="self-start text-sm font-semibold text-muted hover:text-ink-2 hover:underline"
+                >
+                    Keep saved key ({saved})
+                </button>
+            )}
+        </div>
+    );
+}
 
 interface Stripe {
     mode: 'test' | 'live';
@@ -25,7 +67,6 @@ export default function Gateways({ base, stripe }: { base: string; stripe: Strip
         e.preventDefault();
         form.put(`${base}/gateways/stripe`, { preserveScroll: true, onSuccess: () => form.reset('publishable', 'secret', 'webhook_secret') });
     };
-    const saved = (v: string | null) => (v ? `Saved: ${v}. Leave blank to keep it.` : undefined);
     const prefix = form.data.mode === 'live' ? 'live' : 'test';
 
     return (
@@ -46,14 +87,14 @@ export default function Gateways({ base, stripe }: { base: string; stripe: Strip
                         </div>
                         {stripe.error && <p className="text-sm text-red-700 dark:text-red-300">{stripe.error}</p>}
                         <div className="grid gap-4 sm:grid-cols-2">
-                            <Field id="s-pk" label="Publishable key" error={form.errors.publishable} hint={saved(stripe.publishable)}>
-                                <Input id="s-pk" autoComplete="off" spellCheck={false} placeholder={`pk_${prefix}_…`} value={form.data.publishable} onChange={(e) => form.setData('publishable', e.target.value)} invalid={!!form.errors.publishable} />
+                            <Field id="s-pk" label="Publishable key" error={form.errors.publishable}>
+                                <KeyInput key={`pk${stripe.publishable}${stripe.checkedAt}`} id="s-pk" saved={stripe.publishable} placeholder={`pk_${prefix}_…`} value={form.data.publishable} onChange={(v) => form.setData('publishable', v)} invalid={!!form.errors.publishable} />
                             </Field>
-                            <Field id="s-sk" label="Secret key" error={form.errors.secret} hint={saved(stripe.secret)}>
-                                <Input id="s-sk" type="password" autoComplete="new-password" placeholder={`sk_${prefix}_…`} value={form.data.secret} onChange={(e) => form.setData('secret', e.target.value)} invalid={!!form.errors.secret} />
+                            <Field id="s-sk" label="Secret key" error={form.errors.secret}>
+                                <KeyInput key={`sk${stripe.secret}${stripe.checkedAt}`} id="s-sk" secret saved={stripe.secret} placeholder={`sk_${prefix}_…`} value={form.data.secret} onChange={(v) => form.setData('secret', v)} invalid={!!form.errors.secret} />
                             </Field>
-                            <Field id="s-wh" label="Webhook signing secret" error={form.errors.webhook_secret} hint={saved(stripe.webhookSecret)}>
-                                <Input id="s-wh" type="password" autoComplete="new-password" placeholder="whsec_…" value={form.data.webhook_secret} onChange={(e) => form.setData('webhook_secret', e.target.value)} invalid={!!form.errors.webhook_secret} />
+                            <Field id="s-wh" label="Webhook signing secret" error={form.errors.webhook_secret}>
+                                <KeyInput key={`wh${stripe.webhookSecret}${stripe.checkedAt}`} id="s-wh" secret saved={stripe.webhookSecret} placeholder="whsec_…" value={form.data.webhook_secret} onChange={(v) => form.setData('webhook_secret', v)} invalid={!!form.errors.webhook_secret} />
                             </Field>
                             <Field id="s-mode" label="Mode" error={form.errors.mode}>
                                 <Select id="s-mode" value={form.data.mode} onChange={(e) => form.setData('mode', e.target.value as 'test' | 'live')}>
