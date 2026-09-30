@@ -223,13 +223,13 @@ Demo logins (password `password`, local only):
 
 ## What Stage 6 built (follow these conventions)
 
-- `AppServicesComplianceCheck` is compliance-rules §8: rows done|check|missing|manual, plus
+- `App\Services\ComplianceCheck` is compliance-rules §8: rows done|check|missing|manual, plus
   `summary()` for the profile header ("Compliance: N to fix"). Needs documents, reportTasks and
   business loaded. Pending portal uploads do not count.
-- `AppServicesCompliancePack`: one PDF per worker (`resources/views/pdf/compliance-pack.blade.php`):
+- `App\Services\CompliancePack`: one PDF per worker (`resources/views/pdf/compliance-pack.blade.php`):
   check, details (secrets last 4 only), documents list, absences, Home Office reports, change
   history. Export is audited (`employee.pack_exported`). PDFs use font subsetting (small files).
-- `AppServicesRetention`: two-step deletion reviewed by the admin at `/app/retention`
+- `App\Services\Retention`: two-step deletion reviewed by the admin at `/app/retention`
   (linked from Settings and a dashboard notice): after `delete_after` everything except
   right-to-work evidence and the core record; after `rtw_delete_after` the whole record and
   login. Files are erased; the audit entry holds only the id and dates (no personal data).
