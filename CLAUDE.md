@@ -38,6 +38,10 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
    On this laptop XAMPP's own PHP is 8.2 (too old); php.new's PHP 8.4 lives in
    `C:\Users\Dell User\.config\herd-lite\bin` and is first on the user PATH.
    From Git Bash, call Composer as `php "C:/Users/Dell User/.config/herd-lite/bin/composer.phar"`.
+   php.new's PHP ships without trusted certificates, so Laravel's HTTPS calls (PayPal, gov.uk)
+   fail with "cURL error 60". Fix: download https://curl.se/ca/cacert.pem into the herd-lite `bin`
+   folder and add `curl.cainfo` and `openssl.cafile` pointing at it (forward slashes) to its
+   `php.ini`. Done on this laptop (backup: `php.ini.before-cacert`). Stripe is unaffected either way.
 3. Database: XAMPP's MySQL (MariaDB 10.4), user `root`, no password. Start MySQL in
    the XAMPP Control Panel, then create the databases once:
    `C:\xampp\mysql\bin\mysql.exe -uroot -e "CREATE DATABASE sponsorsafe; CREATE DATABASE sponsorsafe_test"`.
