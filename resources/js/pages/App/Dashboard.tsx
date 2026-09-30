@@ -1,3 +1,4 @@
+import { Alert } from '@/components/ui/alert';
 import type { TaskRow } from '@/components/report-task';
 import { Badge, type Tone } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -14,9 +15,10 @@ interface Props {
     watchlist: { id: number; name: string; status: string; expiry: { text: string; tone: Tone }; unpaid: string }[];
     year: string;
     deadlines: TaskRow[];
+    retentionDue: number;
 }
 
-export default function Dashboard({ business, stats, watchlist, year, deadlines }: Props) {
+export default function Dashboard({ business, stats, watchlist, year, deadlines, retentionDue }: Props) {
     const tiles = [
         { label: 'Home Office reports pending', value: stats.pending, hint: 'Worker and company events', href: '/app/reports?status=pending', alert: false },
         { label: 'Due within 5 working days', value: stats.urgent, hint: 'Including overdue', href: '/app/reports?status=pending', alert: stats.urgent > 0 },
@@ -27,6 +29,16 @@ export default function Dashboard({ business, stats, watchlist, year, deadlines 
     return (
         <AppLayout title="Dashboard">
             <PageHeader title="Dashboard" description={`${business.name} · ${business.employees} of ${business.limit} employees on your plan`} />
+            {retentionDue > 0 && (
+                <div className="mb-5">
+                    <Alert tone="warning">
+                        {retentionDue === 1 ? "1 leaver's records are" : `${retentionDue} leavers' records are`} due for deletion.{" "}
+                        <Link href="/app/retention" className="font-semibold underline">
+                            Review them
+                        </Link>
+                    </Alert>
+                </div>
+            )}
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {tiles.map((t) => {

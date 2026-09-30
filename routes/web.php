@@ -6,6 +6,7 @@ use App\Http\Controllers\App\DocumentController;
 use App\Http\Controllers\App\EmployeeController;
 use App\Http\Controllers\App\ReportTaskController;
 use App\Http\Controllers\App\RequestController;
+use App\Http\Controllers\App\RetentionController;
 use App\Http\Controllers\App\SettingsController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\SetPasswordController;
@@ -52,6 +53,11 @@ Route::middleware(['auth:web', 'business.active', 'role:admin'])->prefix('app')-
     Route::post('/employees/{employee}/changes', [EmployeeController::class, 'recordChange'])->whereNumber('employee')->name('employees.changes');
     Route::post('/employees/{employee}/invite', [EmployeeController::class, 'invite'])->whereNumber('employee')->name('employees.invite');
     Route::post('/employees/{employee}/end', [EmployeeController::class, 'end'])->whereNumber('employee')->name('employees.end');
+    Route::get('/employees/{employee}/compliance-pack', [EmployeeController::class, 'pack'])->whereNumber('employee')->middleware('throttle:20,1')->name('employees.pack');
+
+    // Retention: leavers' records due for deletion (reviewed and confirmed by the admin).
+    Route::get('/retention', [RetentionController::class, 'index'])->name('retention.index');
+    Route::delete('/retention/{employee}', [RetentionController::class, 'destroy'])->whereNumber('employee')->name('retention.destroy');
 
     // Requests from the employee portal (compliance-rules §6).
     Route::get('/requests', [RequestController::class, 'index'])->name('requests.index');

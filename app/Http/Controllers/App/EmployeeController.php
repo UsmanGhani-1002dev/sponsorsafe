@@ -12,6 +12,9 @@ use App\Models\DocumentRequest;
 use App\Models\Employee;
 use App\Models\ReportTask;
 use App\Services\AbsenceRules;
+use App\Services\ComplianceCheck;
+use App\Services\CompliancePack;
+use App\Support\Audit;
 use App\Services\EmployeeRecorder;
 use App\Services\EmployeeRules;
 use App\Services\PasswordLinks;
@@ -133,6 +136,10 @@ class EmployeeController extends Controller
                     : ['text' => 'Home Office: '.$pending->count().' pending', 'tone' => $pending->contains(fn ($t) => $t->badge($wd)['tone'] === 'red') ? 'red' : 'amber'],
             ],
             'tasks' => $e->reportTasks->map(fn ($t) => ReportTaskController::row($t, $wd))->values(),
+            'compliance' => [
+                'summary' => ComplianceCheck::summary($checkRows = (new ComplianceCheck($wd))->rows($e)),
+                'rows' => array_map(fn ($r) => [...$r, 'badge' => ComplianceCheck::badge($r['status'])], $checkRows),
+            ],
             'endReasons' => Employee::END_REASONS,
             'reporter' => $request->user()->name,
             'today' => today()->format('Y-m-d'),
@@ -220,6 +227,15 @@ class EmployeeController extends Controller
 
         return back()->with('success', "Employment ended for {$e->full_name}. Portal access is off. Remember to give them their P45 and final payslip."
             .($task ? " Sponsored worker: report this on the Sponsor Management System by {$task->deadline->format('j M Y')}." : ''));
+    }
+
+    /** Compliance pack: one PDF for a Home Office visit. Audited. */
+    public function pack(Request $request, int $employee, CompliancePack $pack): \Illuminate\Http\Response
+    {
+        $e = $this->find($request, $employee);
+        Audit::log('employee.pack_exported', $e, [], $request->user());
+
+        return $pack->download($e, $request->user());
     }
 
     public function invite(Request $request, int $employee): RedirectResponse

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\App;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Services\AbsenceRules;
+use App\Services\Retention;
 use App\Services\WorkingDays;
 use App\Support\Badges;
 use App\Support\DashboardCounts;
@@ -42,6 +43,7 @@ class DashboardController extends Controller
                 ];
             }),
             'year' => $year,
+            'retentionDue' => Retention::due($business)->count(),
             'deadlines' => $business->reportTasks()->pending()->with('employee')->orderBy('deadline')->limit(5)->get()
                 ->map(fn ($t) => ReportTaskController::row($t, $wd)),
         ]);

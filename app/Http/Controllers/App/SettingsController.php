@@ -8,6 +8,7 @@ use App\Models\Employee;
 use App\Models\KeyPerson;
 use App\Models\ReportTask;
 use App\Services\ReportTasks;
+use App\Services\Retention;
 use App\Services\WorkingDays;
 use App\Models\WorkSite;
 use App\Services\EmployeeRecorder;
@@ -53,6 +54,7 @@ class SettingsController extends Controller
                 'sms' => self::smsStatus($s, $wd),
             ]),
             'employees' => $employees->map(fn (Employee $e) => ['id' => $e->id, 'name' => $e->full_name, 'siteId' => $e->work_site_id]),
+            'retentionDue' => Retention::due($business)->count(),
             'rules' => [
                 'values' => [
                     ...collect(['unpaid_limit_weeks', 'unpaid_leave_year', 'unauthorised_trigger_days', 'worker_report_deadline_days', 'company_report_deadline_days',

@@ -146,7 +146,7 @@ class AbsenceController extends Controller
             'rows' => $rows,
             'filters' => $filters,
             'generated' => now()->format('j M Y, H:i'),
-        ])->setPaper('a4', 'landscape')->download('absences-'.now()->format('Y-m-d').'.pdf');
+        ])->setOption('isFontSubsettingEnabled', true)->setPaper('a4', 'landscape')->download('absences-'.now()->format('Y-m-d').'.pdf');
     }
 
     /** One row for the log, the CSV and the PDF. The Home Office badge follows the absence's report task. */

@@ -16,8 +16,9 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
 - **Stage 2 (employees): done and tested.**
 - **Stage 3 (documents + absence): done and tested.**
 - **Stage 4 (Home Office reports + end of employment): done and tested.**
-- **Stage 5 (employee portal + Requests inbox): done and tested** — 182 PHPUnit tests passing. Waiting for Shaf's review.
-- **Next: Stage 6 (Compliance check tab, compliance pack PDF, retention review).** See "Build order" below.
+- **Stage 5 (employee portal + Requests inbox): done and tested.**
+- **Stage 6 (compliance check, compliance pack PDF, retention review): done and tested** — 193 PHPUnit tests passing. Waiting for Shaf's review.
+- **Next: Stage 7 (public website, AI chat, sign-up, billing, rest of the super-admin area).** See "Build order" below.
 - Local setup on this laptop is done (git repo, MySQL databases, PHP 8.4).
 
 ## Local setup (Windows)
@@ -220,6 +221,20 @@ Demo logins (password `password`, local only):
   password). Dashboard "Employee requests" tile is live.
 - Out of scope, not built: pay reviews and free-text "other" requests from the prototype.
 
+## What Stage 6 built (follow these conventions)
+
+- `AppServicesComplianceCheck` is compliance-rules §8: rows done|check|missing|manual, plus
+  `summary()` for the profile header ("Compliance: N to fix"). Needs documents, reportTasks and
+  business loaded. Pending portal uploads do not count.
+- `AppServicesCompliancePack`: one PDF per worker (`resources/views/pdf/compliance-pack.blade.php`):
+  check, details (secrets last 4 only), documents list, absences, Home Office reports, change
+  history. Export is audited (`employee.pack_exported`). PDFs use font subsetting (small files).
+- `AppServicesRetention`: two-step deletion reviewed by the admin at `/app/retention`
+  (linked from Settings and a dashboard notice): after `delete_after` everything except
+  right-to-work evidence and the core record; after `rtw_delete_after` the whole record and
+  login. Files are erased; the audit entry holds only the id and dates (no personal data).
+  Stage 8 adds the monthly reminder email.
+
 ## UI and performance rules ("modern and very fast")
 
 - Build shared pieces once and reuse them: DataTable (server-side sort, filter,
@@ -270,7 +285,7 @@ Demo logins (password `password`, local only):
 5. ~~Employee portal~~ — done: home, my documents, leave and sickness, update my details,
    my requests, my details; admin "Requests" inbox with approve/decline side
    effects (§6).
-6. End of employment, Compliance check tab (§8), compliance pack PDF.
+6. ~~End of employment, Compliance check tab (§8), compliance pack PDF~~ — done (plus the retention review).
 7. Public website + AI chat assistant + sign-up + billing (Stripe via Cashier,
    PayPal, webhooks, suspension on failed payment) + the rest of the super-admin
    area (pricing, gateways, enquiries, AI assistant settings). See details below.

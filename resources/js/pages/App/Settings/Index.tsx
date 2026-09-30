@@ -35,11 +35,12 @@ interface Props {
     sites: Site[];
     employees: { id: number; name: string; siteId: number | null }[];
     rules: RulesProps;
+    retentionDue: number;
 }
 
 const opts = { preserveScroll: true, preserveState: true } as const;
 
-export default function Settings({ business, people, roles, plan, sites, employees, rules }: Props) {
+export default function Settings({ business, people, roles, plan, sites, employees, rules, retentionDue }: Props) {
     const pct = Math.min(100, Math.round((plan.used / plan.limit) * 100));
 
     return (
@@ -88,6 +89,14 @@ export default function Settings({ business, people, roles, plan, sites, employe
 
             <KeyPersonnel people={people} roles={roles} />
             <WorkSites sites={sites} employees={employees} />
+
+            <SectionTitle title="Leavers' records" description="Records are deleted when the retention period after employment ends has passed, after you review them." />
+            <Card className="flex flex-wrap items-center justify-between gap-3 p-5">
+                <p className="text-sm text-ink-2">{retentionDue ? `${retentionDue} due for deletion now.` : "Nothing is due for deletion."}</p>
+                <Link href="/app/retention" className="inline-flex min-h-11 items-center rounded-lg border border-line-strong bg-surface px-4 text-[15px] font-semibold text-ink-2 hover:bg-canvas">
+                    Review records due for deletion
+                </Link>
+            </Card>
 
             <SectionTitle title="Compliance rules" description="The thresholds and deadlines behind every Home Office check. Changes apply to checks from now on; past records keep their result." />
             <RulesForm {...rules} />

@@ -17,6 +17,7 @@ use App\Models\User;
 use App\Models\ReportTask;
 use App\Models\EmployeeRequest;
 use App\Services\AbsenceRecorder;
+use App\Services\EmployeeRecorder;
 use App\Services\EmployeeRequests;
 use App\Services\ReportTasks;
 use App\Services\DocumentVault;
@@ -173,6 +174,16 @@ class DemoSeeder extends Seeder
         $promotion = $rahul->changes()->where('field', 'job_title')->sole();
         ReportTasks::forChange($rahul->setRelation('business', $retail), $promotion, ChangeType::JobTitle, $retailAdmin, '2026-09-10');
         ReportTasks::manual($catering, ReportTask::COMPANY, null, 'Registered or trading address changed', '2026-09-01', $cateringAdmin);
+
+        // A leaver from last year, now due for deletion (shows the retention review).
+        $priya = $this->employee($retail, 'Second shop', 'Priya Shah', 'Sales Assistant', B::BritishIrish, [
+            'date_of_birth' => '1994-02-17', 'rtw_check_method' => self::MANUAL, 'rtw_check_date' => '2023-05-02', 'start_date' => '2023-05-08',
+            'salary' => 21000, 'address' => '4 Lodge Road, Southampton SO14 6RG', 'phone' => '07700 900108',
+        ]);
+        foreach ([['rtw', 'passport-check-copy-signed-dated.pdf', '2023-05-02'], ['contract', 'employment-contract-signed.pdf', '2023-05-08'], ['payroll', 'payslips-2025.pdf', '2025-06-30']] as [$cat, $file, $date]) {
+            $this->document($priya, $cat, $file, $date, null);
+        }
+        app(EmployeeRecorder::class)->end($priya->setRelation('business', $retail), '2025-06-30', 'Resigned', $retailAdmin);
 
         // Employee portal requests waiting in HR's inbox (prototype).
         EmployeeRequest::whereIn('business_id', [$retail->id, $catering->id])->delete();

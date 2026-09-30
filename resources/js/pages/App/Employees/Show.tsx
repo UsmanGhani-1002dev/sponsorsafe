@@ -13,7 +13,7 @@ import { DocumentsTab, type DocumentCategoryRow } from '@/components/employee/do
 import type { AbsenceRow } from '@/components/absence';
 import { ReportDialog, reopenTask, type TaskRow } from '@/components/report-task';
 import { router, useForm } from '@inertiajs/react';
-import { FileCheck2, History, Mail, Pencil, UserX } from 'lucide-react';
+import { Download, FileCheck2, History, Mail, Pencil, UserX } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
 type BadgeData = { text: string; tone: Tone } | null;
@@ -37,6 +37,10 @@ interface Props {
         homeOffice: { text: string; tone: Tone };
     };
     tasks: TaskRow[];
+    compliance: {
+        summary: { text: string; tone: Tone };
+        rows: { key: string; label: string; detail: string; status: string; badge: { text: string; tone: Tone } }[];
+    };
     endReasons: string[];
     reporter: string;
     today: string;
@@ -70,7 +74,7 @@ export default function ShowEmployee(props: Props) {
     const { employee } = props;
     const [tab, setTab] = useState(() => {
         const wanted = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : null;
-        return wanted && ['docs', 'absence', 'reports', 'history'].includes(wanted) ? wanted : 'details';
+        return wanted && ['check', 'docs', 'absence', 'reports', 'history'].includes(wanted) ? wanted : 'details';
     });
     const [confirmInvite, setConfirmInvite] = useState(false);
     const [ending, setEnding] = useState(false);
@@ -106,19 +110,28 @@ export default function ShowEmployee(props: Props) {
                         </Badge>
                         {!employee.left && <Badge tone={employee.expiry.tone}>Expiry: {employee.expiry.text}</Badge>}
                         <Badge tone={employee.homeOffice.tone}>{employee.homeOffice.text}</Badge>
+                        <Badge tone={props.compliance.summary.tone}>{props.compliance.summary.text}</Badge>
                         {employee.left ? <Badge tone="grey">{employee.leftText}</Badge> : <Badge tone={portalBadge[employee.portal].tone}>{portalBadge[employee.portal].text}</Badge>}
                     </div>
                 </div>
-                {!employee.left && !ending && (
-                    <div className="flex flex-wrap gap-2">
-                        <Button variant="secondary" onClick={() => setConfirmInvite(true)}>
-                            <Mail size={16} aria-hidden /> {inviteLabel}
-                        </Button>
-                        <Button variant="danger" onClick={() => setEnding(true)}>
-                            <UserX size={16} aria-hidden /> End employment
-                        </Button>
-                    </div>
-                )}
+                <div className="flex flex-wrap gap-2">
+                    <a
+                        href={`/app/employees/${employee.id}/compliance-pack`}
+                        className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-accent bg-surface px-4 text-[15px] font-semibold text-accent hover:bg-accent-soft"
+                    >
+                        <Download size={16} aria-hidden /> Export compliance pack (PDF)
+                    </a>
+                    {!employee.left && !ending && (
+                        <>
+                            <Button variant="secondary" onClick={() => setConfirmInvite(true)}>
+                                <Mail size={16} aria-hidden /> {inviteLabel}
+                            </Button>
+                            <Button variant="danger" onClick={() => setEnding(true)}>
+                                <UserX size={16} aria-hidden /> End employment
+                            </Button>
+                        </>
+                    )}
+                </div>
             </Card>
 
             {ending && <EndEmployment employee={employee} reasons={props.endReasons} today={props.today} onClose={() => setEnding(false)} />}
@@ -133,7 +146,7 @@ export default function ShowEmployee(props: Props) {
                 onChange={changeTab}
                 tabs={[
                     { id: 'details', label: 'Details' },
-                    { id: 'check', label: 'Compliance check', soon: true },
+                    { id: 'check', label: 'Compliance check' },
                     { id: 'docs', label: 'Documents' },
                     { id: 'absence', label: 'Absence' },
                     { id: 'reports', label: 'Home Office' },
@@ -143,6 +156,7 @@ export default function ShowEmployee(props: Props) {
 
             <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
                 {tab === 'details' && <Details {...props} />}
+                {tab === 'check' && <ComplianceTab rows={props.compliance.rows} />}
                 {tab === 'docs' && <DocumentsTab employeeId={employee.id} employeeName={employee.name} hasPortal={employee.portal !== 'none'} categories={props.documents} upload={props.upload} />}
                 {tab === 'absence' && <AbsenceTab employeeId={employee.id} left={employee.left} absence={props.absence} />}
                 {tab === 'reports' && <HomeOfficeTab tasks={props.tasks} reporter={props.reporter} today={props.today} />}
@@ -192,6 +206,28 @@ function EndEmployment({ employee, reasons, today, onClose }: { employee: Props[
                 </div>
             </form>
         </Card>
+    );
+}
+
+/** Compliance check tab (compliance-rules §8). */
+function ComplianceTab({ rows }: { rows: Props['compliance']['rows'] }) {
+    return (
+        <div className="flex flex-col gap-3">
+            <p className="text-[15px] text-ink-2">Everything the law and the sponsor duties expect for this employee. Fix anything marked Missing or Check.</p>
+            <Card className="overflow-hidden">
+                <ul>
+                    {rows.map((r) => (
+                        <li key={r.key} className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-3.5 first:border-t-0">
+                            <div className="min-w-0">
+                                <p className="font-semibold">{r.label}</p>
+                                <p className="text-[13px] text-ink-2">{r.detail}</p>
+                            </div>
+                            <Badge tone={r.badge.tone}>{r.badge.text}</Badge>
+                        </li>
+                    ))}
+                </ul>
+            </Card>
+        </div>
     );
 }
 
