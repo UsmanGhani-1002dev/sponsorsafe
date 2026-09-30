@@ -18,8 +18,9 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
 - **Stage 4 (Home Office reports + end of employment): done and tested.**
 - **Stage 5 (employee portal + Requests inbox): done and tested.**
 - **Stage 6 (compliance check, compliance pack PDF, retention review): done and tested** — 193 PHPUnit tests passing. Waiting for Shaf's review.
-- **Stage 7a (public website, pricing, enquiries): done and tested** — 203 PHPUnit tests passing. Waiting for review.
-- **Next: Stage 7b (sign-up and billing), then 7c (AI chat).** See "Build order" below.
+- **Stage 7a (public website, pricing, enquiries): done and tested** — 203 PHPUnit tests passing.
+- **Stage 7b part 1 (sign-up + Stripe billing): done and tested** — 219 PHPUnit tests passing. Waiting for review.
+- **Next: Stage 7b part 2 (PayPal + price-change emails 30 days ahead), then 7c (AI chat).** See "Build order" below.
 - Local setup on this laptop is done (git repo, MySQL databases, PHP 8.4).
 
 ## Local setup (Windows)
@@ -255,6 +256,36 @@ Demo logins (password `password`, local only):
 - On the website use `$request->user('web')`, never the default guard (the super admin guard
   may be active).
 
+## What Stage 7b part 1 built (follow these conventions)
+
+- Stripe via Laravel Cashier; **the Business is the billable model** (`Cashier::useCustomerModel`).
+  `subscriptions.business_id`; Stripe customer columns on `businesses`. Currency GBP.
+- Business statuses: `active`, `suspended` (with `suspended_reason` manual | payment | cancelled) and
+  `pending` (signed up, not paid; nobody can sign in). `grace_ends_on` set = payment failed, still open.
+- `App\Billing\Gateways`: keys entered by the super admin (Payment gateways), each encrypted in
+  `platform_settings`, only ever shown as `••••` + last 4. Falls back to `STRIPE_*` in `.env`.
+  Routes that talk to Stripe use the `stripe` middleware (`ApplyStripeKeys`); commands call
+  `Gateways::applyStripe()`.
+- **Every Stripe API call is in `App\Billing\StripeGateway`** (tests bind `Tests\Fakes\FakeStripeGateway`).
+  It creates the monthly Price in Stripe on first use per amount and mode (`platform_settings.stripe_prices`).
+- **Every subscription state change goes through `App\Billing\Subscriptions`**: `start` (pending business +
+  admin; an unpaid repeat sign-up with the same email is reused), `paid` (idempotent: activates, sends
+  `WelcomeSubscriber` with a 7-day set-password link, clears grace, reopens a payment/cancel suspension but
+  never a manual one), `failed` (grace once, `Pricing::current()['grace_days']`, default 7, `PaymentFailed`
+  email), `cancelled`, `daily` (`billing:check` at 06:00: suspend after grace, remove sign-ups unpaid for
+  `abandoned_signup_days`). All audited (`billing.*`).
+- Sign-up: `/signup` → pending business → Stripe Checkout (hosted) → `/signup/done?session_id=` which
+  confirms the payment with Stripe (never trusts the URL). Honeypot + `App\Support\FormToken` + throttle.
+- Webhook `POST /stripe/webhook` (`StripeWebhookController` extends Cashier's): signature always required,
+  403 while no secret is saved. Handles checkout.session.completed, invoice.paid, invoice.payment_failed,
+  customer.subscription.deleted, plus Cashier's own sync events.
+- Admin: Settings → Subscription (Manage billing = Stripe customer portal, Book 1-to-1 training) and a
+  red "payment failed" banner (`billing` shared prop). Super admin: Payment gateways, grace days in Plans
+  and pricing, billing states in Businesses. PayPal shows "Coming soon" until part 2.
+- Local testing: Stripe test keys in Payment gateways; the return page activates without webhooks. For
+  failed payments locally, forward webhooks with the Stripe CLI
+  (`stripe listen --forward-to 127.0.0.1:8000/stripe/webhook`, then save its `whsec_` secret).
+
 ## UI and performance rules ("modern and very fast")
 
 - Build shared pieces once and reuse them: DataTable (server-side sort, filter,
@@ -346,7 +377,7 @@ Demo logins (password `password`, local only):
 
 1. Unpaid-leave year: calendar year from 1 January (default) or rolling 12 months?
    Build it as a setting either way.
-2. Grace period after a failed payment (suggest 7 days).
+2. ~~Grace period after a failed payment~~ — built as 7 days by default, editable in Plans and pricing.
 3. Final product name and domain ("SponsorSafe" is a working name).
 
 ## Working agreement

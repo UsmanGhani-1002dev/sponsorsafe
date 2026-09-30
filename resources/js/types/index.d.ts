@@ -11,6 +11,7 @@ export interface SharedProps {
     auth: { user: AuthUser | null };
     flash: { success?: string | null; error?: string | null; contactSent?: { first: string; email: string } | null };
     ops: { newEnquiries: number } | null;
+    billing: { graceEnds: string } | null;
     errors: Record<string, string>;
     [key: string]: unknown;
 }

@@ -12,9 +12,14 @@ use App\Services\Retention;
 use App\Services\WorkingDays;
 use App\Models\WorkSite;
 use App\Services\EmployeeRecorder;
+use App\Billing\StripeGateway;
 use App\Support\Audit;
+use App\Support\Pricing;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Stripe\Exception\ApiErrorException;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -44,6 +49,9 @@ class SettingsController extends Controller
                 'used' => $employees->count(),
                 'nextPayment' => Employee::formatDate($business->next_payment_on),
                 'method' => $business->payment_label,
+                'graceEnds' => Employee::formatDate($business->grace_ends_on),
+                'canManage' => $business->payment_provider === 'stripe' && filled($business->stripe_id),
+                'training' => Pricing::forDisplay()['training'],
             ],
             'sites' => $sites->map(fn (WorkSite $s) => [
                 'id' => $s->id,
@@ -181,6 +189,25 @@ class SettingsController extends Controller
     }
 
     /** Compliance rule settings (compliance-rules §9). Stored per business; defaults come from config. */
+    /** Manage billing: Stripe's own portal (change card, invoices, cancel), then back to Settings. */
+    public function billing(Request $request, StripeGateway $stripe): HttpResponse
+    {
+        $business = $request->user()->business;
+        if ($business->payment_provider !== 'stripe' || blank($business->stripe_id)) {
+            return back()->with('error', 'Online billing is not set up for this subscription. Please contact us to change payment details.');
+        }
+        try {
+            $url = $stripe->portalUrl($business, route('app.settings'));
+        } catch (ApiErrorException $e) {
+            Log::warning('Stripe billing portal failed', ['business' => $business->id, 'error' => $e->getMessage()]);
+
+            return back()->with('error', 'We could not open billing just now. Please try again in a moment.');
+        }
+        Audit::log('billing.portal_opened', $business, businessId: $business->id);
+
+        return Inertia::location($url);
+    }
+
     public function updateRules(Request $request): RedirectResponse
     {
         $business = $request->user()->business;

@@ -15,6 +15,9 @@ use App\Http\Controllers\Ops\BusinessController;
 use App\Http\Controllers\Ops\EnquiryController;
 use App\Http\Controllers\Ops\OpsAuthController;
 use App\Http\Controllers\Ops\PricingController;
+use App\Http\Controllers\Billing\StripeWebhookController;
+use App\Http\Controllers\Ops\GatewayController;
+use App\Http\Controllers\Website\SignupController;
 use App\Http\Controllers\Website\WebsiteController;
 use App\Http\Controllers\Portal\DetailsController;
 use App\Http\Controllers\Portal\DocumentController as PortalDocumentController;
@@ -26,7 +29,13 @@ use Illuminate\Support\Facades\Route;
 // ---- Public website ----
 Route::get('/', [WebsiteController::class, 'home'])->name('home');
 Route::post('/contact', [WebsiteController::class, 'contact'])->middleware('throttle:5,10')->name('contact');
-Route::get('/signup', [WebsiteController::class, 'signup'])->name('signup');
+// Sign-up and payment (Stripe Checkout). The webhook is signed by Stripe, not CSRF-protected.
+Route::middleware('stripe')->group(function () {
+    Route::get('/signup', [SignupController::class, 'show'])->name('signup');
+    Route::post('/signup', [SignupController::class, 'store'])->middleware('throttle:10,10')->name('signup.store');
+    Route::get('/signup/done', [SignupController::class, 'done'])->middleware('throttle:30,1')->name('signup.done');
+    Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook'])->name('stripe.webhook');
+});
 Route::get('/privacy', [WebsiteController::class, 'legal'])->defaults('page', 'privacy')->name('privacy');
 Route::get('/terms', [WebsiteController::class, 'legal'])->defaults('page', 'terms')->name('terms');
 
@@ -97,6 +106,7 @@ Route::middleware(['auth:web', 'business.active', 'role:admin'])->prefix('app')-
     Route::post('/absence/{absence}/fit-note', [AbsenceController::class, 'fitNote'])->whereNumber('absence')->name('absence.fit-note');
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
+    Route::post('/settings/billing', [SettingsController::class, 'billing'])->middleware(['stripe', 'throttle:10,1'])->name('billing');
     Route::put('/settings/rules', [SettingsController::class, 'updateRules'])->name('rules.update');
     Route::post('/settings/people', [SettingsController::class, 'storePerson'])->name('people.store');
     Route::put('/settings/people/{person}', [SettingsController::class, 'updatePerson'])->whereNumber('person')->name('people.update');
@@ -137,6 +147,8 @@ Route::prefix(config('sponsorsafe.ops_path'))->middleware('ops.ip')->name('ops.'
         Route::post('/businesses/{business}/toggle', [BusinessController::class, 'toggle'])->name('businesses.toggle');
         Route::get('/pricing', [PricingController::class, 'show'])->name('pricing');
         Route::put('/pricing', [PricingController::class, 'update'])->name('pricing.update');
+        Route::get('/gateways', [GatewayController::class, 'show'])->name('gateways');
+        Route::put('/gateways/stripe', [GatewayController::class, 'updateStripe'])->middleware('throttle:10,1')->name('gateways.stripe');
         Route::get('/enquiries', [EnquiryController::class, 'index'])->name('enquiries');
         Route::post('/enquiries/{enquiry}/handled', [EnquiryController::class, 'handle'])->whereNumber('enquiry')->name('enquiries.handle');
         Route::post('/logout', [OpsAuthController::class, 'destroy'])->name('logout');

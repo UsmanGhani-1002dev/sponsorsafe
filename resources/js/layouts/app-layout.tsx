@@ -19,7 +19,7 @@ const nav = [
 ];
 
 export default function AppLayout({ title, children }: { title: string; children: ReactNode }) {
-    const { auth } = usePage<SharedProps>().props;
+    const { auth, billing } = usePage<SharedProps>().props;
     const path = usePage().url.split('?')[0];
     const isActive = (href: string) => (href === '/app' ? path === '/app' : path === href || path.startsWith(href + '/'));
 
@@ -92,6 +92,16 @@ export default function AppLayout({ title, children }: { title: string; children
                 <main id="main" className="min-w-0 flex-1 px-4 py-6 sm:px-10 sm:py-8">
                     <div className="mx-auto max-w-6xl">
                         <Flash />
+                        {billing && (
+                            <div role="alert" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/60 dark:text-red-200">
+                                <span>
+                                    <strong>Your last payment didn't go through.</strong> Please update your payment details by {billing.graceEnds} to keep access. Your records are safe.
+                                </span>
+                                <Link href="/app/settings" className="font-semibold underline">
+                                    Manage billing
+                                </Link>
+                            </div>
+                        )}
                         {children}
                     </div>
                 </main>

@@ -7,7 +7,8 @@ use App\Models\PlatformSetting;
 /**
  * The public plan: monthly price, employee limit and 1-to-1 training price. Set by the super admin
  * (Plans and pricing) and shown on the website straight away; falls back to config/sponsorsafe.php.
- * Existing subscribers keep the price stored on their business until they are moved (Stage 7b).
+ * Existing subscribers keep the price stored on their business until they are moved.
+ * Also holds the grace period after a failed payment (days).
  */
 class Pricing
 {
@@ -22,6 +23,7 @@ class Pricing
             'price_pence' => (int) ($saved['price_pence'] ?? $defaults['price_pence']),
             'employee_limit' => (int) ($saved['employee_limit'] ?? $defaults['employee_limit']),
             'training_price_pence' => (int) ($saved['training_price_pence'] ?? $defaults['training_price_pence']),
+            'grace_days' => (int) ($saved['grace_days'] ?? $defaults['grace_days']),
         ];
     }
 

@@ -5,14 +5,24 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Laravel\Cashier\Billable;
 
 class Business extends Model
 {
-    use HasFactory;
+    use Billable, HasFactory;
+
+    public const ACTIVE = 'active';
+    public const SUSPENDED = 'suspended';
+    /** Signed up on the website but has not finished paying yet; nobody can sign in. */
+    public const PENDING = 'pending';
+
+    public const SUSPENDED_MANUAL = 'manual';
+    public const SUSPENDED_PAYMENT = 'payment';
+    public const SUSPENDED_CANCELLED = 'cancelled';
 
     protected $fillable = [
-        'name', 'licence_number', 'authorising_officer', 'status', 'plan_price_pence', 'employee_limit',
-        'payment_provider', 'payment_label', 'next_payment_on', 'settings', 'suspended_at',
+        'name', 'licence_number', 'authorising_officer', 'phone', 'status', 'plan_price_pence', 'employee_limit', 'employees_band',
+        'payment_provider', 'payment_label', 'next_payment_on', 'payment_failed_on', 'grace_ends_on', 'settings', 'suspended_at', 'suspended_reason',
     ];
 
     protected function casts(): array
@@ -20,7 +30,10 @@ class Business extends Model
         return [
             'settings' => 'array',
             'next_payment_on' => 'date',
+            'payment_failed_on' => 'date',
+            'grace_ends_on' => 'date',
             'suspended_at' => 'datetime',
+            'trial_ends_at' => 'datetime',
         ];
     }
 
@@ -62,12 +75,39 @@ class Business extends Model
 
     public function isActive(): bool
     {
-        return $this->status === 'active';
+        return $this->status === self::ACTIVE;
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === self::PENDING;
+    }
+
+    /** A failed payment is waiting to be fixed; access continues until grace_ends_on. */
+    public function inGrace(): bool
+    {
+        return $this->isActive() && $this->grace_ends_on !== null;
     }
 
     /** A compliance rule value for this business, falling back to the platform default. */
     public function rule(string $key): mixed
     {
         return data_get($this->settings, $key, config("sponsorsafe.rules.$key"));
+    }
+
+    /** Stripe: the customer is the business, billed to its first admin's email. */
+    public function stripeName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function stripeEmail(): ?string
+    {
+        return $this->admins()->orderBy('id')->value('email');
+    }
+
+    public function stripePhone(): ?string
+    {
+        return $this->phone;
     }
 }

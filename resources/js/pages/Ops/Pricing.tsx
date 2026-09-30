@@ -6,7 +6,7 @@ import OpsLayout from '@/layouts/ops-layout';
 import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 
-export default function Pricing({ base, values }: { base: string; values: { price: string; limit: string; training: string } }) {
+export default function Pricing({ base, values }: { base: string; values: { price: string; limit: string; training: string; grace: string } }) {
     const form = useForm(values);
     const submit = (e: FormEvent) => {
         e.preventDefault();
@@ -27,6 +27,11 @@ export default function Pricing({ base, values }: { base: string; values: { pric
                         </Field>
                         <Field id="training" label="1-to-1 training per person (£)" error={form.errors.training}>
                             <Input id="training" inputMode="decimal" value={form.data.training} onChange={(e) => form.setData('training', e.target.value)} invalid={!!form.errors.training} />
+                        </Field>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-3">
+                        <Field id="grace" label="Grace period (days)" error={form.errors.grace} hint="After a failed payment, before access is paused.">
+                            <Input id="grace" inputMode="numeric" value={form.data.grace} onChange={(e) => form.setData('grace', e.target.value)} invalid={!!form.errors.grace} />
                         </Field>
                     </div>
                     <Alert tone="info">New prices show on the website straight away. Existing subscribers keep their current price until you move them, and are emailed 30 days before any change (with online billing).</Alert>

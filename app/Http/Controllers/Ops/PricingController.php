@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-/** Plans and pricing: the price, employee limit and training price shown on the website. */
+/** Plans and pricing: the price, employee limit and training price shown on the website, and the grace period. */
 class PricingController extends Controller
 {
     public function show(): Response
@@ -24,6 +24,7 @@ class PricingController extends Controller
                 'price' => number_format($p['price_pence'] / 100, 2, '.', ''),
                 'limit' => (string) $p['employee_limit'],
                 'training' => number_format($p['training_price_pence'] / 100, 2, '.', ''),
+                'grace' => (string) $p['grace_days'],
             ],
         ]);
     }
@@ -34,13 +35,15 @@ class PricingController extends Controller
             'price' => ['required', 'numeric', 'min:1', 'max:1000'],
             'limit' => ['required', 'integer', 'min:1', 'max:500'],
             'training' => ['required', 'numeric', 'min:0', 'max:5000'],
-        ], [], ['price' => 'monthly price', 'limit' => 'employee limit', 'training' => 'training price']);
+            'grace' => ['required', 'integer', 'min:0', 'max:30'],
+        ], [], ['price' => 'monthly price', 'limit' => 'employee limit', 'training' => 'training price', 'grace' => 'grace period']);
 
         $before = Pricing::current();
         $after = [
             'price_pence' => (int) round($data['price'] * 100),
             'employee_limit' => (int) $data['limit'],
             'training_price_pence' => (int) round($data['training'] * 100),
+            'grace_days' => (int) $data['grace'],
         ];
         if ($before === $after) {
             return back()->with('success', 'Nothing changed.');

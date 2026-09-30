@@ -31,7 +31,7 @@ interface Props {
     business: { name: string; licence: string | null; admins: string[] };
     people: Person[];
     roles: { value: string; label: string; single: boolean }[];
-    plan: { price: string; limit: number; used: number; nextPayment: string | null; method: string | null };
+    plan: { price: string; limit: number; used: number; nextPayment: string | null; method: string | null; graceEnds: string | null; canManage: boolean; training: string };
     sites: Site[];
     employees: { id: number; name: string; siteId: number | null }[];
     rules: RulesProps;
@@ -60,7 +60,7 @@ export default function Settings({ business, people, roles, plan, sites, employe
                 <Card className="flex flex-col gap-4 p-5 sm:p-6">
                     <div className="flex items-center justify-between">
                         <h2 className="text-[17px] font-semibold">Subscription</h2>
-                        <Badge tone="green">Active</Badge>
+                        {plan.graceEnds ? <Badge tone="red">Payment failed</Badge> : <Badge tone="green">Active</Badge>}
                     </div>
                     <p>
                         <span className="text-3xl font-semibold tracking-tight">£{plan.price}</span> <span className="text-sm text-muted">per month · up to {plan.limit} employees</span>
@@ -81,8 +81,20 @@ export default function Settings({ business, people, roles, plan, sites, employe
                             Next payment {plan.nextPayment ?? '—'} · {plan.method ?? '—'}
                         </p>
                     )}
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
-                        Manage billing and 1-to-1 training <Badge tone="grey">Soon</Badge>
+                    {plan.graceEnds && <p className="text-sm text-red-700 dark:text-red-300">Update your payment details by {plan.graceEnds} to keep access.</p>}
+                    <div className="flex flex-wrap items-center gap-2">
+                        {plan.canManage ? (
+                            <Button variant="secondary" className="min-h-10 text-sm" onClick={() => router.post('/app/settings/billing')}>
+                                Manage billing
+                            </Button>
+                        ) : (
+                            <a href="/?topic=Existing%20customer%20support#contact" className="inline-flex min-h-10 items-center rounded-lg border border-line-strong bg-surface px-3.5 text-sm font-semibold text-ink-2 hover:bg-canvas">
+                                Contact us about billing
+                            </a>
+                        )}
+                        <a href="/?topic=1-to-1%20training#contact" className="inline-flex min-h-10 items-center rounded-lg px-3.5 text-sm font-semibold text-accent hover:bg-accent-soft">
+                            Book 1-to-1 training (£{plan.training} per person)
+                        </a>
                     </div>
                 </Card>
             </div>

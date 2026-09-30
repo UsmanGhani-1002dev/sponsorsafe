@@ -114,10 +114,10 @@ class WebsiteTest extends TestCase
         $business = Business::factory()->create(['plan_price_pence' => 2000, 'employee_limit' => 15]);
         $this->actingAs($this->superAdmin(), 'ops');
 
-        $this->get("{$this->ops}/pricing")->assertInertia(fn (Assert $p) => $p->component('Ops/Pricing')->where('values', ['price' => '20.00', 'limit' => '15', 'training' => '49.00']));
-        $this->put("{$this->ops}/pricing", ['price' => '25', 'limit' => '20', 'training' => '59.50'])->assertSessionHas('success');
+        $this->get("{$this->ops}/pricing")->assertInertia(fn (Assert $p) => $p->component('Ops/Pricing')->where('values', ['price' => '20.00', 'limit' => '15', 'training' => '49.00', 'grace' => '7']));
+        $this->put("{$this->ops}/pricing", ['price' => '25', 'limit' => '20', 'training' => '59.50', 'grace' => '10'])->assertSessionHas('success');
 
-        $this->assertSame(['price_pence' => 2500, 'employee_limit' => 20, 'training_price_pence' => 5950], Pricing::current());
+        $this->assertSame(['price_pence' => 2500, 'employee_limit' => 20, 'training_price_pence' => 5950, 'grace_days' => 10], Pricing::current());
         $this->assertSame([2000, 15], [$business->fresh()->plan_price_pence, $business->fresh()->employee_limit]);
         $this->assertTrue(AuditLog::where('action', 'ops.pricing_changed')->exists());
         $this->get('/')->assertInertia(fn (Assert $p) => $p->where('plan', ['price' => '25', 'limit' => 20, 'training' => '59.50']));
@@ -128,8 +128,8 @@ class WebsiteTest extends TestCase
         $this->actingAs(User::factory()->admin()->create())->get("{$this->ops}/pricing")->assertRedirect("{$this->ops}/login");
         $this->put("{$this->ops}/pricing", ['price' => '1', 'limit' => '1', 'training' => '1'])->assertRedirect("{$this->ops}/login");
 
-        $this->actingAs($this->superAdmin(), 'ops')->put("{$this->ops}/pricing", ['price' => '0', 'limit' => 'x', 'training' => '-1'])
-            ->assertSessionHasErrors(['price', 'limit', 'training']);
+        $this->actingAs($this->superAdmin(), 'ops')->put("{$this->ops}/pricing", ['price' => '0', 'limit' => 'x', 'training' => '-1', 'grace' => '60'])
+            ->assertSessionHasErrors(['price', 'limit', 'training', 'grace']);
     }
 
     // ---- Super admin: enquiries ----

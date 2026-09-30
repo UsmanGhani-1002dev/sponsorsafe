@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ApplyStripeKeys;
 use App\Http\Middleware\EnsureBusinessActive;
 use App\Http\Middleware\EnsureRole;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -23,7 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'business.active' => EnsureBusinessActive::class,
             'ops.ip' => OpsIpAllowlist::class,
             'ops.auth' => OpsAuthenticated::class,
+            'stripe' => ApplyStripeKeys::class,
         ]);
+        // Stripe signs its webhooks instead (checked in StripeWebhookController).
+        $middleware->validateCsrfTokens(except: ['stripe/webhook']);
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn (Request $request) => $request->user()?->homeRoute() ?? '/');
         $middleware->trustProxies(at: '*');

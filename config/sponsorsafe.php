@@ -15,7 +15,12 @@ return [
         'price_pence' => 2000,
         'employee_limit' => 15,
         'training_price_pence' => 4900,
+        // Days a business keeps access after a failed payment, then it is suspended (data kept).
+        'grace_days' => 7,
     ],
+
+    // Sign-ups that never finished paying are removed after this many days.
+    'abandoned_signup_days' => 7,
 
     // Compliance rule defaults, copied into each business's settings on creation.
     'rules' => [

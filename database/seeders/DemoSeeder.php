@@ -44,6 +44,8 @@ class DemoSeeder extends Seeder
         $catering = $this->business('Demo Catering Ltd', 'active', 'PayPal', 'paypal', '2026-10-02', 'Mark Evans', 'hr@demo-catering.example',
             sites: ['Central kitchen' => 'Unit 7, Millbrook Trading Estate, Southampton SO15 0LD'],
             people: [['authorising_officer', 'Mark Evans', 'hr@demo-catering.example'], ['key_contact', 'Mark Evans', 'hr@demo-catering.example'], ['level1_user', 'Mark Evans', 'hr@demo-catering.example']]);
+        // Its last payment failed: in the grace period (banner in the app, amber in the super admin list).
+        $catering->update(['payment_failed_on' => today()->subDays(2), 'grace_ends_on' => today()->addDays(5)]);
         $cafe = $this->business('Demo Cafe Ltd', 'suspended', 'Card ending 1881', 'stripe', null, 'Leo Grant', 'hr@demo-cafe.example',
             sites: ['Cafe' => '22 Oxford Street, Southampton SO14 3DJ'],
             people: [['authorising_officer', 'Leo Grant', 'hr@demo-cafe.example']]);
@@ -263,7 +265,7 @@ class DemoSeeder extends Seeder
         $b = Business::updateOrCreate(['name' => $name], [
             'licence_number' => 'SL'.strtoupper(substr(md5($name), 0, 8)), 'authorising_officer' => $people[0][1],
             'status' => $status, 'payment_label' => $label, 'payment_provider' => $provider, 'next_payment_on' => $next,
-            'suspended_at' => $status === 'suspended' ? now() : null,
+            'suspended_at' => $status === 'suspended' ? now() : null, 'suspended_reason' => $status === 'suspended' ? Business::SUSPENDED_MANUAL : null,
         ]);
         User::updateOrCreate(['email' => $adminEmail], ['business_id' => $b->id, 'name' => $adminName, 'role' => User::ROLE_ADMIN, 'password' => 'password']);
         foreach ($sites as $site => $address) {

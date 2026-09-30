@@ -6,7 +6,9 @@ import { router } from '@inertiajs/react';
 interface Row {
     id: number;
     name: string;
-    status: 'active' | 'suspended';
+    status: 'active' | 'suspended' | 'pending';
+    suspendedReason: 'manual' | 'payment' | 'cancelled' | null;
+    graceEnds: string | null;
     admin: { name: string; email: string } | null;
     employees: number;
     limit: number;
@@ -14,6 +16,15 @@ interface Row {
     payment: string | null;
     next_payment: string | null;
     joined: string;
+}
+
+const reasons = { manual: 'by you', payment: 'not paid', cancelled: 'cancelled' } as const;
+
+function Status({ b }: { b: Row }) {
+    if (b.status === 'pending') return <Badge tone="blue">Awaiting payment</Badge>;
+    if (b.status === 'suspended') return <Badge tone="red">Suspended{b.suspendedReason ? ` · ${reasons[b.suspendedReason]}` : ''}</Badge>;
+    if (b.graceEnds) return <Badge tone="amber">Payment failed · until {b.graceEnds}</Badge>;
+    return <Badge tone="green">Active</Badge>;
 }
 
 export default function Businesses({ base, businesses, stats }: { base: string; businesses: Row[]; stats: { active: number; suspended: number; revenue: number; employees: number } }) {
@@ -51,7 +62,7 @@ export default function Businesses({ base, businesses, stats }: { base: string; 
                     </thead>
                     <tbody>
                         {businesses.map((b) => (
-                            <tr key={b.id} className="border-t border-slate-100">
+                            <tr key={b.id} className="border-t border-line">
                                 <td className="px-5 py-3.5">
                                     <p className="font-semibold">{b.name}</p>
                                     <p className="text-xs text-muted">Joined {b.joined}</p>
@@ -66,26 +77,28 @@ export default function Businesses({ base, businesses, stats }: { base: string; 
                                 <td className="px-5 py-3.5">{b.payment ?? '—'}</td>
                                 <td className="px-5 py-3.5">{b.next_payment ?? '—'}</td>
                                 <td className="px-5 py-3.5">
-                                    <Badge tone={b.status === 'active' ? 'green' : 'red'}>{b.status === 'active' ? 'Active' : 'Suspended'}</Badge>
+                                    <Status b={b} />
                                 </td>
                                 <td className="px-5 py-3.5 text-right">
-                                    <button
-                                        onClick={() => toggle(b)}
-                                        className={
-                                            b.status === 'active'
-                                                ? 'min-h-9 rounded-lg border border-red-200 bg-surface px-3 text-sm font-semibold text-red-700 hover:bg-red-50'
-                                                : 'min-h-9 rounded-lg bg-accent-fill px-3 text-sm font-semibold text-white hover:bg-accent-strong'
-                                        }
-                                    >
-                                        {b.status === 'active' ? 'Suspend' : 'Activate'}
-                                    </button>
+                                    {b.status !== 'pending' && (
+                                        <button
+                                            onClick={() => toggle(b)}
+                                            className={
+                                                b.status === 'active'
+                                                    ? 'min-h-9 rounded-lg border border-red-200 bg-surface px-3 text-sm font-semibold text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/60'
+                                                    : 'min-h-9 rounded-lg bg-accent-fill px-3 text-sm font-semibold text-white hover:bg-accent-fill-hover'
+                                            }
+                                        >
+                                            {b.status === 'active' ? 'Suspend' : 'Activate'}
+                                        </button>
+                                    )}
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             </Card>
-            <p className="mt-6 text-[13px] text-muted">Plans and pricing, payment gateways, enquiries and the AI assistant settings arrive in Stage 7.</p>
+            <p className="mt-4 text-[13px] text-muted">A business suspended for non-payment reopens by itself when payment arrives. One you suspend by hand stays suspended until you activate it.</p>
         </OpsLayout>
     );
 }

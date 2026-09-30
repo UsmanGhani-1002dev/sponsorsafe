@@ -38,6 +38,12 @@ class PasswordLinks
         Audit::log('employee.invited', $employee, [], $by);
     }
 
+    /** A set-password link valid for the invite period, for a login created some other way (a new subscriber). */
+    public function issueInvite(User $user): string
+    {
+        return $this->issue($user, now()->addDays(self::INVITE_DAYS));
+    }
+
     /** Forgotten password: email a short-lived link. Silently does nothing for unknown or inactive accounts. */
     public function reset(string $email): void
     {

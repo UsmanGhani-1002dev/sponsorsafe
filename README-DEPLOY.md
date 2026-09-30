@@ -35,6 +35,17 @@ If `php` on the command line is an older version, use the full path, e.g.
 * * * * * cd /home/USER/sponsorsafe && php artisan schedule:run >> /dev/null 2>&1
 ```
 
+The scheduler also runs `billing:check` daily (suspends businesses whose payment grace period has
+ended, removes sign-ups that never paid).
+
+## 4a. Stripe (card payments)
+1. In the Stripe dashboard (live mode): Developers → API keys. Copy the publishable and secret keys.
+2. Developers → Webhooks → Add endpoint: `https://app.yourdomain.co.uk/stripe/webhook`, with the
+   events listed on the super admin's **Payment gateways** page. Copy the signing secret (`whsec_…`).
+3. Settings → Billing → Customer portal: turn it on (lets customers change card and cancel).
+4. Super admin → **Payment gateways**: paste the three values, choose **Live**, **Save and test connection**.
+   Keys are stored encrypted; `.env` needs no Stripe values.
+
 ## 5. Sign in
 - Businesses and employees: `https://app.yourdomain.co.uk/login`
 - Super admin: `https://app.yourdomain.co.uk/<OPS_PATH>/login` (first sign-in shows a key for your authenticator app)

@@ -12,7 +12,7 @@ export default function OpsLayout({ title, base, children }: { title: string; ba
     const nav = [
         { label: 'Businesses', href: base, ready: true },
         { label: 'Plans and pricing', href: `${base}/pricing`, ready: true },
-        { label: 'Payment gateways', href: `${base}/gateways`, ready: false },
+        { label: 'Payment gateways', href: `${base}/gateways`, ready: true },
         { label: 'Enquiries and training', href: `${base}/enquiries`, ready: true, count: ops?.newEnquiries ?? 0 },
         { label: 'AI chat assistant', href: `${base}/assistant`, ready: false },
     ];
