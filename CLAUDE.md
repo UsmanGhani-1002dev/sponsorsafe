@@ -18,7 +18,8 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
 - **Stage 4 (Home Office reports + end of employment): done and tested.**
 - **Stage 5 (employee portal + Requests inbox): done and tested.**
 - **Stage 6 (compliance check, compliance pack PDF, retention review): done and tested** — 193 PHPUnit tests passing. Waiting for Shaf's review.
-- **Next: Stage 7 (public website, AI chat, sign-up, billing, rest of the super-admin area).** See "Build order" below.
+- **Stage 7a (public website, pricing, enquiries): done and tested** — 203 PHPUnit tests passing. Waiting for review.
+- **Next: Stage 7b (sign-up and billing), then 7c (AI chat).** See "Build order" below.
 - Local setup on this laptop is done (git repo, MySQL databases, PHP 8.4).
 
 ## Local setup (Windows)
@@ -234,6 +235,25 @@ Demo logins (password `password`, local only):
   right-to-work evidence and the core record; after `rtw_delete_after` the whole record and
   login. Files are erased; the audit entry holds only the id and dates (no personal data).
   Stage 8 adds the monthly reminder email.
+
+## What Stage 7a built (follow these conventions)
+
+- Stage 7 is split in three, with a review after each: **7a** website + pricing + enquiries (done),
+  **7b** sign-up and billing (Stripe via Cashier, PayPal, webhooks, grace period, gateways),
+  **7c** AI chat assistant.
+- Public website at `/` (`pages/Website/*`, `layouts/website-layout.tsx`): home (hero, features,
+  who it is for, pricing and training, FAQ, contact), `/signup` placeholder until 7b, draft
+  `/privacy` and `/terms` (final wording needed from Enovtec before go-live). Only Website pages
+  may be indexed, and only in production (`app.blade.php`).
+- `App\Support\Pricing`: the live plan (price, employee limit, training price) from
+  `platform_settings` key `plan`, falling back to config. Super admin edits it (Plans and pricing,
+  audited). Existing businesses keep the price and limit stored on them.
+- Contact form → `enquiries` table + `NewEnquiry` email to `SUPPORT_EMAIL`. Bot protection: hidden
+  honeypot field, signed start time (at least 3 seconds), 5 per 10 minutes per IP.
+- Super admin layout has the sidebar (Businesses, Plans and pricing, Payment gateways (Soon),
+  Enquiries and training with a new count, AI chat assistant (Soon)); shared `ops.newEnquiries`.
+- On the website use `$request->user('web')`, never the default guard (the super admin guard
+  may be active).
 
 ## UI and performance rules ("modern and very fast")
 

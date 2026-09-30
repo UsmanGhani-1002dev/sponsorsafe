@@ -16,6 +16,7 @@ use App\Models\SuperAdmin;
 use App\Models\User;
 use App\Models\ReportTask;
 use App\Models\EmployeeRequest;
+use App\Models\Enquiry;
 use App\Services\AbsenceRecorder;
 use App\Services\EmployeeRecorder;
 use App\Services\EmployeeRequests;
@@ -205,7 +206,21 @@ class DemoSeeder extends Seeder
             'absence_id' => $aisha->absences()->where('start_date', '2026-08-10')->value('id'), 'created_at' => '2026-07-20 08:30:00',
         ]);
 
-        SuperAdmin::updateOrCreate(['email' => 'owner@sponsorsafe.example'], ['name' => 'Platform owner', 'password' => 'password']);
+        $owner = SuperAdmin::updateOrCreate(['email' => 'owner@sponsorsafe.example'], ['name' => 'Platform owner', 'password' => 'password']);
+
+        // Website enquiries (prototype super admin).
+        Enquiry::query()->delete();
+        foreach ([
+            ['Tom Hughes', 'tom@example.co.uk', 'General question', 'Does it work for Health and Care Worker visas?', '2026-09-18 11:20', true],
+            ['Priya Shah', 'office@demo-care.example', '1-to-1 training', 'Training for 2 people please (office manager and me).', '2026-09-21 09:05', false],
+            ['Imran Ali', 'imran@example.co.uk', 'Book a free demo', 'We have 6 staff, 3 sponsored. Can we see it working?', '2026-09-23 16:40', false],
+        ] as [$name, $email, $topic, $message, $at, $handled]) {
+            Enquiry::forceCreate([
+                'name' => $name, 'email' => $email, 'topic' => $topic, 'message' => $message, 'source' => 'website',
+                'status' => $handled ? Enquiry::HANDLED : Enquiry::NEW, 'handled_by' => $handled ? $owner->id : null,
+                'handled_at' => $handled ? '2026-09-18 15:00' : null, 'created_at' => $at, 'updated_at' => $at,
+            ]);
+        }
     }
 
     private function document(Employee $e, string $category, string $name, string $uploaded, ?string $expires): void

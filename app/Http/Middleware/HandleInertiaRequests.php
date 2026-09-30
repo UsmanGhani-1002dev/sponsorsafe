@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Enquiry;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -33,7 +34,10 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
+                'contactSent' => fn () => $request->session()->get('contactSent'),
             ],
+            // Super admin sidebar: new enquiries waiting (only for a signed-in super admin).
+            'ops' => fn () => auth('ops')->check() ? ['newEnquiries' => Enquiry::where('status', Enquiry::NEW)->count()] : null,
         ];
     }
 }

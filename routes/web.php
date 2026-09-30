@@ -12,7 +12,10 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\SetPasswordController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Ops\BusinessController;
+use App\Http\Controllers\Ops\EnquiryController;
 use App\Http\Controllers\Ops\OpsAuthController;
+use App\Http\Controllers\Ops\PricingController;
+use App\Http\Controllers\Website\WebsiteController;
 use App\Http\Controllers\Portal\DetailsController;
 use App\Http\Controllers\Portal\DocumentController as PortalDocumentController;
 use App\Http\Controllers\Portal\HomeController;
@@ -20,8 +23,12 @@ use App\Http\Controllers\Portal\LeaveController;
 use App\Http\Controllers\Portal\RequestController as PortalRequestController;
 use Illuminate\Support\Facades\Route;
 
-// Public website arrives in Stage 7; until then the root goes to sign-in.
-Route::redirect('/', '/login');
+// ---- Public website ----
+Route::get('/', [WebsiteController::class, 'home'])->name('home');
+Route::post('/contact', [WebsiteController::class, 'contact'])->middleware('throttle:5,10')->name('contact');
+Route::get('/signup', [WebsiteController::class, 'signup'])->name('signup');
+Route::get('/privacy', [WebsiteController::class, 'legal'])->defaults('page', 'privacy')->name('privacy');
+Route::get('/terms', [WebsiteController::class, 'legal'])->defaults('page', 'terms')->name('terms');
 
 // ---- Sign-in for business admins and employees (email first, then password) ----
 Route::middleware('guest:web')->group(function () {
@@ -128,6 +135,10 @@ Route::prefix(config('sponsorsafe.ops_path'))->middleware('ops.ip')->name('ops.'
     Route::middleware('ops.auth')->group(function () {
         Route::get('/', [BusinessController::class, 'index'])->name('businesses');
         Route::post('/businesses/{business}/toggle', [BusinessController::class, 'toggle'])->name('businesses.toggle');
+        Route::get('/pricing', [PricingController::class, 'show'])->name('pricing');
+        Route::put('/pricing', [PricingController::class, 'update'])->name('pricing.update');
+        Route::get('/enquiries', [EnquiryController::class, 'index'])->name('enquiries');
+        Route::post('/enquiries/{enquiry}/handled', [EnquiryController::class, 'handle'])->whereNumber('enquiry')->name('enquiries.handle');
         Route::post('/logout', [OpsAuthController::class, 'destroy'])->name('logout');
     });
 });

@@ -7,6 +7,9 @@ return [
     // Comma-separated IPs allowed to reach the super-admin area. Empty = allow all (not recommended in production).
     'ops_allowed_ips' => array_filter(array_map('trim', explode(',', (string) env('OPS_ALLOWED_IPS', '')))),
 
+    // Where website enquiries are emailed (the log file locally).
+    'support_email' => env('SUPPORT_EMAIL', 'support@sponsorsafe.example'),
+
     // Defaults for new businesses and the public plan (super admin can change them).
     'plan' => [
         'price_pence' => 2000,
