@@ -263,7 +263,7 @@ function DashboardPreview() {
         <div aria-hidden className="rounded-2xl border border-line bg-surface p-5 shadow-[0_12px_24px_-8px_rgba(16,24,40,0.15)]">
             <div className="flex items-center justify-between">
                 <span className="font-semibold">Dashboard</span>
-                <span className="text-sm text-muted">Demo Retail Ltd</span>
+                <span className="text-sm text-muted">UrbanCart Ltd</span>
             </div>
             <div className="mt-4 grid grid-cols-3 gap-3">
                 {[
