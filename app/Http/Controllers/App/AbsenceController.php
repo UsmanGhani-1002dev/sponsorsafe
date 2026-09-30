@@ -8,6 +8,7 @@ use App\Models\Absence;
 use App\Models\Employee;
 use App\Services\AbsenceCheck;
 use App\Services\AbsenceRecorder;
+use App\Services\WorkingDays;
 use App\Support\Audit;
 use App\Support\Table;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -16,6 +17,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -23,6 +25,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 /** Absence log, "Record absence" with the live Home Office check, and exports (compliance-rules §3). */
 class AbsenceController extends Controller
 {
+    private ?WorkingDays $wd = null;
+
     public function __construct(private AbsenceRecorder $recorder) {}
 
     public function index(Request $request): Response
@@ -30,7 +34,7 @@ class AbsenceController extends Controller
         [$table, $query] = $this->filtered($request);
 
         return Inertia::render('App/Absence/Index', [
-            'absences' => $table->paginate($query, fn (Absence $a) => self::row($a)),
+            'absences' => $table->paginate($query, fn (Absence $a) => self::row($a, $this->wd())),
             'table' => $table->state(),
             'employees' => $request->user()->business->employees()->orderBy('full_name')->get(['id', 'full_name'])->map(fn ($e) => ['value' => (string) $e->id, 'label' => $e->full_name]),
             'types' => array_map(fn ($t) => ['value' => $t->value, 'label' => $t->label()], AbsenceType::cases()),
@@ -83,7 +87,11 @@ class AbsenceController extends Controller
     public function destroy(Request $request, int $absence): RedirectResponse
     {
         $a = Absence::where('business_id', $request->user()->business_id)->findOrFail($absence);
-        $this->recorder->delete($a, $request->user());
+        try {
+            $this->recorder->delete($a, $request->user());
+        } catch (ValidationException $e) {
+            return back()->with('error', collect($e->errors())->flatten()->first());
+        }
 
         return back()->with('success', 'Absence removed from the log.');
     }
@@ -103,11 +111,13 @@ class AbsenceController extends Controller
         $rows = $table->sorted($query)->limit(5000)->get();
         Audit::log('absence.exported', null, ['format' => 'csv', 'rows' => $rows->count(), 'filters' => $table->state()]);
 
-        return response()->streamDownload(function () use ($rows) {
+        $wd = $this->wd();
+
+        return response()->streamDownload(function () use ($rows, $wd) {
             $out = fopen('php://output', 'w');
             fputcsv($out, ['Employee', 'Type', 'Start', 'End', 'Working days', 'Pay', 'Reason', 'Home Office']);
             foreach ($rows as $a) {
-                $r = self::row($a);
+                $r = self::row($a, $wd);
                 // Guard against spreadsheet formula injection in free text.
                 fputcsv($out, array_map(fn ($v) => is_string($v) && preg_match('/^[=+\-@]/', $v) ? "'".$v : $v,
                     [$r['employee'], $r['type'], $a->start_date->format('Y-m-d'), $a->end_date->format('Y-m-d'), $r['days'], $r['pay'], $r['reason'], $r['homeOffice']['text']]));
@@ -119,7 +129,7 @@ class AbsenceController extends Controller
     public function exportPdf(Request $request): \Illuminate\Http\Response
     {
         [$table, $query] = $this->filtered($request);
-        $rows = $table->sorted($query)->limit(2000)->get()->map(fn ($a) => self::row($a));
+        $rows = $table->sorted($query)->limit(2000)->get()->map(fn ($a) => self::row($a, $this->wd()));
         $state = $table->state();
         Audit::log('absence.exported', null, ['format' => 'pdf', 'rows' => $rows->count(), 'filters' => $state]);
 
@@ -139,10 +149,13 @@ class AbsenceController extends Controller
         ])->setPaper('a4', 'landscape')->download('absences-'.now()->format('Y-m-d').'.pdf');
     }
 
-    /** One row for the log, the CSV and the PDF. */
-    public static function row(Absence $a): array
+    /** One row for the log, the CSV and the PDF. The Home Office badge follows the absence's report task. */
+    public static function row(Absence $a, WorkingDays $wd): array
     {
+        $task = $a->reportTask;
         $ho = match (true) {
+            $task && ! $task->isPending() => $task->badge($wd),
+            $task !== null => ['text' => 'Report by '.$task->deadline->format('j M Y'), 'tone' => $task->badge($wd)['tone'] === 'blue' ? 'amber' : $task->badge($wd)['tone']],
             $a->isReportable() => ['text' => 'Report by '.$a->report_deadline->format('j M Y'), 'tone' => $a->report_deadline->isPast() ? 'red' : 'amber'],
             $a->check_status === AbsenceCheck::NOT_YET => ['text' => 'Counting – no report yet', 'tone' => 'blue'],
             default => ['text' => 'Not reportable', 'tone' => 'grey'],
@@ -159,6 +172,7 @@ class AbsenceController extends Controller
             'reason' => $a->reason,
             'homeOffice' => $ho,
             'fitNoteMissing' => $a->needsFitNote(),
+            'taskId' => $task?->isPending() ? $task->id : null,
         ];
     }
 
@@ -172,7 +186,7 @@ class AbsenceController extends Controller
                 'type' => array_column(AbsenceType::cases(), 'value'),
             ]);
 
-        $query = Absence::query()->select('absences.*')->with('employee')
+        $query = Absence::query()->select('absences.*')->with(['employee', 'reportTask'])
             ->join('employees', 'employees.id', '=', 'absences.employee_id')
             ->where('absences.business_id', $business->id);
         $table->search($query, ['employees.full_name', 'absences.reason']);
@@ -208,6 +222,11 @@ class AbsenceController extends Controller
     private function fileRules(bool $required): array
     {
         return [$required ? 'required' : 'nullable', 'file', 'max:'.config('sponsorsafe.documents.max_kb'), 'mimes:'.implode(',', config('sponsorsafe.documents.mimes'))];
+    }
+
+    private function wd(): WorkingDays
+    {
+        return $this->wd ??= WorkingDays::fromDatabase();
     }
 
     private function employee(Request $request, int $id): Employee

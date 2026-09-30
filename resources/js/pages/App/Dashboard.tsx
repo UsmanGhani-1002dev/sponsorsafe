@@ -1,48 +1,127 @@
+import type { TaskRow } from '@/components/report-task';
+import { Badge, type Tone } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { PageHeader } from '@/components/ui/page-header';
 import AppLayout from '@/layouts/app-layout';
+import { cn } from '@/lib/cn';
 import { Link } from '@inertiajs/react';
+import { CheckCircle2, ShieldCheck } from 'lucide-react';
 
 interface Props {
-    business: { name: string; licence: string | null; employees: number; limit: number };
+    business: { name: string; employees: number; limit: number };
+    stats: { pending: number; urgent: number; expiring: number; employees: number };
+    watchlist: { id: number; name: string; status: string; expiry: { text: string; tone: Tone }; unpaid: string }[];
+    year: string;
+    deadlines: TaskRow[];
 }
 
-export default function Dashboard({ business }: Props) {
-    const pct = Math.min(100, Math.round((business.employees / business.limit) * 100));
+export default function Dashboard({ business, stats, watchlist, year, deadlines }: Props) {
+    const tiles = [
+        { label: 'Home Office reports pending', value: stats.pending, hint: 'Worker and company events', href: '/app/reports?status=pending', alert: false },
+        { label: 'Due within 5 working days', value: stats.urgent, hint: 'Including overdue', href: '/app/reports?status=pending', alert: stats.urgent > 0 },
+        { label: 'Employee requests', value: null, hint: 'Arrives with the employee portal', href: null, alert: false },
+        { label: 'Visas expiring in 90 days', value: stats.expiring, hint: 'Follow-up right-to-work checks', href: '/app/employees?sort=expiry', alert: stats.expiring > 0 },
+    ];
+
     return (
         <AppLayout title="Dashboard">
-            <h1 className="mb-6 text-[26px] font-semibold">Dashboard</h1>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <Card className="p-5">
-                    <p className="text-sm text-muted">Employees on your plan</p>
-                    <p className="mt-1 font-mono text-3xl font-semibold">
-                        {business.employees}
-                        <span className="text-lg text-muted"> / {business.limit}</span>
-                    </p>
-                    <div className="mt-3 h-2 rounded bg-subtle" role="progressbar" aria-valuenow={business.employees} aria-valuemin={0} aria-valuemax={business.limit} aria-label="Employees used">
-                        <div className="h-2 rounded bg-accent" style={{ width: `${pct}%` }} />
-                    </div>
-                </Card>
-                <Card className="p-5">
-                    <p className="text-sm text-muted">Sponsor licence number</p>
-                    <p className="mt-1 text-lg font-semibold">{business.licence ?? 'Not added yet'}</p>
-                </Card>
-                <Card className="p-5">
-                    <p className="text-sm text-muted">Home Office reports due</p>
-                    <p className="mt-1 font-mono text-3xl font-semibold">0</p>
-                    <p className="mt-1 text-[13px] text-muted">Report tracking is coming soon.</p>
-                </Card>
+            <PageHeader title="Dashboard" description={`${business.name} · ${business.employees} of ${business.limit} employees on your plan`} />
+
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {tiles.map((t) => {
+                    const body = (
+                        <>
+                            <p className="text-sm text-muted">{t.label}</p>
+                            <p className={cn('mt-1 font-mono text-3xl font-semibold', t.alert && (t.label.startsWith('Visas') ? 'text-amber-700 dark:text-amber-300' : 'text-red-700 dark:text-red-300'))}>{t.value ?? '—'}</p>
+                            <p className="mt-1 text-[13px] text-muted">{t.hint}</p>
+                        </>
+                    );
+                    return t.href ? (
+                        <Link key={t.label} href={t.href} prefetch className="block rounded-xl border border-line bg-surface p-5 shadow-[0_1px_2px_rgba(16,24,40,0.05)] hover:border-line-strong">
+                            {body}
+                        </Link>
+                    ) : (
+                        <Card key={t.label} className="p-5">
+                            {body}
+                        </Card>
+                    );
+                })}
             </div>
-            <Card className="mt-6 p-6">
-                <h2 className="text-lg font-semibold">{business.employees === 0 ? 'Next: add your employees' : 'Your employees'}</h2>
-                <p className="mt-1 max-w-2xl text-[15px] text-ink-2">
-                    {business.employees === 0
-                        ? 'Add a work site under Settings, then add each person you employ. The form asks only for what their right-to-work basis needs.'
-                        : 'Open an employee to see their right-to-work details and change history, or record a change.'}
-                </p>
-                <Link href="/app/employees" prefetch className="mt-4 inline-flex min-h-11 items-center rounded-lg bg-accent-fill px-4 text-[15px] font-semibold text-white hover:bg-accent-fill-hover">
-                    {business.employees === 0 ? 'Add employees' : 'Go to Employees'}
-                </Link>
-            </Card>
+
+            <div className="mt-8 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                <section aria-labelledby="deadlines-title">
+                    <div className="mb-3 flex items-baseline justify-between">
+                        <h2 id="deadlines-title" className="text-lg font-semibold">
+                            Next Home Office deadlines
+                        </h2>
+                        <Link href="/app/reports" className="text-sm font-semibold text-accent hover:underline">
+                            All reports
+                        </Link>
+                    </div>
+                    <Card className="overflow-hidden">
+                        {deadlines.length === 0 ? (
+                            <EmptyState icon={CheckCircle2} title="Nothing to report right now" />
+                        ) : (
+                            <ul>
+                                {deadlines.map((t) => (
+                                    <li key={t.id} className="border-t border-line first:border-t-0">
+                                        <Link href={`/app/reports?task=${t.id}`} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 hover:bg-canvas">
+                                            <div className="min-w-0">
+                                                <p className="font-semibold">{t.event}</p>
+                                                <p className="text-[13px] text-muted">
+                                                    {t.who} · deadline {t.deadline}
+                                                </p>
+                                            </div>
+                                            <Badge tone={t.badge.tone}>{t.badge.text}</Badge>
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </Card>
+                </section>
+
+                <section aria-labelledby="watch-title">
+                    <h2 id="watch-title" className="mb-1 text-lg font-semibold">
+                        Right-to-work watchlist
+                    </h2>
+                    <p className="mb-3 text-sm text-ink-2">Employees with time-limited permission. A follow-up check is needed before each expiry.</p>
+                    <Card className="overflow-hidden">
+                        {watchlist.length === 0 ? (
+                            <EmptyState icon={ShieldCheck} title="Nobody has time-limited permission" />
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="bg-canvas text-[13px] font-semibold text-ink-2">
+                                        <tr>
+                                            <th scope="col" className="px-5 py-3">Employee</th>
+                                            <th scope="col" className="px-5 py-3">Expiry</th>
+                                            <th scope="col" className="px-5 py-3 whitespace-nowrap">Unpaid days {year}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {watchlist.map((w) => (
+                                            <tr key={w.id} className="border-t border-line">
+                                                <td className="px-5 py-3">
+                                                    <Link href={`/app/employees/${w.id}`} prefetch className="font-semibold hover:text-accent hover:underline">
+                                                        {w.name}
+                                                    </Link>
+                                                    <span className="block text-[13px] text-muted">{w.status}</span>
+                                                </td>
+                                                <td className="px-5 py-3">
+                                                    <Badge tone={w.expiry.tone}>{w.expiry.text}</Badge>
+                                                </td>
+                                                <td className="px-5 py-3 font-mono">{w.unpaid}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </Card>
+                </section>
+            </div>
         </AppLayout>
     );
 }

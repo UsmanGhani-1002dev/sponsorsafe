@@ -6,6 +6,9 @@ use App\Enums\AbsenceType;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Models\KeyPerson;
+use App\Models\ReportTask;
+use App\Services\ReportTasks;
+use App\Services\WorkingDays;
 use App\Models\WorkSite;
 use App\Services\EmployeeRecorder;
 use App\Support\Audit;
@@ -21,7 +24,8 @@ class SettingsController extends Controller
     public function index(Request $request): Response
     {
         $business = $request->user()->business;
-        $sites = $business->workSites()->with(['employees' => fn ($q) => $q->current()->orderBy('full_name')])->orderByRaw('closed_on is not null')->orderBy('name')->get();
+        $sites = $business->workSites()->with(['employees' => fn ($q) => $q->current()->orderBy('full_name'), 'reportTasks' => fn ($q) => $q->latest('id')])->orderByRaw('closed_on is not null')->orderBy('name')->get();
+        $wd = WorkingDays::fromDatabase();
         $employees = $business->employees()->current()->orderBy('full_name')->get(['id', 'full_name', 'work_site_id']);
 
         return Inertia::render('App/Settings/Index', [
@@ -46,6 +50,7 @@ class SettingsController extends Controller
                 'address' => $s->address,
                 'closed' => Employee::formatDate($s->closed_on),
                 'staff' => $s->employees->pluck('full_name'),
+                'sms' => self::smsStatus($s, $wd),
             ]),
             'employees' => $employees->map(fn (Employee $e) => ['id' => $e->id, 'name' => $e->full_name, 'siteId' => $e->work_site_id]),
             'rules' => [
@@ -66,8 +71,9 @@ class SettingsController extends Controller
         $data = $this->validateSite($request);
         $site = $request->user()->business->workSites()->create($data);
         Audit::log('work_site.created', $site, ['name' => $site->name]);
+        $task = ReportTasks::forSite($site->setRelation('business', $request->user()->business), 'added', $request->user());
 
-        return back()->with('success', "{$site->name} added. Remember to add the new work address on the Sponsor Management System.");
+        return back()->with('success', "{$site->name} added. A Home Office report task was created: add the work address on the Sponsor Management System by {$task->deadline->format('j M Y')}.");
     }
 
     public function updateSite(Request $request, int $site): RedirectResponse
@@ -91,8 +97,9 @@ class SettingsController extends Controller
         }
         $site->update(['closed_on' => today()]);
         Audit::log('work_site.closed', $site, ['name' => $site->name]);
+        $task = ReportTasks::forSite($site->setRelation('business', $request->user()->business), 'closed', $request->user());
 
-        return back()->with('success', "{$site->name} closed. Remember to remove the work address on the Sponsor Management System.");
+        return back()->with('success', "{$site->name} closed. A Home Office report task was created: remove the work address on the Sponsor Management System by {$task->deadline->format('j M Y')}.");
     }
 
     public function moveEmployee(Request $request, EmployeeRecorder $recorder): RedirectResponse
@@ -107,10 +114,11 @@ class SettingsController extends Controller
         if ((int) $employee->work_site_id === (int) $data['work_site_id']) {
             return back()->withErrors(['work_site_id' => "{$employee->full_name} already works at that site."]);
         }
-        $recorder->update($employee, ['work_site_id' => (int) $data['work_site_id']], $request->user());
+        $change = $recorder->update($employee, ['work_site_id' => (int) $data['work_site_id']], $request->user())[0];
+        $task = $change->report_task_id ? ReportTask::findOrFail($change->report_task_id) : null;
 
         return back()->with('success', "{$employee->full_name} moved and logged in their change history."
-            .($employee->isSponsored() ? ' Sponsored worker: report the new work location on the Sponsor Management System.' : ''));
+            .($task ? ' Sponsored worker: a Home Office report task was created, deadline '.$task->deadline->format('j M Y').'.' : ' Not a sponsored worker, so no Home Office report.'));
     }
 
     public function storePerson(Request $request): RedirectResponse
@@ -122,8 +130,9 @@ class SettingsController extends Controller
         }
         $person = $business->keyPersonnel()->create($data);
         Audit::log('key_person.added', $person, ['role' => $person->role, 'name' => $person->name]);
+        $task = ReportTasks::forKeyPerson($person, 'added', $request->user());
 
-        return back()->with('success', $person->roleLabel().' added. Update the Sponsor Management System to match.');
+        return back()->with('success', $person->roleLabel().' added. '.self::smsNote($task));
     }
 
     public function updatePerson(Request $request, int $person): RedirectResponse
@@ -134,9 +143,11 @@ class SettingsController extends Controller
             $meta = collect($person->getDirty())->map(fn ($new, $field) => ['from' => $person->getOriginal($field), 'to' => $new])->all();
             $person->save();
             Audit::log('key_person.changed', $person, $meta);
+
+            return back()->with('success', $person->roleLabel().' saved. '.self::smsNote(ReportTasks::forKeyPerson($person, 'changed', $request->user())));
         }
 
-        return back()->with('success', $person->roleLabel().' saved. Update the Sponsor Management System to match.');
+        return back()->with('success', 'Nothing changed.');
     }
 
     public function destroyPerson(Request $request, int $person): RedirectResponse
@@ -144,8 +155,27 @@ class SettingsController extends Controller
         $person = $request->user()->business->keyPersonnel()->findOrFail($person);
         $person->delete();
         Audit::log('key_person.removed', $person, ['role' => $person->role, 'name' => $person->name]);
+        $task = ReportTasks::forKeyPerson($person, 'removed', $request->user());
 
-        return back()->with('success', "{$person->name} removed as ".$person->roleLabel().'. Update the Sponsor Management System to match.');
+        return back()->with('success', "{$person->name} removed as ".$person->roleLabel().'. '.self::smsNote($task));
+    }
+
+    /** "Listed on SMS", or "Add to SMS by …" while the site's Home Office task is pending. */
+    private static function smsStatus(WorkSite $site, WorkingDays $wd): array
+    {
+        $task = $site->reportTasks->first();
+        if ($task?->isPending()) {
+            $tone = $task->badge($wd)['tone'];
+
+            return ['text' => ($site->closed_on ? 'Remove from SMS by ' : 'Add to SMS by ').$task->deadline->format('j M Y'), 'tone' => $tone === 'blue' ? 'amber' : $tone, 'taskId' => $task->id];
+        }
+
+        return ['text' => $site->closed_on ? 'Removed from SMS' : 'Listed on SMS', 'tone' => $site->closed_on ? 'grey' : 'green', 'taskId' => null];
+    }
+
+    private static function smsNote(ReportTask $task): string
+    {
+        return 'A Home Office report task was created: update the Sponsor Management System by '.$task->deadline->format('j M Y').'.';
     }
 
     /** Compliance rule settings (compliance-rules §9). Stored per business; defaults come from config. */

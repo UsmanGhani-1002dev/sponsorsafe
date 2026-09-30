@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Business;
 use App\Models\DocumentRequest;
 use App\Models\Employee;
+use App\Models\ReportTask;
 use App\Services\AbsenceRules;
 use App\Services\EmployeeRecorder;
 use App\Services\EmployeeRules;
@@ -19,7 +20,7 @@ use App\Support\Badges;
 use App\Support\Table;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -33,7 +34,7 @@ class EmployeeController extends Controller
         $table = Table::from($request, sorts: ['name' => 'full_name', 'job' => 'job_title', 'start' => 'start_date', 'expiry' => 'visa_expiry'], default: 'name')
             ->filters(['status' => ['current', 'left', 'all'], 'basis' => array_column(RightToWorkBasis::cases(), 'value')]);
 
-        $query = $business->employees()->with(['workSite', 'user', 'documents:id,employee_id,category']);
+        $query = $business->employees()->with(['workSite', 'user', 'documents:id,employee_id,category'])->withCount(['reportTasks as pending_tasks' => fn ($q) => $q->pending()]);
         $table->search($query, ['full_name', 'job_title', 'email']);
         match ($table->filter('status', 'current')) {
             'current' => $query->current(),
@@ -52,6 +53,7 @@ class EmployeeController extends Controller
             'expiry' => $e->ended_on ? ['text' => 'Left', 'tone' => 'grey'] : Badges::expiry($e->visa_expiry),
             'portal' => $e->portalStatus(),
             'documents' => $e->documentsOnFile(),
+            'pendingReports' => $e->pending_tasks,
         ]);
 
         return Inertia::render('App/Employees/Index', [
@@ -101,10 +103,14 @@ class EmployeeController extends Controller
     public function show(Request $request, int $employee): Response
     {
         $e = $this->find($request, $employee)->load([
-            'workSite', 'user', 'changes.changedBy', 'documents.uploader', 'absences' => fn ($q) => $q->orderByDesc('start_date'),
+            'workSite', 'user', 'changes.changedBy', 'changes.reportTask', 'documents.uploader', 'absences' => fn ($q) => $q->with('reportTask')->orderByDesc('start_date'),
             'documentRequests' => fn ($q) => $q->where('status', DocumentRequest::STATUS_AWAITING),
+            'reportTasks' => fn ($q) => $q->orderByRaw("case when status = 'pending' then 0 else 1 end")->orderBy('deadline'),
         ]);
         $e->absences->each->setRelation('employee', $e);
+        $e->reportTasks->each->setRelation('employee', $e);
+        $wd = WorkingDays::fromDatabase();
+        $pending = $e->reportTasks->filter->isPending();
 
         return Inertia::render('App/Employees/Show', [
             'employee' => [
@@ -119,10 +125,19 @@ class EmployeeController extends Controller
                 'portal' => $e->portalStatus(),
                 'email' => $e->email,
                 'left' => $e->ended_on !== null,
+                'leftText' => $e->ended_on ? 'Left '.Employee::formatDate($e->ended_on).' · '.$e->end_reason : null,
+                'startIso' => $e->start_date->format('Y-m-d'),
                 'documents' => $e->documentsOnFile(),
+                'homeOffice' => $pending->isEmpty()
+                    ? ['text' => 'Home Office: up to date', 'tone' => 'green']
+                    : ['text' => 'Home Office: '.$pending->count().' pending', 'tone' => $pending->contains(fn ($t) => $t->badge($wd)['tone'] === 'red') ? 'red' : 'amber'],
             ],
+            'tasks' => $e->reportTasks->map(fn ($t) => ReportTaskController::row($t, $wd))->values(),
+            'endReasons' => Employee::END_REASONS,
+            'reporter' => $request->user()->name,
+            'today' => today()->format('Y-m-d'),
             'documents' => $this->documentCategories($e),
-            'absence' => $this->absenceSummary($e),
+            'absence' => $this->absenceSummary($e, $wd),
             'upload' => ['maxMb' => config('sponsorsafe.documents.max_kb') / 1024, 'categories' => array_map(fn ($c) => ['value' => $c->value, 'label' => $c->label()], DocumentCategory::cases())],
             'sections' => $this->sections($e),
             'history' => $e->changes->map(fn ($c) => [
@@ -132,7 +147,8 @@ class EmployeeController extends Controller
                 'from' => $c->old_value,
                 'to' => $c->new_value,
                 'by' => $c->changedBy?->name ?? 'System',
-                'reportable' => $e->isSponsored() && collect(ChangeType::cases())->contains(fn (ChangeType $t) => $t->label() === $c->label && $t->reportableIfSponsored()),
+                'homeOffice' => $c->reportTask ? $c->reportTask->badge($wd) : ['text' => 'Not reportable', 'tone' => 'grey'],
+                'taskId' => $c->reportTask?->isPending() ? $c->report_task_id : null,
             ]),
             'waitingFor' => $e->documentRequests->map(fn (DocumentRequest $r) => [
                 'label' => $r->category->label(),
@@ -171,19 +187,39 @@ class EmployeeController extends Controller
     {
         $e = $this->find($request, $employee);
         [$type, $data] = EmployeeRules::validateChange($request->all(), $e);
-        $changes = $this->recorder->update($e, $data, $request->user(), $type->label());
+        $changes = $this->recorder->update($e, $data, $request->user(), $type);
 
         if (! $changes) {
             return back()->withErrors(['value' => 'That is the same as the current value.']);
         }
-        if ($e->isSponsored() && $type->reportableIfSponsored()) {
-            $days = (int) $e->business->rule('worker_report_deadline_days');
-            $deadline = Employee::formatDate(Carbon::parse(WorkingDays::fromDatabase()->add(today(), $days)));
+        if ($taskId = $changes[0]->report_task_id) {
+            $deadline = Employee::formatDate(ReportTask::findOrFail($taskId)->deadline);
 
-            return back()->with('success', "Saved and logged. Sponsored worker: report this change on the Sponsor Management System by {$deadline} ({$days} working days).");
+            return back()->with('success', "Saved and logged. A Home Office report task was created: report this change on the Sponsor Management System by {$deadline}.");
         }
 
         return back()->with('success', 'Saved and logged in the history. No Home Office report needed.');
+    }
+
+    /** End of employment (§10). A sponsored worker gets a Home Office task: 10 working days from the last day. */
+    public function end(Request $request, int $employee): RedirectResponse
+    {
+        $e = $this->find($request, $employee);
+        if ($e->ended_on) {
+            return back()->with('error', 'Employment has already ended.');
+        }
+        $data = $request->validate([
+            'last_day' => ['required', 'date', 'before_or_equal:'.today()->addMonths(6)->format('Y-m-d'),
+                ...($request->input('reason') === 'Did not start' ? [] : ['after_or_equal:'.$e->start_date->format('Y-m-d')])],
+            'reason' => ['required', Rule::in(Employee::END_REASONS)],
+        ], [
+            'last_day.after_or_equal' => 'The last working day cannot be before they started. If they never started, choose "Did not start".',
+            'last_day.before_or_equal' => 'Enter a last working day within the next 6 months.',
+        ]);
+        $task = $this->recorder->end($e, $data['last_day'], $data['reason'], $request->user());
+
+        return back()->with('success', "Employment ended for {$e->full_name}. Portal access is off. Remember to give them their P45 and final payslip."
+            .($task ? " Sponsored worker: report this on the Sponsor Management System by {$task->deadline->format('j M Y')}." : ''));
     }
 
     public function invite(Request $request, int $employee): RedirectResponse
@@ -247,7 +283,7 @@ class EmployeeController extends Controller
     }
 
     /** Absence tab: unpaid days against the limit, annual leave left and this person's absences. */
-    private function absenceSummary(Employee $e): array
+    private function absenceSummary(Employee $e, WorkingDays $wd): array
     {
         $year = (string) today()->year;
         $usage = AbsenceRules::forBusiness($e->business)->unpaidUsage(today()->format('Y-m-d'), (float) $e->days_per_week, $e->absences->map->forRules());
@@ -260,7 +296,7 @@ class EmployeeController extends Controller
             'year' => $year,
             'unpaid' => ['used' => $usage['used'], 'limit' => $num($usage['limit'])],
             'annual' => ['allowance' => $num($allowance), 'taken' => $taken, 'left' => $num($allowance - $taken)],
-            'rows' => $e->absences->map(fn ($a) => AbsenceController::row($a))->values(),
+            'rows' => $e->absences->map(fn ($a) => AbsenceController::row($a, $wd))->values(),
         ];
     }
 

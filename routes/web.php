@@ -4,6 +4,7 @@ use App\Http\Controllers\App\AbsenceController;
 use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\DocumentController;
 use App\Http\Controllers\App\EmployeeController;
+use App\Http\Controllers\App\ReportTaskController;
 use App\Http\Controllers\App\SettingsController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\SetPasswordController;
@@ -45,6 +46,14 @@ Route::middleware(['auth:web', 'business.active', 'role:admin'])->prefix('app')-
     Route::put('/employees/{employee}/personal', [EmployeeController::class, 'correct'])->whereNumber('employee')->name('employees.correct');
     Route::post('/employees/{employee}/changes', [EmployeeController::class, 'recordChange'])->whereNumber('employee')->name('employees.changes');
     Route::post('/employees/{employee}/invite', [EmployeeController::class, 'invite'])->whereNumber('employee')->name('employees.invite');
+    Route::post('/employees/{employee}/end', [EmployeeController::class, 'end'])->whereNumber('employee')->name('employees.end');
+
+    // Home Office reports (compliance-rules §4).
+    Route::get('/reports', [ReportTaskController::class, 'index'])->name('reports.index');
+    Route::post('/reports', [ReportTaskController::class, 'store'])->name('reports.store');
+    Route::post('/reports/{task}/reported', [ReportTaskController::class, 'reported'])->whereNumber('task')->name('reports.reported');
+    Route::post('/reports/{task}/not-required', [ReportTaskController::class, 'notRequired'])->whereNumber('task')->name('reports.not-required');
+    Route::post('/reports/{task}/reopen', [ReportTaskController::class, 'reopen'])->whereNumber('task')->name('reports.reopen');
 
     // Documents: private files, every view and download audited.
     Route::post('/employees/{employee}/documents', [DocumentController::class, 'store'])->whereNumber('employee')->name('documents.store');

@@ -39,6 +39,11 @@ class Business extends Model
         return $this->hasMany(Employee::class);
     }
 
+    public function reportTasks(): HasMany
+    {
+        return $this->hasMany(ReportTask::class);
+    }
+
     public function keyPersonnel(): HasMany
     {
         return $this->hasMany(KeyPerson::class);

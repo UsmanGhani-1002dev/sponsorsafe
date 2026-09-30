@@ -17,6 +17,11 @@ class EmployeeChange extends Model
         return $this->belongsTo(Employee::class);
     }
 
+    public function reportTask(): BelongsTo
+    {
+        return $this->belongsTo(ReportTask::class);
+    }
+
     public function changedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'changed_by');

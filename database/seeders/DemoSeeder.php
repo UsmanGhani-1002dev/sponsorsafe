@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\AbsenceType;
+use App\Enums\ChangeType;
 use App\Enums\DocumentCategory;
 use App\Enums\RightToWorkBasis as B;
 use App\Models\Business;
@@ -13,7 +14,9 @@ use App\Models\EmployeeChange;
 use App\Models\KeyPerson;
 use App\Models\SuperAdmin;
 use App\Models\User;
+use App\Models\ReportTask;
 use App\Services\AbsenceRecorder;
+use App\Services\ReportTasks;
 use App\Services\DocumentVault;
 use Illuminate\Database\Seeder;
 use Illuminate\Http\UploadedFile;
@@ -134,8 +137,10 @@ class DemoSeeder extends Seeder
             $this->document($f[0], $f[1], $f[2], $f[3], $f[4] ?? null);
         }
 
-        // Absences (prototype). Rahul's reported 10-day unauthorised absence arrives with Home Office tasks in Stage 4.
+        // Absences (prototype). Any reportable one creates its Home Office task as it is recorded.
+        ReportTask::whereIn('business_id', [$retail->id, $catering->id])->delete();
         $absences = [
+            [$rahul, AbsenceType::Unauthorised, '2026-06-01', '2026-06-12', 'No contact, later returned'],
             [$aisha, AbsenceType::Unpaid, '2026-03-02', '2026-03-09', 'Family matter'],
             [$aisha, AbsenceType::Annual, '2026-08-10', '2026-08-14', 'Holiday'],
             [$rahul, AbsenceType::SickSelf, '2026-09-14', '2026-09-15', 'Unwell'],
@@ -159,6 +164,13 @@ class DemoSeeder extends Seeder
             $absence = $recorder->record($employee, $type, $start, $end, $reason, $fitNote, $admin);
             $absence->fitNote?->forceFill(['created_at' => $end.' 16:00:00', 'updated_at' => $end.' 16:00:00'])->save();
         }
+
+        // Home Office tasks from the prototype: Rahul's streak was reported on time; his promotion is still to report.
+        $streak = ReportTask::where('employee_id', $rahul->id)->where('source', 'absence')->sole();
+        ReportTasks::markReported($streak, '2026-06-15', 'Nadia Khan', 'SMS-4471920', $retailAdmin);
+        $promotion = $rahul->changes()->where('field', 'job_title')->sole();
+        ReportTasks::forChange($rahul->setRelation('business', $retail), $promotion, ChangeType::JobTitle, $retailAdmin, '2026-09-10');
+        ReportTasks::manual($catering, ReportTask::COMPANY, null, 'Registered or trading address changed', '2026-09-01', $cateringAdmin);
 
         SuperAdmin::updateOrCreate(['email' => 'owner@sponsorsafe.example'], ['name' => 'Platform owner', 'password' => 'password']);
     }

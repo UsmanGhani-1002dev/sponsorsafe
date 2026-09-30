@@ -14,8 +14,9 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
 
 - **Stage 1 (foundation): done and tested** — built in a Claude chat.
 - **Stage 2 (employees): done and tested.**
-- **Stage 3 (documents + absence): done and tested** — 143 PHPUnit tests passing. Waiting for Shaf's review.
-- **Next: Stage 4 (Home Office reports).** See "Build order" below.
+- **Stage 3 (documents + absence): done and tested.**
+- **Stage 4 (Home Office reports + end of employment): done and tested** — 163 PHPUnit tests passing. Waiting for Shaf's review.
+- **Next: Stage 5 (employee portal + Requests inbox).** See "Build order" below.
 - Local setup on this laptop is done (git repo, MySQL databases, PHP 8.4).
 
 ## Local setup (Windows)
@@ -166,7 +167,34 @@ Demo logins (password `password`, local only):
 - Decisions: calendar leave year by default; self-cert sickness counted in calendar days;
   fit notes optional at save and flagged "Fit note missing"; no second trigger once a
   limit or streak has already been passed (a warning instead).
-- Demo: Rahul's reported 10-day unauthorised absence is added in Stage 4 with its task.
+- Demo: Rahul's reported 10-day unauthorised absence (Stage 4 seeds it with its reported task).
+
+## What Stage 4 built (follow these conventions)
+
+- `report_tasks` (compliance-rules §4): level worker|company, event, `trigger_on`, `deadline`,
+  `source` (absence, change, work_site, key_personnel, leaver, manual), polymorphic `subject`
+  (morph map in `AppServiceProvider`), status pending|reported|not_required, reported on/by,
+  `notes` (SMS reference or reason). `employees.delete_after` / `rtw_delete_after`.
+- **Every task is created by `App\Services\ReportTasks`**, called from the recorders:
+  `AbsenceRecorder::record` (stored check), `EmployeeRecorder::update` (pass the `ChangeType`
+  for "Record a change"; a `work_site_id` change is a site move), `EmployeeRecorder::end`
+  (End employment, §10), Settings (site added/closed, key personnel added/changed/removed),
+  and `ReportTasks::manual`. Worker tasks only for sponsored workers. Deadlines always from
+  `Business::rule('worker_report_deadline_days' | 'company_report_deadline_days')` in
+  working days; key personnel use the company deadline.
+- `ReportTask::badge()` is the §4 badge (overdue / due today red, ≤ 5 working days amber,
+  pending blue, reported green, not required grey). `ReportTaskController::row()` is the
+  one task shape for the reports list, profile tab and dashboard.
+- Mark reported: date (not future, not before the trigger) and reported-by required; SMS
+  reference optional (prototype + acceptance test 6). Not required: reason required.
+  Reopen for mistakes. All audited. Removing an absence removes its pending task; a
+  completed task blocks removal (`ReportTasks::guardRemoval`).
+- `ReportTasks::backfill()` ran in the migration for records made before Stage 4.
+- Dashboard tiles via `App\Support\DashboardCounts` (cached 5 minutes per business and
+  day; `forget()` on every task/employee write).
+- End employment (pulled forward from Stage 6): last day + reason, portal off, delete-after
+  dates, open document requests cancelled, P45 reminder. Stage 6 still has the
+  Compliance check tab, the PDF pack and the monthly "due for deletion" review.
 
 ## UI and performance rules ("modern and very fast")
 
@@ -212,7 +240,7 @@ Demo logins (password `password`, local only):
    dates, "Request from employee"; absence types (§3), absence log,
    `AbsenceRules` service (unpaid limit, unauthorised streak) with tests,
    record-absence screen with the live Home Office check.
-4. Home Office reports: task model, auto-creation from absences, reportable record
+4. ~~Home Office reports~~ — done (plus End employment from Stage 6): task model, auto-creation from absences, reportable record
    changes, site changes and leavers (§4); "Mark reported" / "Not required";
    dashboard counts and deadlines.
 5. Employee portal: home, my documents, leave and sickness, update my details,

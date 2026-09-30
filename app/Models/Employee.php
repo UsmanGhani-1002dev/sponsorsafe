@@ -17,6 +17,7 @@ class Employee extends Model
 
     public const CHECK_METHODS = ['Home Office online check (share code)', 'Manual check of original passport', 'IDVT – certified identity provider'];
     public const CONTRACT_TYPES = ['Permanent', 'Fixed term', 'Part-time permanent'];
+    public const END_REASONS = ['Resigned', 'Dismissed', 'Contract ended', 'Redundancy', 'Did not start', 'Other'];
     public const NATIONALITIES = ['British', 'Irish', 'Indian', 'Pakistani', 'Bangladeshi', 'Nigerian', 'Polish', 'Romanian', 'Filipino', 'Other'];
 
     /** Encrypted at rest; only the last 4 characters are ever shown. */
@@ -60,7 +61,7 @@ class Employee extends Model
         'ni_number', 'passport_number', 'passport_expiry', 'rtw_basis', 'visa_type', 'rtw_check_method', 'rtw_check_date',
         'rtw_checked_by', 'share_code', 'visa_start', 'visa_expiry', 'work_restrictions', 'follow_up_check_due', 'cos_number',
         'cos_assigned_on', 'soc_code', 'job_title', 'salary', 'start_date', 'days_per_week', 'contracted_hours', 'contract_type',
-        'ended_on', 'end_reason',
+        'ended_on', 'end_reason', 'delete_after', 'rtw_delete_after',
     ];
 
     protected $hidden = self::SECRET_FIELDS;
@@ -81,6 +82,8 @@ class Employee extends Model
             'cos_assigned_on' => 'date',
             'start_date' => 'date',
             'ended_on' => 'date',
+            'delete_after' => 'date',
+            'rtw_delete_after' => 'date',
             'salary' => 'decimal:2',
             'days_per_week' => 'decimal:1',
             'contracted_hours' => 'decimal:2',
@@ -120,6 +123,11 @@ class Employee extends Model
     public function absences(): HasMany
     {
         return $this->hasMany(Absence::class);
+    }
+
+    public function reportTasks(): HasMany
+    {
+        return $this->hasMany(ReportTask::class);
     }
 
     /** Required document categories for this person (§2): sponsored workers also need CoS and recruitment evidence. */

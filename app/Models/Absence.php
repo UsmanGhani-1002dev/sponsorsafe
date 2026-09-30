@@ -6,6 +6,7 @@ use App\Enums\AbsenceType;
 use App\Services\AbsenceCheck;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 /** One entry in the absence log (compliance-rules §3), with its Home Office check result. */
 class Absence extends Model
@@ -34,6 +35,11 @@ class Absence extends Model
     public function fitNote(): BelongsTo
     {
         return $this->belongsTo(Document::class, 'fit_note_id');
+    }
+
+    public function reportTask(): MorphOne
+    {
+        return $this->morphOne(ReportTask::class, 'subject');
     }
 
     public function recordedBy(): BelongsTo

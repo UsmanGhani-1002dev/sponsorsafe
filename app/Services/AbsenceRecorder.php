@@ -58,6 +58,7 @@ class AbsenceRecorder
                 'source' => $source,
             ]);
             Audit::log('absence.recorded', $absence, ['employee_id' => $employee->id, 'type' => $type->value, 'days' => $check->days, 'check' => $check->status], $by);
+            ReportTasks::forAbsence($absence->setRelation('employee', $employee), $by);
 
             return $absence;
         });
@@ -70,8 +71,12 @@ class AbsenceRecorder
         Audit::log('absence.fit_note_added', $absence, ['document_id' => $note->id], $by);
     }
 
+    /**
+     * @throws ValidationException when its Home Office task has already been completed
+     */
     public function delete(Absence $absence, User $by): void
     {
+        DB::transaction(fn () => ReportTasks::guardRemoval($absence, $by));
         $absence->delete();
         Audit::log('absence.deleted', $absence, [
             'employee_id' => $absence->employee_id, 'type' => $absence->type->value,

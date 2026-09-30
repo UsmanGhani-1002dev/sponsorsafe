@@ -119,7 +119,7 @@ class EmployeeRecordTest extends TestCase
 
         // 10 working days from Mon 28 Sep 2026 is Mon 12 Oct 2026.
         $this->actingAs($this->admin)->post("/app/employees/{$e->id}/changes", ['type' => 'salary_reduction', 'value' => '£40,000'])
-            ->assertSessionHas('success', 'Saved and logged. Sponsored worker: report this change on the Sponsor Management System by 12 Oct 2026 (10 working days).');
+            ->assertSessionHas('success', 'Saved and logged. A Home Office report task was created: report this change on the Sponsor Management System by 12 Oct 2026.');
         $change = EmployeeChange::sole();
         $this->assertSame(['Salary – reduction', '£42,000.00', '£40,000.00'], [$change->label, $change->old_value, $change->new_value]);
     }
@@ -202,8 +202,8 @@ class EmployeeRecordTest extends TestCase
         $this->get("/app/employees/{$e->id}")->assertInertia(fn (Assert $p) => $p->component('App/Employees/Show')
             ->has('history', 2)
             ->where('history.0.label', 'Job title')
-            ->where('history.0.reportable', true)
-            ->where('history.1.reportable', false)
+            ->where('history.0.homeOffice.text', fn ($t) => str_ends_with($t, 'working days left'))
+            ->where('history.1.homeOffice', ['text' => 'Not reportable', 'tone' => 'grey'])
             ->where('history.0.by', 'Nadia Khan'));
     }
 

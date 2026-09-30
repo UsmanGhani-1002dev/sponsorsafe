@@ -16,6 +16,7 @@ interface Row {
     expiry: { text: string; tone: Tone };
     portal: 'none' | 'invited' | 'active';
     documents: { have: number; need: number };
+    pendingReports: number;
 }
 
 interface Props {
@@ -59,6 +60,11 @@ export default function EmployeesIndex({ employees, table, bases, plan }: Props)
                     {e.documents.have} of {e.documents.need}
                 </Badge>
             ),
+        },
+        {
+            key: 'homeOffice',
+            label: 'Home Office',
+            render: (e) => <Badge tone={e.pendingReports ? 'red' : 'green'}>{e.pendingReports ? `${e.pendingReports} pending` : 'Up to date'}</Badge>,
         },
         { key: 'portal', label: 'Portal', render: (e) => <Badge tone={portal[e.portal].tone}>{portal[e.portal].text}</Badge> },
     ];

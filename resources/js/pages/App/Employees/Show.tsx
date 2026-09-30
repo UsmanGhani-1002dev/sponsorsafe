@@ -11,8 +11,9 @@ import AppLayout from '@/layouts/app-layout';
 import { AbsenceTab } from '@/components/employee/absence-tab';
 import { DocumentsTab, type DocumentCategoryRow } from '@/components/employee/documents-tab';
 import type { AbsenceRow } from '@/components/absence';
+import { ReportDialog, reopenTask, type TaskRow } from '@/components/report-task';
 import { router, useForm } from '@inertiajs/react';
-import { History, Mail, Pencil } from 'lucide-react';
+import { FileCheck2, History, Mail, Pencil, UserX } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
 type BadgeData = { text: string; tone: Tone } | null;
@@ -30,8 +31,15 @@ interface Props {
         portal: 'none' | 'invited' | 'active';
         email: string;
         left: boolean;
+        leftText: string | null;
+        startIso: string;
         documents: { have: number; need: number };
+        homeOffice: { text: string; tone: Tone };
     };
+    tasks: TaskRow[];
+    endReasons: string[];
+    reporter: string;
+    today: string;
     documents: DocumentCategoryRow[];
     absence: {
         year: string;
@@ -41,7 +49,7 @@ interface Props {
     };
     upload: { maxMb: number; categories: { value: string; label: string }[] };
     sections: { title: string; fields: { label: string; value: string; badge: BadgeData }[] }[];
-    history: { id: number; date: string; label: string; from: string | null; to: string | null; by: string; reportable: boolean }[];
+    history: { id: number; date: string; label: string; from: string | null; to: string | null; by: string; homeOffice: { text: string; tone: Tone }; taskId: number | null }[];
     waitingFor: { label: string; since: string }[];
     changeTypes: { value: string; label: string; field: string; reportable: boolean; current: string | null }[];
     personal: {
@@ -62,9 +70,10 @@ export default function ShowEmployee(props: Props) {
     const { employee } = props;
     const [tab, setTab] = useState(() => {
         const wanted = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : null;
-        return wanted && ['docs', 'absence', 'history'].includes(wanted) ? wanted : 'details';
+        return wanted && ['docs', 'absence', 'reports', 'history'].includes(wanted) ? wanted : 'details';
     });
     const [confirmInvite, setConfirmInvite] = useState(false);
+    const [ending, setEnding] = useState(false);
     const [sending, setSending] = useState(false);
 
     const changeTab = (id: string) => {
@@ -95,16 +104,24 @@ export default function ShowEmployee(props: Props) {
                         <Badge tone={employee.documents.have === employee.documents.need ? 'green' : 'amber'}>
                             Documents {employee.documents.have} of {employee.documents.need}
                         </Badge>
-                        <Badge tone={employee.expiry.tone}>Expiry: {employee.expiry.text}</Badge>
-                        <Badge tone={portalBadge[employee.portal].tone}>{portalBadge[employee.portal].text}</Badge>
+                        {!employee.left && <Badge tone={employee.expiry.tone}>Expiry: {employee.expiry.text}</Badge>}
+                        <Badge tone={employee.homeOffice.tone}>{employee.homeOffice.text}</Badge>
+                        {employee.left ? <Badge tone="grey">{employee.leftText}</Badge> : <Badge tone={portalBadge[employee.portal].tone}>{portalBadge[employee.portal].text}</Badge>}
                     </div>
                 </div>
-                {!employee.left && (
-                    <Button variant="secondary" onClick={() => setConfirmInvite(true)}>
-                        <Mail size={16} aria-hidden /> {inviteLabel}
-                    </Button>
+                {!employee.left && !ending && (
+                    <div className="flex flex-wrap gap-2">
+                        <Button variant="secondary" onClick={() => setConfirmInvite(true)}>
+                            <Mail size={16} aria-hidden /> {inviteLabel}
+                        </Button>
+                        <Button variant="danger" onClick={() => setEnding(true)}>
+                            <UserX size={16} aria-hidden /> End employment
+                        </Button>
+                    </div>
                 )}
             </Card>
+
+            {ending && <EndEmployment employee={employee} reasons={props.endReasons} today={props.today} onClose={() => setEnding(false)} />}
 
             <ConfirmDialog open={confirmInvite} title={inviteLabel} confirmLabel="Send email" processing={sending} onConfirm={invite} onClose={() => setConfirmInvite(false)}>
                 We will email {employee.email} a link to set their password. It works once and expires in 7 days. Any earlier link stops working.
@@ -119,7 +136,7 @@ export default function ShowEmployee(props: Props) {
                     { id: 'check', label: 'Compliance check', soon: true },
                     { id: 'docs', label: 'Documents' },
                     { id: 'absence', label: 'Absence' },
-                    { id: 'reports', label: 'Home Office', soon: true },
+                    { id: 'reports', label: 'Home Office' },
                     { id: 'history', label: 'History' },
                 ]}
             />
@@ -128,9 +145,97 @@ export default function ShowEmployee(props: Props) {
                 {tab === 'details' && <Details {...props} />}
                 {tab === 'docs' && <DocumentsTab employeeId={employee.id} employeeName={employee.name} hasPortal={employee.portal !== 'none'} categories={props.documents} upload={props.upload} />}
                 {tab === 'absence' && <AbsenceTab employeeId={employee.id} left={employee.left} absence={props.absence} />}
+                {tab === 'reports' && <HomeOfficeTab tasks={props.tasks} reporter={props.reporter} today={props.today} />}
                 {tab === 'history' && <HistoryTab {...props} />}
             </div>
         </AppLayout>
+    );
+}
+
+/** End of employment (§10): last working day and reason. A sponsored worker gets a Home Office task. */
+function EndEmployment({ employee, reasons, today, onClose }: { employee: Props['employee']; reasons: string[]; today: string; onClose: () => void }) {
+    const form = useForm({ last_day: today, reason: reasons[0] });
+    const submit = (e: FormEvent) => {
+        e.preventDefault();
+        form.post(`/app/employees/${employee.id}/end`, { preserveScroll: true, onSuccess: onClose });
+    };
+
+    return (
+        <Card className="mb-6 border-2 border-red-300 p-5 sm:p-6 dark:border-red-900">
+            <form onSubmit={submit} noValidate className="flex flex-col gap-4">
+                <h2 className="text-lg font-semibold">End employment for {employee.name}</h2>
+                <div className="grid gap-4 sm:grid-cols-2 lg:max-w-2xl">
+                    <Field id="end-day" label={form.data.reason === 'Did not start' ? 'Date they were due to start' : 'Last working day'} error={form.errors.last_day}>
+                        <Input id="end-day" type="date" value={form.data.last_day} onChange={(e) => form.setData('last_day', e.target.value)} invalid={!!form.errors.last_day} />
+                    </Field>
+                    <Field id="end-reason" label="Reason" error={form.errors.reason}>
+                        <Select id="end-reason" value={form.data.reason} onChange={(e) => form.setData('reason', e.target.value)}>
+                            {reasons.map((r) => (
+                                <option key={r}>{r}</option>
+                            ))}
+                        </Select>
+                    </Field>
+                </div>
+                <p className="max-w-3xl text-sm leading-relaxed text-ink-2">
+                    {employee.sponsored
+                        ? 'Sponsored worker: a Home Office report task is created, due 10 working days after this date. '
+                        : 'Not a sponsored worker, so nothing is reported to the Home Office. '}
+                    Their portal access is turned off, the records are kept for the retention period, and you will be reminded to give them their P45 and final payslip.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                    <Button type="submit" variant="danger" disabled={form.processing}>
+                        Confirm end of employment
+                    </Button>
+                    <Button type="button" variant="secondary" onClick={onClose}>
+                        Cancel
+                    </Button>
+                </div>
+            </form>
+        </Card>
+    );
+}
+
+/** Home Office tab: this person's report tasks. */
+function HomeOfficeTab({ tasks, reporter, today }: { tasks: TaskRow[]; reporter: string; today: string }) {
+    const [marking, setMarking] = useState<TaskRow | null>(null);
+
+    return (
+        <>
+            {tasks.length === 0 ? (
+                <Card>
+                    <EmptyState icon={FileCheck2} title="No Home Office reports for this employee" />
+                </Card>
+            ) : (
+                <ul className="flex flex-col gap-3">
+                    {tasks.map((t) => (
+                        <li key={t.id}>
+                            <Card className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
+                                <div className="min-w-0">
+                                    <p className="text-[15px] font-semibold">{t.event}</p>
+                                    <p className="text-[13px] text-muted">
+                                        Triggered {t.trigger} · deadline {t.deadline} · from {t.source}
+                                    </p>
+                                    {t.done && <p className="text-[13px] text-ink-2">{t.done}</p>}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Badge tone={t.badge.tone}>{t.badge.text}</Badge>
+                                    {t.pending ? (
+                                        <Button className="min-h-10 px-3 text-sm" onClick={() => setMarking(t)}>
+                                            Mark reported
+                                        </Button>
+                                    ) : (
+                                        <Button variant="ghost" className="min-h-10 px-3 text-sm" onClick={() => reopenTask(t.id)}>
+                                            Reopen
+                                        </Button>
+                                    )}
+                                </div>
+                            </Card>
+                        </li>
+                    ))}
+                </ul>
+            )}
+            <ReportDialog task={marking} reporter={reporter} today={today} onClose={() => setMarking(null)} />
+        </>
     );
 }
 
@@ -231,7 +336,7 @@ function HistoryTab({ employee, history, changeTypes, reportDeadlineDays }: Prop
     };
 
     let hint: { text: string; tone: 'warning' | 'info' };
-    if (type.reportable) hint = { text: `Sponsored worker: this change must be reported on the Sponsor Management System within ${reportDeadlineDays} working days.`, tone: 'warning' };
+    if (type.reportable) hint = { text: `Sponsored worker: saving creates a Home Office report task, due in ${reportDeadlineDays} working days.`, tone: 'warning' };
     else if (employee.sponsored && type.value === 'salary_increase') hint = { text: 'Salary increase: logged only, not reportable.', tone: 'info' };
     else hint = { text: 'Not reportable. It is logged in the history.', tone: 'info' };
 
@@ -262,7 +367,7 @@ function HistoryTab({ employee, history, changeTypes, reportDeadlineDays }: Prop
                                         </td>
                                         <td className="px-5 py-3.5 text-muted">{h.from ?? '—'}</td>
                                         <td className="px-5 py-3.5">{h.to ?? '—'}</td>
-                                        <td className="px-5 py-3.5">{h.reportable ? <Badge tone="amber">Report on SMS</Badge> : <Badge tone="grey">Not reportable</Badge>}</td>
+                                        <td className="px-5 py-3.5"><Badge tone={h.homeOffice.tone}>{h.homeOffice.text}</Badge></td>
                                     </tr>
                                 ))}
                             </tbody>

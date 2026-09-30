@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class WorkSite extends Model
 {
@@ -27,6 +28,12 @@ class WorkSite extends Model
     public function employees(): HasMany
     {
         return $this->hasMany(Employee::class);
+    }
+
+    /** Home Office tasks for adding or closing this address. */
+    public function reportTasks(): MorphMany
+    {
+        return $this->morphMany(ReportTask::class, 'subject');
     }
 
     public function scopeOpen(Builder $query): void

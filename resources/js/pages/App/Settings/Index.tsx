@@ -1,4 +1,4 @@
-import { Badge } from '@/components/ui/badge';
+import { Badge, type Tone } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -7,7 +7,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Field, Input, Select } from '@/components/ui/field';
 import { PageHeader } from '@/components/ui/page-header';
 import AppLayout from '@/layouts/app-layout';
-import { router, useForm } from '@inertiajs/react';
+import { Link, router, useForm } from '@inertiajs/react';
 import { Building2, UserRound } from 'lucide-react';
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 
@@ -25,6 +25,7 @@ interface Site {
     address: string;
     closed: string | null;
     staff: string[];
+    sms: { text: string; tone: Tone; taskId: number | null };
 }
 interface Props {
     business: { name: string; licence: string | null; admins: string[] };
@@ -268,6 +269,7 @@ function WorkSites({ sites, employees }: Pick<Props, 'sites' | 'employees'>) {
                                     <th scope="col" className="px-5 py-3">Site</th>
                                     <th scope="col" className="px-5 py-3">Address</th>
                                     <th scope="col" className="px-5 py-3">Employees</th>
+                                    <th scope="col" className="px-5 py-3">Sponsor Management System</th>
                                     <th scope="col" className="px-5 py-3">
                                         <span className="sr-only">Actions</span>
                                     </th>
@@ -277,7 +279,7 @@ function WorkSites({ sites, employees }: Pick<Props, 'sites' | 'employees'>) {
                                 {sites.map((s) =>
                                     renaming === s.id ? (
                                         <tr key={s.id} className="border-t border-line">
-                                            <td colSpan={4} className="p-4">
+                                            <td colSpan={5} className="p-4">
                                                 <SiteForm site={s} onDone={() => setRenaming(null)} />
                                             </td>
                                         </tr>
@@ -288,6 +290,15 @@ function WorkSites({ sites, employees }: Pick<Props, 'sites' | 'employees'>) {
                                             </td>
                                             <td className="px-5 py-3.5">{s.address}</td>
                                             <td className="px-5 py-3.5 text-ink-2">{s.staff.length ? s.staff.join(', ') : 'None'}</td>
+                                            <td className="px-5 py-3.5">
+                                                {s.sms.taskId ? (
+                                                    <Link href={`/app/reports?task=${s.sms.taskId}`} className="hover:opacity-80">
+                                                        <Badge tone={s.sms.tone}>{s.sms.text}</Badge>
+                                                    </Link>
+                                                ) : (
+                                                    <Badge tone={s.sms.tone}>{s.sms.text}</Badge>
+                                                )}
+                                            </td>
                                             <td className="px-5 py-2 text-right whitespace-nowrap">
                                                 {!s.closed && (
                                                     <>
