@@ -31,7 +31,7 @@ interface Props {
     business: { name: string; licence: string | null; admins: string[] };
     people: Person[];
     roles: { value: string; label: string; single: boolean }[];
-    plan: { price: string; limit: number; used: number; nextPayment: string | null; method: string | null; graceEnds: string | null; canManage: boolean; training: string };
+    plan: { price: string; limit: number; used: number; nextPayment: string | null; method: string | null; graceEnds: string | null; canManage: boolean; training: string; provider: 'stripe' | 'paypal' | null; priceChange: { on: string; price: string; limit: number | null } | null };
     sites: Site[];
     employees: { id: number; name: string; siteId: number | null }[];
     rules: RulesProps;
@@ -82,10 +82,15 @@ export default function Settings({ business, people, roles, plan, sites, employe
                         </p>
                     )}
                     {plan.graceEnds && <p className="text-sm text-red-700 dark:text-red-300">Update your payment details by {plan.graceEnds} to keep access.</p>}
+                    {plan.priceChange && (
+                        <p className="rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink-2">
+                            From {plan.priceChange.on}: £{plan.priceChange.price} per month{plan.priceChange.limit ? ` for up to ${plan.priceChange.limit} employees` : ''}.
+                        </p>
+                    )}
                     <div className="flex flex-wrap items-center gap-2">
                         {plan.canManage ? (
                             <Button variant="secondary" className="min-h-10 text-sm" onClick={() => router.post('/app/settings/billing')}>
-                                Manage billing
+                                {plan.provider === 'paypal' ? 'Manage billing in PayPal' : 'Manage billing'}
                             </Button>
                         ) : (
                             <a href="/?topic=Existing%20customer%20support#contact" className="inline-flex min-h-10 items-center rounded-lg border border-line-strong bg-surface px-3.5 text-sm font-semibold text-ink-2 hover:bg-canvas">

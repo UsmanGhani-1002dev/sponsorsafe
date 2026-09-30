@@ -12,7 +12,9 @@ use App\Services\Retention;
 use App\Services\WorkingDays;
 use App\Models\WorkSite;
 use App\Services\EmployeeRecorder;
+use App\Billing\PayPalGateway;
 use App\Billing\StripeGateway;
+use App\Models\Business;
 use App\Support\Audit;
 use App\Support\Pricing;
 use Illuminate\Http\RedirectResponse;
@@ -50,7 +52,9 @@ class SettingsController extends Controller
                 'nextPayment' => Employee::formatDate($business->next_payment_on),
                 'method' => $business->payment_label,
                 'graceEnds' => Employee::formatDate($business->grace_ends_on),
-                'canManage' => $business->payment_provider === 'stripe' && filled($business->stripe_id),
+                'canManage' => self::canManageBilling($business),
+                'provider' => $business->payment_provider,
+                'priceChange' => $business->price_change_on ? ['on' => Employee::formatDate($business->price_change_on), 'price' => Pricing::pounds($business->price_change_pence), 'limit' => $business->price_change_limit] : null,
                 'training' => Pricing::forDisplay()['training'],
             ],
             'sites' => $sites->map(fn (WorkSite $s) => [
@@ -188,13 +192,20 @@ class SettingsController extends Controller
         return 'A Home Office report task was created: update the Sponsor Management System by '.$task->deadline->format('j M Y').'.';
     }
 
-    /** Compliance rule settings (compliance-rules §9). Stored per business; defaults come from config. */
-    /** Manage billing: Stripe's own portal (change card, invoices, cancel), then back to Settings. */
-    public function billing(Request $request, StripeGateway $stripe): HttpResponse
+    /**
+     * Manage billing: Stripe's own portal (change card, invoices, cancel), then back to Settings.
+     * PayPal has no per-merchant portal: PayPal customers go to their PayPal automatic payments page.
+     */
+    public function billing(Request $request, StripeGateway $stripe, PayPalGateway $paypal): HttpResponse
     {
         $business = $request->user()->business;
-        if ($business->payment_provider !== 'stripe' || blank($business->stripe_id)) {
+        if (! self::canManageBilling($business)) {
             return back()->with('error', 'Online billing is not set up for this subscription. Please contact us to change payment details.');
+        }
+        if ($business->payment_provider === 'paypal') {
+            Audit::log('billing.portal_opened', $business, ['provider' => 'paypal'], businessId: $business->id);
+
+            return Inertia::location($paypal->manageUrl());
         }
         try {
             $url = $stripe->portalUrl($business, route('app.settings'));
@@ -203,11 +214,21 @@ class SettingsController extends Controller
 
             return back()->with('error', 'We could not open billing just now. Please try again in a moment.');
         }
-        Audit::log('billing.portal_opened', $business, businessId: $business->id);
+        Audit::log('billing.portal_opened', $business, ['provider' => 'stripe'], businessId: $business->id);
 
         return Inertia::location($url);
     }
 
+    private static function canManageBilling(Business $business): bool
+    {
+        return match ($business->payment_provider) {
+            'stripe' => filled($business->stripe_id),
+            'paypal' => filled($business->paypal_subscription_id),
+            default => false,
+        };
+    }
+
+    /** Compliance rule settings (compliance-rules §9). Stored per business; defaults come from config. */
     public function updateRules(Request $request): RedirectResponse
     {
         $business = $request->user()->business;

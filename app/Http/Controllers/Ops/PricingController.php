@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Ops;
 
+use App\Billing\Subscriptions;
 use App\Http\Controllers\Controller;
+use App\Models\Business;
 use App\Models\PlatformSetting;
 use App\Support\Audit;
 use App\Support\Pricing;
@@ -11,12 +13,17 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-/** Plans and pricing: the price, employee limit and training price shown on the website, and the grace period. */
+/**
+ * Plans and pricing: the price, employee limit and training price shown on the website, the grace period,
+ * and moving existing subscribers to the current plan (emailed 30 days ahead).
+ */
 class PricingController extends Controller
 {
-    public function show(): Response
+    public function show(Subscriptions $subscriptions): Response
     {
         $p = Pricing::current();
+        $older = $subscriptions->onOlderPlan()->get(['id', 'plan_price_pence', 'employee_limit', 'price_change_on', 'price_change_pence', 'price_change_limit']);
+        $scheduled = $older->filter(fn (Business $b) => $b->price_change_on && $b->price_change_pence === $p['price_pence'] && $b->price_change_limit === $p['employee_limit']);
 
         return Inertia::render('Ops/Pricing', [
             'base' => '/'.config('sponsorsafe.ops_path'),
@@ -25,6 +32,16 @@ class PricingController extends Controller
                 'limit' => (string) $p['employee_limit'],
                 'training' => number_format($p['training_price_pence'] / 100, 2, '.', ''),
                 'grace' => (string) $p['grace_days'],
+            ],
+            'subscribers' => [
+                'older' => $older->count(),
+                'waiting' => $older->count() - $scheduled->count(), // not yet told about the current plan
+                'scheduled' => $scheduled->count(),
+                'scheduledOn' => $scheduled->min('price_change_on')?->format('j M Y'),
+                'plans' => $older->groupBy(fn (Business $b) => $b->plan_price_pence.'-'.$b->employee_limit)
+                    ->map(fn ($group) => '£'.Pricing::pounds($group->first()->plan_price_pence).' · '.$group->first()->employee_limit.' employees ('.$group->count().')')
+                    ->values(),
+                'moveOn' => today()->addDays(Subscriptions::NOTICE_DAYS)->format('j M Y'),
             ],
         ]);
     }
@@ -51,6 +68,17 @@ class PricingController extends Controller
         PlatformSetting::put(Pricing::KEY, $after);
         Audit::log('ops.pricing_changed', null, ['from' => $before, 'to' => $after]);
 
-        return back()->with('success', 'Pricing saved. The website shows the new prices now. Existing subscribers keep their current price.');
+        return back()->with('success', 'Pricing saved. The website shows the new prices now. Existing subscribers keep their current price until you move them.');
+    }
+
+    /** Email existing subscribers now and move them to the current plan in 30 days. */
+    public function move(Subscriptions $subscriptions): RedirectResponse
+    {
+        $count = $subscriptions->schedulePriceChange();
+        Audit::log('ops.subscribers_moved', null, ['count' => $count, 'to' => Pricing::current()]);
+
+        return back()->with('success', $count
+            ? "Emailed {$count} subscriber(s). They move to the current plan on ".today()->addDays(Subscriptions::NOTICE_DAYS)->format('j M Y').'.'
+            : 'Everyone is already on the current plan or has been told about it.');
     }
 }

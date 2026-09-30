@@ -46,6 +46,13 @@ ended, removes sign-ups that never paid).
 4. Super admin → **Payment gateways**: paste the three values, choose **Live**, **Save and test connection**.
    Keys are stored encrypted; `.env` needs no Stripe values.
 
+## 4b. PayPal
+1. developer.paypal.com → Apps & Credentials (Live) → create an app. Copy the Client ID and secret.
+2. In the app, add a webhook: `https://app.yourdomain.co.uk/paypal/webhook`, with the events listed on
+   the super admin's **Payment gateways** page. Copy the webhook ID.
+3. Super admin → **Payment gateways** → PayPal: paste the three values, choose **Live**, **Save and test
+   connection**. The monthly plan is created in PayPal automatically on the first subscription.
+
 ## 5. Sign in
 - Businesses and employees: `https://app.yourdomain.co.uk/login`
 - Super admin: `https://app.yourdomain.co.uk/<OPS_PATH>/login` (first sign-in shows a key for your authenticator app)

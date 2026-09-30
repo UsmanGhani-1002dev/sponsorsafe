@@ -77,6 +77,15 @@ class StripeGateway
         return $business->billingPortalUrl($returnUrl);
     }
 
+    /** A scheduled price change: the subscription moves to the new price from the next invoice (no proration). */
+    public function changePrice(Business $business, int $pence): void
+    {
+        $subscription = $business->subscription('default');
+        if ($subscription?->valid()) {
+            $subscription->noProrate()->swap($this->priceId($pence));
+        }
+    }
+
     /** The monthly GBP price for this amount, created in Stripe the first time it is needed. */
     public function priceId(int $pence): string
     {

@@ -23,6 +23,7 @@ class Business extends Model
     protected $fillable = [
         'name', 'licence_number', 'authorising_officer', 'phone', 'status', 'plan_price_pence', 'employee_limit', 'employees_band',
         'payment_provider', 'payment_label', 'next_payment_on', 'payment_failed_on', 'grace_ends_on', 'settings', 'suspended_at', 'suspended_reason',
+        'paypal_subscription_id', 'paypal_plan_id', 'price_change_pence', 'price_change_limit', 'price_change_on',
     ];
 
     protected function casts(): array
@@ -32,6 +33,7 @@ class Business extends Model
             'next_payment_on' => 'date',
             'payment_failed_on' => 'date',
             'grace_ends_on' => 'date',
+            'price_change_on' => 'date',
             'suspended_at' => 'datetime',
             'trial_ends_at' => 'datetime',
         ];

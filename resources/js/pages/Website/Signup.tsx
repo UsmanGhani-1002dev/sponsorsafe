@@ -150,7 +150,7 @@ export default function Signup({ plan, bands, formToken, gateways, cancelled, pr
                         </Link>
                     </div>
                     <p className="inline-flex items-center gap-2 text-[13px] text-muted">
-                        <Lock size={14} aria-hidden /> You'll be taken to {form.data.pay === 'paypal' ? 'PayPal' : 'Stripe'} to pay £{plan.price}. Card details never touch our servers.
+                        <Lock size={14} aria-hidden /> You'll be taken to {form.data.pay === 'paypal' ? 'PayPal' : 'Stripe'} to pay £{plan.price} a month. Your card and PayPal details never touch our servers.
                     </p>
                 </form>
 

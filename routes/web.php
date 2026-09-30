@@ -15,6 +15,7 @@ use App\Http\Controllers\Ops\BusinessController;
 use App\Http\Controllers\Ops\EnquiryController;
 use App\Http\Controllers\Ops\OpsAuthController;
 use App\Http\Controllers\Ops\PricingController;
+use App\Http\Controllers\Billing\PayPalWebhookController;
 use App\Http\Controllers\Billing\StripeWebhookController;
 use App\Http\Controllers\Ops\GatewayController;
 use App\Http\Controllers\Website\SignupController;
@@ -36,6 +37,8 @@ Route::middleware('stripe')->group(function () {
     Route::get('/signup/done', [SignupController::class, 'done'])->middleware('throttle:30,1')->name('signup.done');
     Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook'])->name('stripe.webhook');
 });
+Route::get('/signup/paypal/done', [SignupController::class, 'paypalDone'])->middleware('throttle:30,1')->name('signup.paypal.done');
+Route::post('/paypal/webhook', PayPalWebhookController::class)->middleware('throttle:120,1')->name('paypal.webhook');
 Route::get('/privacy', [WebsiteController::class, 'legal'])->defaults('page', 'privacy')->name('privacy');
 Route::get('/terms', [WebsiteController::class, 'legal'])->defaults('page', 'terms')->name('terms');
 
@@ -149,6 +152,8 @@ Route::prefix(config('sponsorsafe.ops_path'))->middleware('ops.ip')->name('ops.'
         Route::put('/pricing', [PricingController::class, 'update'])->name('pricing.update');
         Route::get('/gateways', [GatewayController::class, 'show'])->name('gateways');
         Route::put('/gateways/stripe', [GatewayController::class, 'updateStripe'])->middleware('throttle:10,1')->name('gateways.stripe');
+        Route::put('/gateways/paypal', [GatewayController::class, 'updatePaypal'])->middleware('throttle:10,1')->name('gateways.paypal');
+        Route::post('/pricing/move', [PricingController::class, 'move'])->middleware('throttle:5,1')->name('pricing.move');
         Route::get('/enquiries', [EnquiryController::class, 'index'])->name('enquiries');
         Route::post('/enquiries/{enquiry}/handled', [EnquiryController::class, 'handle'])->whereNumber('enquiry')->name('enquiries.handle');
         Route::post('/logout', [OpsAuthController::class, 'destroy'])->name('logout');

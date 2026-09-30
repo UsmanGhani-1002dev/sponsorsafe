@@ -9,11 +9,16 @@ use Illuminate\Support\Facades\Crypt;
 /**
  * Payment gateway keys entered by the super admin (Payment gateways). Stored in platform_settings,
  * every key encrypted at rest; pages only ever see the last 4 characters.
- * Until keys are saved, the STRIPE_* values in .env are used (handy for local testing).
+ * Until Stripe keys are saved, the STRIPE_* values in .env are used (handy for local testing).
  */
 class Gateways
 {
     public const STRIPE = 'gateway_stripe';
+    public const PAYPAL = 'gateway_paypal';
+
+    private const STRIPE_KEYS = ['publishable', 'secret', 'webhook_secret'];
+    private const PAYPAL_KEYS = ['client_id', 'secret', 'webhook_id'];
+    private const META = ['mode', 'status', 'checked_at', 'error'];
 
     /** Decrypted Stripe settings: mode (test|live), publishable, secret, webhook_secret, status, checked_at, error. */
     public static function stripe(): array
@@ -31,20 +36,31 @@ class Gateways
         ];
     }
 
+    /** Decrypted PayPal settings: mode (sandbox|live), client_id, secret, webhook_id, status, checked_at, error. */
+    public static function paypal(): array
+    {
+        $saved = (array) PlatformSetting::get(self::PAYPAL, []);
+
+        return [
+            'mode' => $saved['mode'] ?? 'sandbox',
+            'client_id' => self::decrypt($saved['client_id'] ?? null),
+            'secret' => self::decrypt($saved['secret'] ?? null),
+            'webhook_id' => self::decrypt($saved['webhook_id'] ?? null),
+            'status' => $saved['status'] ?? null,
+            'checked_at' => $saved['checked_at'] ?? null,
+            'error' => $saved['error'] ?? null,
+        ];
+    }
+
+    /** Blank key values keep what is saved; mode and test results are always replaced. */
     public static function saveStripe(array $values): void
     {
-        $current = (array) PlatformSetting::get(self::STRIPE, []);
-        foreach (['publishable', 'secret', 'webhook_secret'] as $key) {
-            if (filled($values[$key] ?? null)) {
-                $current[$key] = Crypt::encryptString(trim($values[$key]));
-            }
-        }
-        foreach (['mode', 'status', 'checked_at', 'error'] as $key) {
-            if (array_key_exists($key, $values)) {
-                $current[$key] = $values[$key];
-            }
-        }
-        PlatformSetting::put(self::STRIPE, $current);
+        self::save(self::STRIPE, self::STRIPE_KEYS, $values);
+    }
+
+    public static function savePaypal(array $values): void
+    {
+        self::save(self::PAYPAL, self::PAYPAL_KEYS, $values);
     }
 
     /** Card payments can be taken: a secret key is set and the last connection test passed (or keys come from .env). */
@@ -53,6 +69,14 @@ class Gateways
         $s = self::stripe();
 
         return filled($s['secret']) && filled($s['publishable']) && $s['status'] !== 'failed';
+    }
+
+    /** PayPal can be offered: credentials saved and the last connection test passed. */
+    public static function paypalReady(): bool
+    {
+        $p = self::paypal();
+
+        return filled($p['client_id']) && filled($p['secret']) && $p['status'] === 'connected';
     }
 
     /** Point Laravel Cashier at the saved keys. Called by the `stripe` middleware and the billing command. */
@@ -70,6 +94,22 @@ class Gateways
     public static function mask(?string $value): ?string
     {
         return filled($value) ? '••••'.substr($value, -4) : null;
+    }
+
+    private static function save(string $setting, array $keys, array $values): void
+    {
+        $current = (array) PlatformSetting::get($setting, []);
+        foreach ($keys as $key) {
+            if (filled($values[$key] ?? null)) {
+                $current[$key] = Crypt::encryptString(trim($values[$key]));
+            }
+        }
+        foreach (self::META as $key) {
+            if (array_key_exists($key, $values)) {
+                $current[$key] = $values[$key];
+            }
+        }
+        PlatformSetting::put($setting, $current);
     }
 
     private static function decrypt(?string $value): ?string

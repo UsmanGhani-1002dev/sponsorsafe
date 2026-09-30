@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Website;
 
 use App\Billing\Gateways;
+use App\Billing\PayPalException;
+use App\Billing\PayPalGateway;
 use App\Billing\StripeGateway;
 use App\Billing\Subscriptions;
 use App\Http\Controllers\Controller;
@@ -21,9 +23,10 @@ use Stripe\Exception\ApiErrorException;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 /**
- * Website sign-up: business details → pending business → Stripe Checkout (hosted, so card details never
- * touch our server) → back here, where the payment is confirmed with Stripe and the admin is emailed a
- * set-password link. The webhook confirms the same payment too; whichever arrives first wins.
+ * Website sign-up: business details → pending business → Stripe Checkout or PayPal approval (both hosted,
+ * so card details never touch our server) → back here, where the payment is confirmed with the gateway
+ * and the admin is emailed a set-password link. The webhook confirms the same payment too; whichever
+ * arrives first wins.
  */
 class SignupController extends Controller
 {
@@ -38,7 +41,7 @@ class SignupController extends Controller
             'plan' => Pricing::forDisplay(),
             'bands' => collect(self::BANDS)->map(fn ($label, $value) => ['value' => $value, 'label' => $label])->values(),
             'formToken' => FormToken::issue(),
-            'gateways' => ['card' => Gateways::stripeReady(), 'paypal' => false],
+            'gateways' => ['card' => Gateways::stripeReady(), 'paypal' => Gateways::paypalReady()],
             'cancelled' => $request->boolean('cancelled') && $pending !== null,
             // Coming back from a cancelled payment: keep what they typed.
             'previous' => $pending ? [
@@ -48,7 +51,7 @@ class SignupController extends Controller
         ]);
     }
 
-    public function store(Request $request, Subscriptions $subscriptions, StripeGateway $stripe): HttpResponse
+    public function store(Request $request, Subscriptions $subscriptions, StripeGateway $stripe, PayPalGateway $paypal): HttpResponse
     {
         if ($request->filled('website') || ! FormToken::human($request->input('form_token'))) {
             throw ValidationException::withMessages(['form' => 'Sorry, we could not send that. Please try again in a moment.']);
@@ -80,7 +83,7 @@ class SignupController extends Controller
             throw ValidationException::withMessages(['email' => 'This email already has an account. Log in instead, or use a different email.']);
         }
         if ($data['pay'] === 'paypal') {
-            throw ValidationException::withMessages(['pay' => 'PayPal is coming soon. Please pay by card for now.']);
+            return $this->toPaypal($request, $data, $subscriptions, $paypal);
         }
         if (! Gateways::stripeReady()) {
             throw ValidationException::withMessages(['pay' => 'Card payments are not switched on yet. Please contact us to subscribe.']);
@@ -121,10 +124,60 @@ class SignupController extends Controller
             $subscriptions->paid($business, 'stripe', $result['label'], $result['next']);
             $request->session()->forget('signup_business_id');
         }
+
+        return $this->donePage($business, (bool) ($result && $business));
+    }
+
+    /** Approved on PayPal: they come back with ?subscription_id=I-…, which is checked with PayPal. */
+    public function paypalDone(Request $request, Subscriptions $subscriptions, PayPalGateway $paypal): Response|RedirectResponse
+    {
+        $id = (string) $request->query('subscription_id');
+        if (! str_starts_with($id, 'I-')) {
+            return redirect()->route('signup');
+        }
+        $business = Business::where('paypal_subscription_id', $id)->first() ?? $this->pendingBusiness($request);
+        $confirmed = false;
+        try {
+            $sub = $paypal->subscription($id);
+            // Only the subscription we created for this business, and only once PayPal says it is running.
+            if ($business && $sub['business_id'] === $business->id && $business->paypal_subscription_id === $id && $sub['status'] === 'ACTIVE') {
+                $subscriptions->paid($business, 'paypal', 'PayPal', $sub['next']);
+                $request->session()->forget('signup_business_id');
+                $confirmed = true;
+            }
+        } catch (PayPalException $e) {
+            Log::warning('PayPal subscription could not be confirmed', ['subscription' => $id, 'error' => $e->getMessage()]);
+        }
+
+        return $this->donePage($business, $confirmed);
+    }
+
+    /** PayPal: start a subscription and send the visitor to PayPal to approve it. */
+    private function toPaypal(Request $request, array $data, Subscriptions $subscriptions, PayPalGateway $paypal): HttpResponse
+    {
+        if (! Gateways::paypalReady()) {
+            throw ValidationException::withMessages(['pay' => 'PayPal is not switched on yet. Please pay by card, or contact us to subscribe.']);
+        }
+        $business = $subscriptions->start($data, 'paypal');
+        $request->session()->put('signup_business_id', $business->id);
+
+        try {
+            [$id, $url, $plan] = $paypal->createSubscription($business, route('signup.paypal.done'), route('signup', ['cancelled' => 1]));
+        } catch (PayPalException $e) {
+            Log::warning('PayPal subscription could not start', ['business' => $business->id, 'error' => $e->getMessage()]);
+            throw ValidationException::withMessages(['form' => 'We could not reach PayPal. Please try again in a moment, or pay by card.']);
+        }
+        $business->update(['paypal_subscription_id' => $id, 'paypal_plan_id' => $plan]);
+
+        return Inertia::location($url);
+    }
+
+    private function donePage(?Business $business, bool $confirmed): Response
+    {
         $admin = $business?->admins()->orderBy('id')->first();
 
         return Inertia::render('Website/SignupDone', [
-            'confirmed' => (bool) $result,
+            'confirmed' => $confirmed,
             'first' => $admin ? strtok($admin->name, ' ') : null,
             'business' => $business?->name,
             'email' => $admin?->email,

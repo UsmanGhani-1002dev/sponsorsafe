@@ -26,8 +26,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'ops.auth' => OpsAuthenticated::class,
             'stripe' => ApplyStripeKeys::class,
         ]);
-        // Stripe signs its webhooks instead (checked in StripeWebhookController).
-        $middleware->validateCsrfTokens(except: ['stripe/webhook']);
+        // Stripe and PayPal sign their webhooks instead (checked in the webhook controllers).
+        $middleware->validateCsrfTokens(except: ['stripe/webhook', 'paypal/webhook']);
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn (Request $request) => $request->user()?->homeRoute() ?? '/');
         $middleware->trustProxies(at: '*');

@@ -37,6 +37,18 @@ class FakeStripeGateway extends StripeGateway
         return 'https://billing.stripe.test/p/session/test_123';
     }
 
+    /** @var array<int, int> business id => new price */
+    public array $priceChanges = [];
+    public bool $failPriceChange = false;
+
+    public function changePrice(Business $business, int $pence): void
+    {
+        if ($this->failPriceChange) {
+            throw new \RuntimeException('Stripe is down');
+        }
+        $this->priceChanges[$business->id] = $pence;
+    }
+
     public function priceId(int $pence): string
     {
         return 'price_fake_'.$pence;

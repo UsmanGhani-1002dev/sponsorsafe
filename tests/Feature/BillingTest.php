@@ -107,7 +107,7 @@ class BillingTest extends TestCase
             'agree' => 'Please agree to the terms and privacy policy.',
         ]);
         $this->signup(['employees' => '16+'])->assertSessionHasErrors(['employees' => 'The plan covers up to 15 employees. Please contact us for a larger plan.']);
-        $this->signup(['pay' => 'paypal'])->assertSessionHasErrors(['pay' => 'PayPal is coming soon. Please pay by card for now.']);
+        $this->signup(['pay' => 'paypal'])->assertSessionHasErrors(['pay' => 'PayPal is not switched on yet. Please pay by card, or contact us to subscribe.']);
 
         User::factory()->admin()->create(['email' => 'imran@northgate.example']);
         $this->signup()->assertSessionHasErrors(['email' => 'This email already has an account. Log in instead, or use a different email.']);

@@ -6,25 +6,33 @@ use App\Models\Business;
 use App\Models\User;
 use App\Notifications\AccessPaused;
 use App\Notifications\PaymentFailed;
+use App\Notifications\PriceChangeNotice;
 use App\Notifications\WelcomeSubscriber;
 use App\Services\PasswordLinks;
 use App\Support\Audit;
 use App\Support\DashboardCounts;
 use App\Support\Pricing;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+use Throwable;
 
 /**
  * The life of a subscription, whichever gateway takes the money:
  * sign-up (pending) → paid (active, set-password email) → payment failed (grace period, email)
  * → paid again (grace cleared) or grace over / cancelled (suspended, data kept, email).
  * A business the super admin suspended by hand is never reactivated by a payment.
+ * Price moves: existing subscribers are emailed 30 days ahead, then moved on the date.
  */
 class Subscriptions
 {
-    public function __construct(private PasswordLinks $links) {}
+    /** Existing subscribers are told this many days before they move to a new price. */
+    public const NOTICE_DAYS = 30;
+
+    public function __construct(private PasswordLinks $links, private StripeGateway $stripe, private PayPalGateway $paypal) {}
 
     /**
      * Website sign-up, before payment: a pending business and its first admin (no usable password yet).
@@ -112,14 +120,51 @@ class Subscriptions
         $this->suspend($business, Business::SUSPENDED_CANCELLED);
     }
 
+    /** Subscribers still on an older price or employee limit than the current plan. */
+    public function onOlderPlan(): Builder
+    {
+        $plan = Pricing::current();
+
+        return Business::query()->whereIn('status', [Business::ACTIVE, Business::SUSPENDED])
+            ->where(fn ($q) => $q->where('plan_price_pence', '!=', $plan['price_pence'])->orWhere('employee_limit', '!=', $plan['employee_limit']));
+    }
+
     /**
-     * Daily (`billing:check`): suspend businesses whose grace period is over, and remove sign-ups
-     * that never paid. Returns [suspended, removed].
+     * Super admin "Move to the current plan": email every subscriber on an older plan now, and schedule the
+     * change for 30 days' time (applied by `billing:check`). Returns how many were notified.
+     */
+    public function schedulePriceChange(): int
+    {
+        $plan = Pricing::current();
+        $on = today()->addDays(self::NOTICE_DAYS);
+        $businesses = $this->onOlderPlan()
+            ->where(fn ($q) => $q->whereNull('price_change_on')
+                ->orWhere('price_change_pence', '!=', $plan['price_pence'])->orWhere('price_change_limit', '!=', $plan['employee_limit']))
+            ->get();
+
+        foreach ($businesses as $business) {
+            $business->update(['price_change_pence' => $plan['price_pence'], 'price_change_limit' => $plan['employee_limit'], 'price_change_on' => $on]);
+            Notification::send($business->admins()->where('active', true)->get(), new PriceChangeNotice(
+                $business->name, $business->plan_price_pence, $plan['price_pence'], $business->employee_limit, $plan['employee_limit'], $on,
+            ));
+            Audit::log('billing.price_change_scheduled', $business, [
+                'from' => [$business->plan_price_pence, $business->employee_limit], 'to' => [$plan['price_pence'], $plan['employee_limit']], 'on' => $on->toDateString(),
+            ], businessId: $business->id);
+        }
+
+        return $businesses->count();
+    }
+
+    /**
+     * Daily (`billing:check`): suspend businesses whose grace period is over, remove sign-ups that never
+     * paid, and apply price changes that are due. Returns [suspended, removed, moved].
      *
-     * @return array{int, int}
+     * @return array{int, int, int}
      */
     public function daily(): array
     {
+        $moved = $this->applyPriceChanges();
+
         $late = Business::query()->where('status', Business::ACTIVE)->whereDate('grace_ends_on', '<', today())->get();
         $late->each(fn (Business $b) => $this->suspend($b, Business::SUSPENDED_PAYMENT));
 
@@ -130,7 +175,46 @@ class Subscriptions
             $b->delete(); // cascades to the admin login; nothing else exists before payment
         });
 
-        return [$late->count(), $abandoned->count()];
+        return [$late->count(), $abandoned->count(), $moved];
+    }
+
+    /**
+     * Move businesses whose notice period is over to their new price in the gateway, then on our side.
+     * PayPal plans are shared, so each plan's price is changed once. A gateway error leaves the change
+     * scheduled, and it is retried the next day.
+     */
+    private function applyPriceChanges(): int
+    {
+        $due = Business::query()->whereNotNull('price_change_on')->whereDate('price_change_on', '<=', today())->orderBy('id')->get();
+        $paypalPlans = [];
+        $moved = 0;
+
+        foreach ($due as $business) {
+            try {
+                if ($business->payment_provider === 'stripe' && filled($business->stripe_id)) {
+                    $this->stripe->changePrice($business, $business->price_change_pence);
+                } elseif ($business->payment_provider === 'paypal' && filled($business->paypal_plan_id)
+                    && ! in_array($business->paypal_plan_id, $paypalPlans, true)) {
+                    $this->paypal->changePlanPrice($business->paypal_plan_id, $business->price_change_pence);
+                    $paypalPlans[] = $business->paypal_plan_id;
+                }
+            } catch (Throwable $e) {
+                Log::warning('Price change could not be applied', ['business' => $business->id, 'error' => $e->getMessage()]);
+
+                continue;
+            }
+
+            $from = [$business->plan_price_pence, $business->employee_limit];
+            $business->update([
+                'plan_price_pence' => $business->price_change_pence,
+                'employee_limit' => $business->price_change_limit ?? $business->employee_limit,
+                'price_change_pence' => null, 'price_change_limit' => null, 'price_change_on' => null,
+            ]);
+            Audit::log('billing.price_changed', $business, ['from' => $from, 'to' => [$business->plan_price_pence, $business->employee_limit]], businessId: $business->id);
+            $moved++;
+        }
+
+        return $moved;
     }
 
     private function suspend(Business $business, string $reason): void

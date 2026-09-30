@@ -19,8 +19,9 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
 - **Stage 5 (employee portal + Requests inbox): done and tested.**
 - **Stage 6 (compliance check, compliance pack PDF, retention review): done and tested** — 193 PHPUnit tests passing. Waiting for Shaf's review.
 - **Stage 7a (public website, pricing, enquiries): done and tested** — 203 PHPUnit tests passing.
-- **Stage 7b part 1 (sign-up + Stripe billing): done and tested** — 219 PHPUnit tests passing. Waiting for review.
-- **Next: Stage 7b part 2 (PayPal + price-change emails 30 days ahead), then 7c (AI chat).** See "Build order" below.
+- **Stage 7b part 1 (sign-up + Stripe billing): done and tested** — 219 PHPUnit tests passing.
+- **Stage 7b part 2 (PayPal + price moves with 30 days' notice): done and tested** — 229 PHPUnit tests passing. Waiting for review.
+- **Next: Stage 7c (AI chat assistant).** See "Build order" below.
 - Local setup on this laptop is done (git repo, MySQL databases, PHP 8.4).
 
 ## Local setup (Windows)
@@ -285,6 +286,24 @@ Demo logins (password `password`, local only):
 - Local testing: Stripe test keys in Payment gateways; the return page activates without webhooks. For
   failed payments locally, forward webhooks with the Stripe CLI
   (`stripe listen --forward-to 127.0.0.1:8000/stripe/webhook`, then save its `whsec_` secret).
+
+## What Stage 7b part 2 built (follow these conventions)
+
+- PayPal subscriptions with plain HTTP (no package). **Every PayPal call is in `App\Billing\PayPalGateway`**
+  (tests use `Http::fake` + `Http::preventStrayRequests`); failures throw `PayPalException` (safe message).
+  Keys in `Gateways::paypal()` (client ID, secret, webhook ID, sandbox|live), encrypted like Stripe's.
+  The billing plan is created automatically per amount and mode (`platform_settings.paypal_plans`), so the
+  prototype's "plan ID" box became "Webhook ID" (PayPal needs it to verify webhooks).
+- Sign-up with PayPal: pending business stores `paypal_subscription_id` + `paypal_plan_id` → PayPal approval →
+  `/signup/paypal/done?subscription_id=` activates only if PayPal says ACTIVE and it is that business's
+  subscription. Webhook `POST /paypal/webhook` (`PayPalWebhookController`): verified with PayPal's
+  verify-webhook-signature first; ACTIVATED / PAYMENT.SALE.COMPLETED → `paid`, PAYMENT.FAILED / SUSPENDED →
+  `failed`, CANCELLED / EXPIRED → `cancelled`. Manage billing for PayPal → PayPal's automatic payments page.
+- Price moves: super admin Plans and pricing → Existing subscribers → "Email N and move them on {date}" →
+  `Subscriptions::schedulePriceChange()` sets `price_change_pence/limit/on` (+30 days) and sends
+  `PriceChangeNotice`. `billing:check` applies due moves: Stripe `swap` without proration, PayPal
+  update-pricing-schemes once per shared plan; a gateway error leaves it scheduled for the next day.
+  Admins see "From {date}: £X per month" on the subscription card.
 
 ## UI and performance rules ("modern and very fast")
 
