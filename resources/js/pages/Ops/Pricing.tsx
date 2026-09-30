@@ -1,4 +1,5 @@
 import { Alert } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -14,6 +15,7 @@ interface Subscribers {
     scheduledOn: string | null;
     plans: string[];
     moveOn: string;
+    list: { id: number; name: string; admin: string | null; plan: string; payment: string | null; suspended: boolean; movesOn: string | null }[];
 }
 
 interface Props {
@@ -90,6 +92,33 @@ function ExistingSubscribers({ base, s }: { base: string; s: Subscribers }) {
                     <p className="text-[15px] text-ink-2">
                         {s.older} subscriber{s.older === 1 ? ' is' : 's are'} on an older plan: {s.plans.join(', ')}.
                     </p>
+                    <div className="overflow-x-auto rounded-lg border border-line">
+                        <table className="w-full min-w-[640px] text-left text-sm">
+                            <thead className="bg-canvas text-[13px] text-ink-2">
+                                <tr>
+                                    {['Business', 'Admin email', 'Now', 'Pays by', 'Status'].map((h) => (
+                                        <th key={h} scope="col" className="px-4 py-2.5 font-semibold">
+                                            {h}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {s.list.map((b) => (
+                                    <tr key={b.id} className="border-t border-line">
+                                        <td className="px-4 py-2.5 font-semibold">
+                                            {b.name}
+                                            {b.suspended && <span className="ml-2 font-normal text-muted">(suspended)</span>}
+                                        </td>
+                                        <td className="px-4 py-2.5 break-all text-ink-2">{b.admin ?? '—'}</td>
+                                        <td className="px-4 py-2.5 whitespace-nowrap">{b.plan}</td>
+                                        <td className="px-4 py-2.5">{b.payment ?? '—'}</td>
+                                        <td className="px-4 py-2.5">{b.movesOn ? <Badge tone="blue">Emailed · moves {b.movesOn}</Badge> : <Badge tone="grey">Not told yet</Badge>}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                     {s.scheduled > 0 && (
                         <p className="text-sm text-muted">
                             {s.scheduled} already emailed; they move on {s.scheduledOn}.

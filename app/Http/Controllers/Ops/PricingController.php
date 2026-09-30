@@ -22,8 +22,12 @@ class PricingController extends Controller
     public function show(Subscriptions $subscriptions): Response
     {
         $p = Pricing::current();
-        $older = $subscriptions->onOlderPlan()->get(['id', 'plan_price_pence', 'employee_limit', 'price_change_on', 'price_change_pence', 'price_change_limit']);
-        $scheduled = $older->filter(fn (Business $b) => $b->price_change_on && $b->price_change_pence === $p['price_pence'] && $b->price_change_limit === $p['employee_limit']);
+        $older = $subscriptions->onOlderPlan()
+            ->with(['admins' => fn ($q) => $q->orderBy('id')])
+            ->orderBy('name')
+            ->get(['id', 'name', 'status', 'plan_price_pence', 'employee_limit', 'payment_provider', 'payment_label', 'price_change_on', 'price_change_pence', 'price_change_limit']);
+        $isScheduled = fn (Business $b) => $b->price_change_on && $b->price_change_pence === $p['price_pence'] && $b->price_change_limit === $p['employee_limit'];
+        $scheduled = $older->filter($isScheduled);
 
         return Inertia::render('Ops/Pricing', [
             'base' => '/'.config('sponsorsafe.ops_path'),
@@ -42,6 +46,16 @@ class PricingController extends Controller
                     ->map(fn ($group) => '£'.Pricing::pounds($group->first()->plan_price_pence).' · '.$group->first()->employee_limit.' employees ('.$group->count().')')
                     ->values(),
                 'moveOn' => today()->addDays(Subscriptions::NOTICE_DAYS)->format('j M Y'),
+                // Who is on an older plan, so the super admin can see who will be emailed.
+                'list' => $older->map(fn (Business $b) => [
+                    'id' => $b->id,
+                    'name' => $b->name,
+                    'admin' => $b->admins->first()?->email,
+                    'plan' => '£'.Pricing::pounds($b->plan_price_pence).' · '.$b->employee_limit.' employees',
+                    'payment' => $b->payment_label ?? ($b->payment_provider === 'paypal' ? 'PayPal' : null),
+                    'suspended' => $b->status === Business::SUSPENDED,
+                    'movesOn' => $isScheduled($b) ? $b->price_change_on->format('j M Y') : null,
+                ])->values(),
             ],
         ]);
     }

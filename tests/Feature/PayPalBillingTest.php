@@ -251,14 +251,17 @@ class PayPalBillingTest extends TestCase
         $this->actingAs($this->superAdmin(), 'ops');
 
         $this->get("{$this->ops}/pricing")->assertInertia(fn (Assert $p) => $p->where('subscribers.older', 3)->where('subscribers.waiting', 3)
-            ->where('subscribers.plans', ['£20 · 15 employees (3)'])->where('subscribers.moveOn', '31 Oct 2026'));
+            ->where('subscribers.plans', ['£20 · 15 employees (3)'])->where('subscribers.moveOn', '31 Oct 2026')
+            ->has('subscribers.list', 3)
+            ->where('subscribers.list.0', ['id' => $card->id, 'name' => 'Card Ltd', 'admin' => $card->admins()->sole()->email, 'plan' => '£20 · 15 employees', 'payment' => null, 'suspended' => false, 'movesOn' => null]));
 
         $this->post("{$this->ops}/pricing/move")->assertSessionHas('success', 'Emailed 3 subscriber(s). They move to the current plan on 31 Oct 2026.');
         Notification::assertSentTo($card->admins()->sole(), PriceChangeNotice::class, fn (PriceChangeNotice $n) => $n->oldPence === 2000 && $n->newPence === 2500
             && $n->newLimit === 20 && $n->on->toDateString() === '2026-10-31');
         $this->assertSame('2026-10-31', $card->fresh()->price_change_on->toDateString());
         $this->post("{$this->ops}/pricing/move")->assertSessionHas('success', 'Everyone is already on the current plan or has been told about it.');
-        $this->get("{$this->ops}/pricing")->assertInertia(fn (Assert $p) => $p->where('subscribers.waiting', 0)->where('subscribers.scheduled', 3)->where('subscribers.scheduledOn', '31 Oct 2026'));
+        $this->get("{$this->ops}/pricing")->assertInertia(fn (Assert $p) => $p->where('subscribers.waiting', 0)->where('subscribers.scheduled', 3)->where('subscribers.scheduledOn', '31 Oct 2026')
+            ->where('subscribers.list.0.name', 'Card Ltd')->where('subscribers.list.0.movesOn', '31 Oct 2026')->where('subscribers.list.2.payment', 'PayPal'));
 
         // The admin sees it coming in Settings.
         $this->actingAs($card->admins()->sole(), 'web')->get('/app/settings')->assertInertia(fn (Assert $p) => $p->where('plan.priceChange', ['on' => '31 Oct 2026', 'price' => '25', 'limit' => 20]));
