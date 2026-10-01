@@ -1,8 +1,9 @@
-# SponsorSafe – Stage 1 deployment (cPanel / WHM)
+# SponsorSafe – deployment (cPanel / WHM)
 
 Everything is pre-built: `vendor/` (PHP packages) and `public/build/` (the React
-frontend) are included, so the server only needs **PHP 8.3 or 8.4** with:
-pdo_mysql, mbstring, openssl, tokenizer, xml, ctype, fileinfo, bcmath, curl, zip.
+frontend) are included, so the server only needs **PHP 8.4** (cPanel → MultiPHP Manager;
+the packages refuse to start on 8.3) with:
+pdo_mysql, mbstring, openssl, tokenizer, xml, ctype, fileinfo, bcmath, curl, zip, intl.
 No Composer or Node needed on the server.
 
 ## 1. Site and database
@@ -28,7 +29,7 @@ php artisan config:cache && php artisan route:cache && php artisan view:cache
 chmod -R 775 storage bootstrap/cache
 ```
 If `php` on the command line is an older version, use the full path, e.g.
-`/opt/cpanel/ea-php83/root/usr/bin/php artisan ...`.
+`/opt/cpanel/ea-php84/root/usr/bin/php artisan ...`.
 
 ## 4. Cron (cPanel → Cron Jobs, every minute)
 ```
