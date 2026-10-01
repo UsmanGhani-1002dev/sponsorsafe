@@ -78,7 +78,13 @@ class BusinessController extends Controller
             throw ValidationException::withMessages(['limit' => "{$business->name} has {$employees} current employees; the plan must cover at least that many."]);
         }
 
-        if ($problem = $subscriptions->setPlan($business, $data['plan'], $pence, $limit)) {
+        try {
+            $problem = $subscriptions->setPlan($business, $data['plan'], $pence, $limit);
+        } catch (\Throwable $e) {
+            report($e);
+            $problem = "Stripe could not change the price for {$business->name}, so nothing was changed: {$e->getMessage()}";
+        }
+        if ($problem) {
             return back()->with('error', $problem);
         }
 

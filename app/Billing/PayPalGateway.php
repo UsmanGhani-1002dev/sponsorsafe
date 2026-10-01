@@ -183,8 +183,27 @@ class PayPalGateway
     public function planId(int $pence): string
     {
         $saved = $this->saved();
+
+        // A saved plan can go stale (credentials changed to another PayPal account, or deactivated): use it
+        // only while PayPal still has it, active, at this price; otherwise create a fresh one.
         if ($id = $saved['plans'][(string) $pence] ?? null) {
-            return $id;
+            try {
+                $plan = $this->call('get', '/v1/billing/plans/'.rawurlencode($id));
+                // PayPal writes amounts its own way ("35.0"), so compare in pence.
+                $planPence = (int) round((float) ($plan['billing_cycles'][0]['pricing_scheme']['fixed_price']['value'] ?? -1) * 100);
+                if (($plan['status'] ?? null) === 'ACTIVE' && $planPence === $pence) {
+                    return $id;
+                }
+            } catch (PayPalException) {
+                // gone: create below
+            }
+        }
+        if ($saved['product']) {
+            try {
+                $this->call('get', '/v1/catalogs/products/'.rawurlencode($saved['product']));
+            } catch (PayPalException) {
+                $saved['product'] = null;
+            }
         }
 
         $product = $saved['product'] ?? $this->call('post', '/v1/catalogs/products', [

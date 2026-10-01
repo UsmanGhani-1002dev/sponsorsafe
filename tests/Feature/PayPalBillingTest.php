@@ -37,6 +37,8 @@ class PayPalBillingTest extends TestCase
     private array $subscription = ['status' => 'ACTIVE'];
     private string $verification = 'SUCCESS';
     private int $tokenStatus = 200;
+    /** Plan IDs PayPal no longer has (e.g. the credentials were changed to another account). */
+    private array $gonePlans = [];
 
     protected function setUp(): void
     {
@@ -61,6 +63,11 @@ class PayPalBillingTest extends TestCase
                     'subscriber' => ['email_address' => 'payer@example.com'], 'billing_info' => ['next_billing_time' => '2026-10-30T10:00:00Z'], ...$this->subscription]),
                 $path === '/v1/notifications/verify-webhook-signature' => Http::response(['verification_status' => $this->verification]),
                 str_ends_with($path, '/update-pricing-schemes') => Http::response(null, 204),
+                // Saved plans and products still exist, unless the test says a plan was removed in PayPal.
+                $request->method() === 'GET' && str_starts_with($path, '/v1/billing/plans/') => in_array(substr($path, 18), $this->gonePlans, true)
+                    ? Http::response(['name' => 'RESOURCE_NOT_FOUND', 'message' => 'The specified resource does not exist.'], 404)
+                    : Http::response(['id' => substr($path, 18), 'status' => 'ACTIVE', 'billing_cycles' => [['pricing_scheme' => ['fixed_price' => ['value' => rtrim(substr($path, 24), '0'), 'currency_code' => 'GBP']]]]]),
+                $request->method() === 'GET' && str_starts_with($path, '/v1/catalogs/products/') => Http::response(['id' => substr($path, 22)]),
                 default => Http::response(['message' => 'Not found'], 404),
             };
         });
@@ -125,7 +132,19 @@ class PayPalBillingTest extends TestCase
 
         // The plan is created once per price and reused.
         $this->signup(['email' => 'second@harbour.example']);
-        Http::assertSentCount(5); // token, product, plan, subscription; then only the second subscription
+        Http::assertSentCount(6); // token, product, plan, subscription; then a check the plan still exists, and the second subscription
+        $this->assertSame(['P-PLAN20.00'], Business::pluck('paypal_plan_id')->unique()->values()->all());
+    }
+
+    public function test_a_saved_plan_paypal_no_longer_has_is_replaced(): void
+    {
+        $this->connectPaypal();
+        PlatformSetting::put('paypal_plans', ['sandbox' => ['product' => 'PROD-OLD', 'plans' => ['2000' => 'P-GONE']]]);
+        $this->gonePlans = ['P-GONE'];
+
+        $this->signup()->assertRedirect();
+        $this->assertSame('P-PLAN20.00', Business::sole()->paypal_plan_id);
+        $this->assertSame('P-PLAN20.00', PlatformSetting::get('paypal_plans')['sandbox']['plans']['2000']);
         $this->assertSame(['P-PLAN20.00'], Business::pluck('paypal_plan_id')->unique()->values()->all());
     }
 

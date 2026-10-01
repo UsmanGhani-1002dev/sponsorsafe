@@ -339,7 +339,7 @@ class SettingsController extends Controller
 
         try {
             $approve = $subscriptions->changePlan($business, $data['plan'], route('app.plan.paypal', ['plan' => $data['plan']]), route('app.settings'));
-        } catch (PayPalException|ApiErrorException $e) {
+        } catch (PayPalException|ApiErrorException|\RuntimeException $e) {
             Log::warning('Plan change failed', ['business' => $business->id, 'error' => $e->getMessage()]);
 
             return back()->with('error', 'We could not change your plan just now. Please try again in a moment.');

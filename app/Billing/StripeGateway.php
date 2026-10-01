@@ -8,6 +8,7 @@ use Carbon\CarbonImmutable;
 use Laravel\Cashier\Cashier;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\AuthenticationException;
+use Stripe\Exception\InvalidRequestException;
 use Stripe\StripeClient;
 
 /**
@@ -80,9 +81,18 @@ class StripeGateway
     /** A scheduled price change: the subscription moves to the new price from the next invoice (no proration). */
     public function changePrice(Business $business, int $pence): void
     {
-        $subscription = $business->subscription('default');
-        if ($subscription?->valid()) {
-            $subscription->noProrate()->swap($this->priceId($pence));
+        // Asks Stripe for the live subscription rather than Cashier's local copy, which only webhooks fill in:
+        // a missed webhook must never leave Stripe charging the old price.
+        $stripe = Cashier::stripe();
+        $subscription = collect($stripe->subscriptions->all(['customer' => $business->stripe_id, 'status' => 'all', 'limit' => 10])->data)
+            ->first(fn ($s) => in_array($s->status, ['active', 'trialing', 'past_due', 'unpaid'], true));
+        if (! $subscription) {
+            throw new \RuntimeException("Stripe has no live subscription for {$business->name}.");
+        }
+        $item = $subscription->items->data[0];
+        $price = $this->priceId($pence);
+        if ($item->price->id !== $price) {
+            $stripe->subscriptions->update($subscription->id, ['items' => [['id' => $item->id, 'price' => $price]], 'proration_behavior' => 'none']);
         }
     }
 
@@ -92,11 +102,30 @@ class StripeGateway
         $mode = Gateways::stripe()['mode'];
         $all = (array) PlatformSetting::get(self::PRICES, []);
         $saved = $all[$mode] ?? ['product' => null, 'prices' => []];
+        $stripe = Cashier::stripe();
+
+        // A saved ID can go stale (keys changed to another Stripe account, or deleted in the dashboard):
+        // use it only while Stripe still has it, active, at this amount; otherwise create a fresh one.
         if ($id = $saved['prices'][(string) $pence] ?? null) {
-            return $id;
+            try {
+                $price = $stripe->prices->retrieve($id);
+                if ($price->active && $price->unit_amount === $pence && $price->currency === 'gbp') {
+                    return $id;
+                }
+            } catch (InvalidRequestException) {
+                // gone: create below
+            }
+        }
+        if ($saved['product']) {
+            try {
+                if (! $stripe->products->retrieve($saved['product'])->active) {
+                    $saved['product'] = null;
+                }
+            } catch (InvalidRequestException) {
+                $saved['product'] = null;
+            }
         }
 
-        $stripe = Cashier::stripe();
         $saved['product'] ??= $stripe->products->create(['name' => config('app.name').' plan'])->id;
         $price = $stripe->prices->create([
             'product' => $saved['product'],
