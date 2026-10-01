@@ -4,8 +4,8 @@ import WebsiteLayout from '@/layouts/website-layout';
 import { cn } from '@/lib/cn';
 import type { SharedProps } from '@/types';
 import { Link, useForm, usePage } from '@inertiajs/react';
-import { Check, Mail, MapPin, Minus } from 'lucide-react';
-import type { FormEvent } from 'react';
+import { Building2, Check, Mail, MapPin, Minus, User, Users, type LucideIcon } from 'lucide-react';
+import type { FormEvent, ReactNode } from 'react';
 
 
 interface Tier {
@@ -120,46 +120,43 @@ export default function Home({ plans, topics, topic, formToken, signedIn }: Prop
             <section id="pricing" className="scroll-mt-20 border-t border-line bg-canvas">
                 <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
                     <SectionHeading eyebrow="Pricing" title="Simple plans by team size" intro="No setup fee, no contract. Move up as you grow, or cancel whenever you like." />
-                    <div className="mt-10 grid gap-6 md:grid-cols-3">
+                    <div className="mt-12 grid items-stretch gap-6 lg:grid-cols-3">
                         {plans.tiers.map((t, i) => (
-                            <div key={t.key} className={cn('flex flex-col rounded-2xl bg-surface p-7', i === 0 ? 'border-2 border-accent' : 'border border-line')}>
-                                <div className="flex items-center justify-between gap-3">
-                                    <p className="text-lg font-semibold">{t.name}</p>
-                                    {i === 0 && <span className="rounded-full bg-accent-soft px-3 py-1 text-[13px] font-semibold text-accent-strong">Most small sponsors</span>}
-                                </div>
-                                <p className="mt-4">
-                                    <span className="text-5xl font-semibold tracking-tight">£{t.price}</span>
-                                    <span className="ml-2 text-ink-2">per month</span>
-                                </p>
-                                <p className="mt-2 flex-1 text-[15px] font-medium text-ink-2">
-                                    {t.from === 1 ? `Up to ${t.limit} employees` : `${t.from} to ${t.limit} employees`}
-                                </p>
-                                <Link href={`/signup?plan=${t.key}`} className={cn(i === 0 ? primary : secondary, 'mt-6 w-full')}>
-                                    Start {t.name}
-                                </Link>
-                            </div>
+                            <PlanCard
+                                key={t.key}
+                                featured={i === 0}
+                                badge={i === 0 ? 'Most small sponsors' : undefined}
+                                icon={i === 0 ? User : Users}
+                                name={t.name}
+                                tagline={i === 0 ? 'For small teams with a few sponsored workers' : 'For growing teams with more staff to manage'}
+                                price={
+                                    <>
+                                        <span className="text-6xl font-semibold tracking-tight">£{t.price}</span>
+                                        <span className="ml-2 text-lg text-ink-2">per month</span>
+                                    </>
+                                }
+                                employees={t.from === 1 ? `Up to ${t.limit} employees` : `${t.from} to ${t.limit} employees`}
+                                features={planIncludes}
+                                cta={
+                                    <Link href={`/signup?plan=${t.key}`} className={cn(i === 0 ? primary : secondary, 'w-full')}>
+                                        Start {t.name}
+                                    </Link>
+                                }
+                            />
                         ))}
-                        <div className="flex flex-col rounded-2xl border border-line bg-surface p-7">
-                            <p className="text-lg font-semibold">Corporate</p>
-                            <p className="mt-4">
-                                <span className="text-4xl font-semibold tracking-tight">Let's talk</span>
-                            </p>
-                            <p className="mt-2 flex-1 text-[15px] font-medium text-ink-2">More than {largest} employees, with a price agreed for your business</p>
-                            <a href="/?topic=Corporate%20package#contact" className={`${secondary} mt-6 w-full`}>
-                                Contact us
-                            </a>
-                        </div>
-                    </div>
-
-                    <div className="mt-6 rounded-2xl border border-line bg-surface p-7">
-                        <p className="font-semibold">Every plan includes</p>
-                        <ul className="mt-4 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-                            {planIncludes.map((t) => (
-                                <li key={t} className="flex items-start gap-2 text-[15px]">
-                                    <Check size={18} aria-hidden className="mt-0.5 shrink-0 text-accent" /> {t}
-                                </li>
-                            ))}
-                        </ul>
+                        <PlanCard
+                            icon={Building2}
+                            name="Corporate"
+                            tagline="For larger organisations"
+                            price={<span className="text-5xl font-semibold tracking-tight">Let's talk</span>}
+                            employees={`More than ${largest} employees`}
+                            features={[`Everything in ${plans.tiers[plans.tiers.length - 1].name}`, 'A price agreed for your business', '1-to-1 training for your team', 'Email support']}
+                            cta={
+                                <a href="/?topic=Corporate%20package#contact" className={cn(secondary, 'w-full')}>
+                                    Contact us
+                                </a>
+                            }
+                        />
                     </div>
 
                     <div id="training" className="mt-6 flex scroll-mt-24 flex-col gap-5 rounded-2xl border border-line bg-surface p-7 md:flex-row md:items-center md:justify-between">
@@ -210,6 +207,52 @@ export default function Home({ plans, topics, topic, formToken, signedIn }: Prop
                 </div>
             </section>
         </WebsiteLayout>
+    );
+}
+
+/** One pricing card: who it is for, the price, the team size, what is included, and the button pinned to the bottom. */
+function PlanCard({ featured = false, badge, icon: Icon, name, tagline, price, employees, features, cta }: {
+    featured?: boolean;
+    badge?: string;
+    icon: LucideIcon;
+    name: string;
+    tagline: string;
+    price: ReactNode;
+    employees: string;
+    features: string[];
+    cta: ReactNode;
+}) {
+    return (
+        <div
+            className={cn(
+                'relative flex flex-col rounded-3xl bg-surface p-8 transition-shadow sm:p-9',
+                featured ? 'border-2 border-accent shadow-[0_20px_40px_-12px_rgba(79,70,229,0.25)]' : 'border border-line shadow-[0_1px_3px_rgba(16,24,40,0.06)] hover:shadow-[0_12px_24px_-8px_rgba(16,24,40,0.12)]',
+            )}
+        >
+            {badge && (
+                <span className="absolute -top-3.5 left-8 rounded-full bg-accent-fill px-3.5 py-1 text-[13px] font-semibold text-white shadow-sm">{badge}</span>
+            )}
+            <div className="flex items-center gap-3">
+                <span aria-hidden className={cn('inline-flex size-11 items-center justify-center rounded-xl', featured ? 'bg-accent-fill text-white' : 'bg-accent-soft text-accent')}>
+                    <Icon size={22} />
+                </span>
+                <h3 className="text-xl font-semibold">{name}</h3>
+            </div>
+            <p className="mt-3 min-h-12 text-[15px] text-ink-2">{tagline}</p>
+            <p className="mt-5 flex min-h-[4.5rem] items-end">{price}</p>
+            <p className="mt-4 inline-flex self-start rounded-full bg-canvas px-3.5 py-1.5 text-[15px] font-semibold text-ink ring-1 ring-line">{employees}</p>
+            <ul className="mt-7 flex flex-1 flex-col gap-3 border-t border-line pt-7">
+                {features.map((f) => (
+                    <li key={f} className="flex items-start gap-3 text-[15px]">
+                        <span aria-hidden className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
+                            <Check size={13} strokeWidth={3} />
+                        </span>
+                        {f}
+                    </li>
+                ))}
+            </ul>
+            <div className="mt-8">{cta}</div>
+        </div>
     );
 }
 
