@@ -120,7 +120,7 @@ export default function Home({ plans, topics, topic, formToken, signedIn }: Prop
             <section id="pricing" className="scroll-mt-20 border-t border-line bg-canvas">
                 <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
                     <SectionHeading eyebrow="Pricing" title="Simple plans by team size" intro="No setup fee, no contract. Move up as you grow, or cancel whenever you like." />
-                    <div className="mt-12 grid items-stretch gap-6 lg:grid-cols-3">
+                    <div className="mt-10 grid items-stretch gap-6 lg:grid-cols-3">
                         {plans.tiers.map((t, i) => (
                             <PlanCard
                                 key={t.key}
@@ -131,8 +131,8 @@ export default function Home({ plans, topics, topic, formToken, signedIn }: Prop
                                 tagline={i === 0 ? 'For small teams with a few sponsored workers' : 'For growing teams with more staff to manage'}
                                 price={
                                     <>
-                                        <span className="text-6xl font-semibold tracking-tight">£{t.price}</span>
-                                        <span className="ml-2 text-lg text-ink-2">per month</span>
+                                        <span className="text-5xl font-semibold tracking-tight">£{t.price}</span>
+                                        <span className="ml-2 text-base text-ink-2">per month</span>
                                     </>
                                 }
                                 employees={t.from === 1 ? `Up to ${t.limit} employees` : `${t.from} to ${t.limit} employees`}
@@ -148,7 +148,7 @@ export default function Home({ plans, topics, topic, formToken, signedIn }: Prop
                             icon={Building2}
                             name="Corporate"
                             tagline="For larger organisations"
-                            price={<span className="text-5xl font-semibold tracking-tight">Let's talk</span>}
+                            price={<span className="text-4xl font-semibold tracking-tight">Let's talk</span>}
                             employees={`More than ${largest} employees`}
                             features={[`Everything in ${plans.tiers[plans.tiers.length - 1].name}`, 'A price agreed for your business', '1-to-1 training for your team', 'Email support']}
                             cta={
@@ -225,25 +225,25 @@ function PlanCard({ featured = false, badge, icon: Icon, name, tagline, price, e
     return (
         <div
             className={cn(
-                'relative flex flex-col rounded-3xl bg-surface p-8 transition-shadow sm:p-9',
+                'relative flex flex-col rounded-3xl bg-surface p-6 transition-shadow',
                 featured ? 'border-2 border-accent shadow-[0_20px_40px_-12px_rgba(79,70,229,0.25)]' : 'border border-line shadow-[0_1px_3px_rgba(16,24,40,0.06)] hover:shadow-[0_12px_24px_-8px_rgba(16,24,40,0.12)]',
             )}
         >
             {badge && (
-                <span className="absolute -top-3.5 left-8 rounded-full bg-accent-fill px-3.5 py-1 text-[13px] font-semibold text-white shadow-sm">{badge}</span>
+                <span className="absolute -top-3 left-6 rounded-full bg-accent-fill px-3 py-0.5 text-[13px] font-semibold text-white shadow-sm">{badge}</span>
             )}
             <div className="flex items-center gap-3">
-                <span aria-hidden className={cn('inline-flex size-11 items-center justify-center rounded-xl', featured ? 'bg-accent-fill text-white' : 'bg-accent-soft text-accent')}>
-                    <Icon size={22} />
+                <span aria-hidden className={cn('inline-flex size-10 items-center justify-center rounded-xl', featured ? 'bg-accent-fill text-white' : 'bg-accent-soft text-accent')}>
+                    <Icon size={20} />
                 </span>
-                <h3 className="text-xl font-semibold">{name}</h3>
+                <h3 className="text-lg font-semibold">{name}</h3>
             </div>
-            <p className="mt-3 min-h-12 text-[15px] text-ink-2">{tagline}</p>
-            <p className="mt-5 flex min-h-[4.5rem] items-end">{price}</p>
-            <p className="mt-4 inline-flex self-start rounded-full bg-canvas px-3.5 py-1.5 text-[15px] font-semibold text-ink ring-1 ring-line">{employees}</p>
-            <ul className="mt-7 flex flex-1 flex-col gap-3 border-t border-line pt-7">
+            <p className="mt-2 min-h-10 text-sm text-ink-2 xl:min-h-0 xl:whitespace-nowrap">{tagline}</p>
+            <p className="mt-4 flex min-h-12 items-end">{price}</p>
+            <p className="mt-4 inline-flex self-start rounded-full bg-canvas px-3 py-1 text-sm font-semibold text-ink ring-1 ring-line">{employees}</p>
+            <ul className="mt-5 flex flex-1 flex-col gap-2.5 border-t border-line pt-5">
                 {features.map((f) => (
-                    <li key={f} className="flex items-start gap-3 text-[15px]">
+                    <li key={f} className="flex items-start gap-2.5 text-sm">
                         <span aria-hidden className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
                             <Check size={13} strokeWidth={3} />
                         </span>
@@ -251,7 +251,7 @@ function PlanCard({ featured = false, badge, icon: Icon, name, tagline, price, e
                     </li>
                 ))}
             </ul>
-            <div className="mt-8">{cta}</div>
+            <div className="mt-6">{cta}</div>
         </div>
     );
 }
