@@ -46,8 +46,7 @@ class DemoSeeder extends Seeder
             people: [['authorising_officer', 'Mark Evans', 'hr@demo-catering.example'], ['key_contact', 'Mark Evans', 'hr@demo-catering.example'], ['level1_user', 'Mark Evans', 'hr@demo-catering.example']]);
         // Its last payment failed: in the grace period (banner in the app, amber in the super admin list).
         $catering->update(['payment_failed_on' => today()->subDays(2), 'grace_ends_on' => today()->addDays(5)]);
-        // Plans: Retail on Standard (£35, up to 10), Catering on Starter (£20, up to 5). The suspended cafe stays
-        // on the original £20 / 15 plan, so Plans and pricing → Existing subscribers has someone to move.
+        // Plans: Retail on Standard (£35, up to 10); Catering and the cafe on Starter (£20, up to 5).
         $retail->update(['plan' => 'standard', 'plan_price_pence' => 3500, 'employee_limit' => 10,
             'phone' => '023 8000 4521', 'registered_address' => "14 Above Bar Street\nSouthampton SO14 7DU"]);
         $catering->update(['plan' => 'starter', 'plan_price_pence' => 2000, 'employee_limit' => 5,
@@ -55,6 +54,7 @@ class DemoSeeder extends Seeder
         $cafe = $this->business('Demo Cafe Ltd', 'suspended', 'Card ending 1881', 'stripe', null, 'Leo Grant', 'hr@demo-cafe.example',
             sites: ['Cafe' => '22 Oxford Street, Southampton SO14 3DJ'],
             people: [['authorising_officer', 'Leo Grant', 'hr@demo-cafe.example']]);
+        $cafe->update(['plan' => 'starter', 'plan_price_pence' => 2000, 'employee_limit' => 5]);
 
         // Demo Retail: the five people in the prototype.
         $aisha = $this->employee($retail, 'Main shop', 'Aisha Rahman', 'Sales Assistant', B::Sponsored, [
