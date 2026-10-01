@@ -1,13 +1,15 @@
+import { Alert } from '@/components/ui/alert';
 import { Badge, type Tone } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { RulesForm, type RulesProps } from '@/components/settings/rules-form';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Field, Input, Select } from '@/components/ui/field';
+import { Field, Input, Select, Textarea } from '@/components/ui/field';
 import { PageHeader } from '@/components/ui/page-header';
 import AppLayout from '@/layouts/app-layout';
-import { Link, router, useForm } from '@inertiajs/react';
+import type { SharedProps } from '@/types';
+import { Link, router, useForm, usePage } from '@inertiajs/react';
 import { Building2, UserRound } from 'lucide-react';
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 
@@ -27,6 +29,14 @@ interface Site {
     staff: string[];
     sms: { text: string; tone: Tone; taskId: number | null };
 }
+interface Admin {
+    id: number;
+    name: string;
+    email: string;
+    you: boolean;
+    status: string;
+    invited: boolean;
+}
 interface PlanOption {
     key: string;
     name: string;
@@ -38,7 +48,8 @@ interface PlanOption {
 }
 
 interface Props {
-    business: { name: string; licence: string | null; admins: string[] };
+    business: { name: string; licence: string | null; phone: string | null; address: string | null };
+    admins: Admin[];
     people: Person[];
     roles: { value: string; label: string; single: boolean }[];
     plan: { key: string | null; name: string; options: PlanOption[]; price: string; limit: number; used: number; nextPayment: string | null; method: string | null; graceEnds: string | null; canManage: boolean; training: string; provider: 'stripe' | 'paypal' | null; priceChange: { on: string; price: string; limit: number | null } | null };
@@ -50,7 +61,7 @@ interface Props {
 
 const opts = { preserveScroll: true, preserveState: true } as const;
 
-export default function Settings({ business, people, roles, plan, sites, employees, rules, retentionDue }: Props) {
+export default function Settings({ business, admins, people, roles, plan, sites, employees, rules, retentionDue }: Props) {
     const pct = Math.min(100, Math.round((plan.used / plan.limit) * 100));
 
     return (
@@ -58,14 +69,7 @@ export default function Settings({ business, people, roles, plan, sites, employe
             <PageHeader title="Settings" />
 
             <div className="grid items-start gap-5 lg:grid-cols-2">
-                <Card className="p-5 sm:p-6">
-                    <h2 className="mb-2 text-[17px] font-semibold">Business</h2>
-                    <dl>
-                        <Row label="Business name">{business.name}</Row>
-                        <Row label="Sponsor licence number">{business.licence ?? 'Not added yet'}</Row>
-                        <Row label="Admin logins">{business.admins.join(', ')}</Row>
-                    </dl>
-                </Card>
+                <BusinessCard business={business} />
 
                 <Card className="flex flex-col gap-4 p-5 sm:p-6">
                     <div className="flex items-center justify-between">
@@ -115,6 +119,7 @@ export default function Settings({ business, people, roles, plan, sites, employe
                 </Card>
             </div>
 
+            <AdminLogins admins={admins} />
             <KeyPersonnel people={people} roles={roles} />
             <WorkSites sites={sites} employees={employees} />
 
@@ -330,6 +335,152 @@ function PersonForm({ person, onDone }: { person: Person; onDone: () => void }) 
                 </Button>
             </div>
         </form>
+    );
+}
+
+/* ---------------- Business details ---------------- */
+
+/** Name, licence number, phone, registered address. A new name or address adds a Home Office task (shown before saving). */
+function BusinessCard({ business }: Pick<Props, 'business'>) {
+    const [editing, setEditing] = useState(false);
+    const form = useForm({ name: business.name, licence: business.licence ?? '', phone: business.phone ?? '', address: business.address ?? '' });
+    const reportable = form.data.name.trim() !== business.name || (!!business.address && form.data.address.trim() !== business.address);
+    const submit = (e: FormEvent) => {
+        e.preventDefault();
+        form.put('/app/settings/business', { ...opts, onSuccess: () => setEditing(false) });
+    };
+
+    if (!editing) {
+        return (
+            <Card className="p-5 sm:p-6">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                    <h2 className="text-[17px] font-semibold">Business</h2>
+                    <Button variant="ghost" className="min-h-10 px-3 text-sm" onClick={() => (form.setData({ name: business.name, licence: business.licence ?? '', phone: business.phone ?? '', address: business.address ?? '' }), setEditing(true))}>
+                        Change
+                    </Button>
+                </div>
+                <dl>
+                    <Row label="Business name">{business.name}</Row>
+                    <Row label="Sponsor licence number">{business.licence ?? 'Not added yet'}</Row>
+                    <Row label="Phone">{business.phone ?? 'Not added yet'}</Row>
+                    <Row label="Registered address">
+                        <span className="whitespace-pre-line">{business.address ?? 'Not added yet'}</span>
+                    </Row>
+                </dl>
+            </Card>
+        );
+    }
+
+    return (
+        <Card className="p-5 sm:p-6">
+            <form onSubmit={submit} noValidate className="flex flex-col gap-4">
+                <h2 className="text-[17px] font-semibold">Business</h2>
+                <Field id="b-name" label="Business name" error={form.errors.name}>
+                    <Input id="b-name" autoComplete="organization" value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} invalid={!!form.errors.name} />
+                </Field>
+                <div className="grid gap-4 sm:grid-cols-2">
+                    <Field id="b-licence" label="Sponsor licence number" error={form.errors.licence}>
+                        <Input id="b-licence" value={form.data.licence} onChange={(e) => form.setData('licence', e.target.value)} invalid={!!form.errors.licence} />
+                    </Field>
+                    <Field id="b-phone" label="Phone" error={form.errors.phone}>
+                        <Input id="b-phone" type="tel" value={form.data.phone} onChange={(e) => form.setData('phone', e.target.value)} />
+                    </Field>
+                </div>
+                <Field id="b-address" label="Registered or trading address" error={form.errors.address}>
+                    <Textarea id="b-address" rows={3} value={form.data.address} onChange={(e) => form.setData('address', e.target.value)} invalid={!!form.errors.address} />
+                </Field>
+                {reportable && (
+                    <Alert tone="warning">A new business name or address must be reported on the Sponsor Management System. Saving adds a Home Office task (20 working days).</Alert>
+                )}
+                <div className="flex gap-2">
+                    <Button type="submit" disabled={form.processing}>
+                        Save
+                    </Button>
+                    <Button type="button" variant="secondary" onClick={() => setEditing(false)}>
+                        Cancel
+                    </Button>
+                </div>
+            </form>
+        </Card>
+    );
+}
+
+/* ---------------- Admin logins ---------------- */
+
+function AdminLogins({ admins }: Pick<Props, 'admins'>) {
+    const { errors } = usePage<SharedProps>().props;
+    const [removing, setRemoving] = useState<Admin | null>(null);
+    const add = useForm({ name: '', email: '' });
+    const submit = (e: FormEvent) => {
+        e.preventDefault();
+        add.post('/app/settings/admins', { ...opts, onSuccess: () => add.reset() });
+    };
+
+    return (
+        <>
+            <SectionTitle title="Admin logins" description="People who can sign in and manage this business. Every admin uses an authenticator app when signing in." />
+            <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+                <Card className="overflow-hidden">
+                    {errors.admin && (
+                        <div className="p-4 pb-0">
+                            <Alert>{errors.admin}</Alert>
+                        </div>
+                    )}
+                    <ul>
+                        {admins.map((a) => (
+                            <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-3.5 first:border-t-0">
+                                <div className="min-w-0">
+                                    <p className="font-semibold">
+                                        {a.name} {a.you && <span className="font-normal text-muted">(you)</span>}
+                                    </p>
+                                    <p className="text-[13px] break-all text-ink-2">{a.email}</p>
+                                    <p className="text-[13px] text-muted">{a.status}</p>
+                                </div>
+                                {!a.you && (
+                                    <div className="flex gap-1">
+                                        {a.invited && (
+                                            <Button variant="ghost" className="min-h-10 px-3 text-sm" onClick={() => router.post(`/app/settings/admins/${a.id}/resend`, {}, opts)}>
+                                                Resend invite
+                                            </Button>
+                                        )}
+                                        <Button variant="ghost" className="min-h-10 px-3 text-sm text-red-700 dark:text-red-300" onClick={() => setRemoving(a)}>
+                                            Remove
+                                        </Button>
+                                    </div>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                </Card>
+
+                <Card className="p-5 sm:p-6">
+                    <form onSubmit={submit} noValidate className="flex flex-col gap-4">
+                        <h3 className="text-[17px] font-semibold">Add an admin</h3>
+                        <Field id="a-name" label="Full name" error={add.errors.name}>
+                            <Input id="a-name" autoComplete="off" value={add.data.name} onChange={(e) => add.setData('name', e.target.value)} invalid={!!add.errors.name} />
+                        </Field>
+                        <Field id="a-email" label="Email (their login)" error={add.errors.email}>
+                            <Input id="a-email" type="email" autoComplete="off" value={add.data.email} onChange={(e) => add.setData('email', e.target.value)} invalid={!!add.errors.email} />
+                        </Field>
+                        <Button type="submit" disabled={add.processing}>
+                            Send invite
+                        </Button>
+                        <p className="text-[13px] text-muted">They get an email to set a password (the link lasts 7 days). Admins see everything for this business, including documents.</p>
+                    </form>
+                </Card>
+            </div>
+
+            <ConfirmDialog
+                open={removing !== null}
+                title={`Remove ${removing?.name ?? ''}?`}
+                confirmLabel="Remove admin"
+                danger
+                onClose={() => setRemoving(null)}
+                onConfirm={() => removing && router.delete(`/app/settings/admins/${removing.id}`, { ...opts, onFinish: () => setRemoving(null) })}
+            >
+                They will no longer be able to sign in. Everything they recorded stays in the history.
+            </ConfirmDialog>
+        </>
     );
 }
 

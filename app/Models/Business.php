@@ -22,7 +22,7 @@ class Business extends Model
     public const SUSPENDED_CANCELLED = 'cancelled';
 
     protected $fillable = [
-        'name', 'licence_number', 'authorising_officer', 'phone', 'status', 'plan', 'plan_price_pence', 'employee_limit', 'employees_band',
+        'name', 'licence_number', 'authorising_officer', 'phone', 'registered_address', 'status', 'plan', 'plan_price_pence', 'employee_limit', 'employees_band',
         'payment_provider', 'payment_label', 'next_payment_on', 'payment_failed_on', 'grace_ends_on', 'settings', 'suspended_at', 'suspended_reason',
         'paypal_subscription_id', 'paypal_plan_id', 'price_change_pence', 'price_change_limit', 'price_change_plan', 'price_change_on',
     ];

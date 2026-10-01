@@ -24,9 +24,10 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
 - **Stage 7b part 2 (PayPal + price moves with 30 days' notice): done and tested** — 229 PHPUnit tests passing.
 - **Plans by team size (client change, 1 Oct 2026): done and tested** — Starter / Standard / Corporate,
   upgrades and downgrades; 238 PHPUnit tests passing. Waiting for review.
-- **Polish stage part 1 (toasts, Ctrl+K palette): done and tested** — 240 PHPUnit tests passing. Waiting for review.
-- **Next:** polish part 2 (editable business details, more admin logins, employee privacy notice), then
-  Stage 8 (reminders), then Stage 7c (AI chat).
+- **Polish stage part 1 (toasts, Ctrl+K palette): done and tested** — 240 PHPUnit tests passing.
+- **Polish stage part 2 (business details, admin logins, employee privacy notice): done and tested** — 248 PHPUnit
+  tests passing. Waiting for review.
+- **Next:** Stage 8 (reminders), then Stage 7c (AI chat).
 - Local setup on this laptop is done (git repo, MySQL databases, PHP 8.4).
 
 ## Local setup (Windows)
@@ -340,6 +341,14 @@ Demo logins (password `password`, local only):
   button): employees from `GET /app/palette` (JSON, this business only, fetched on open), screens and actions.
   New admin screens or actions belong in its `screens` / `actions` lists. `/app/reports?create=1` opens the
   create-report form.
+- **Business details** (Settings → Business → Change): name, licence number, phone, `registered_address`.
+  A new name, or a change to an existing address, creates a company task via `ReportTasks::forBusinessChange`
+  (source `business`, company deadline); a first address, licence or phone does not. Audited.
+- **Admin logins** (Settings → Admin logins, `App\Services\BusinessAdmins`): invite another admin (`AdminInvite`
+  email, 7-day set-password link, 2FA on first sign-in), resend until they first sign in, remove — never
+  yourself, never the last admin. Routes scope `{admin}` to the signed-in admin's business (404 otherwise).
+- **Employee privacy notice** at `/me/privacy` (`Portal/Privacy`), linked at the foot of every portal page;
+  retention periods read from the business's rules. Draft wording until Enovtec supplies the final text.
 
 ## UI and performance rules ("modern and very fast")
 

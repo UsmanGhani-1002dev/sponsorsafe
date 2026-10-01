@@ -17,6 +17,8 @@ use App\Billing\PayPalGateway;
 use App\Billing\StripeGateway;
 use App\Billing\Subscriptions;
 use App\Models\Business;
+use App\Models\User;
+use App\Services\BusinessAdmins;
 use App\Support\Audit;
 use App\Support\Pricing;
 use Illuminate\Http\RedirectResponse;
@@ -42,8 +44,21 @@ class SettingsController extends Controller
             'business' => [
                 'name' => $business->name,
                 'licence' => $business->licence_number,
-                'admins' => $business->admins()->pluck('email'),
+                'phone' => $business->phone,
+                'address' => $business->registered_address,
             ],
+            'admins' => $business->admins()->orderBy('id')->get()->map(fn (User $u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'email' => $u->email,
+                'you' => $u->is($request->user()),
+                'status' => match (true) {
+                    $u->last_login_at !== null => 'Last signed in '.$u->last_login_at->format('j M Y'),
+                    $u->invited_at !== null => 'Invite sent '.$u->invited_at->format('j M Y'),
+                    default => 'Not signed in yet',
+                },
+                'invited' => $u->last_login_at === null,
+            ]),
             'people' => $business->keyPersonnel()->orderByRaw("field(role, 'authorising_officer', 'key_contact', 'level1_user')")->orderBy('name')->get()
                 ->map(fn (KeyPerson $p) => ['id' => $p->id, 'role' => $p->role, 'roleLabel' => $p->roleLabel(), 'name' => $p->name, 'email' => $p->email, 'phone' => $p->phone]),
             'roles' => collect(KeyPerson::ROLES)->map(fn ($label, $value) => ['value' => $value, 'label' => $label, 'single' => in_array($value, KeyPerson::SINGLE_ROLES, true)])->values(),
@@ -195,6 +210,83 @@ class SettingsController extends Controller
     private static function smsNote(ReportTask $task): string
     {
         return 'A Home Office report task was created: update the Sponsor Management System by '.$task->deadline->format('j M Y').'.';
+    }
+
+    /**
+     * Business details. A new business name or a changed registered/trading address is a company-level
+     * Home Office event (compliance-rules §4); a first address, the licence number or phone is not.
+     */
+    public function updateBusiness(Request $request): RedirectResponse
+    {
+        $business = $request->user()->business;
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:160'],
+            'licence' => ['nullable', 'string', 'max:40'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'address' => ['nullable', 'string', 'max:500'],
+        ], ['name.required' => 'Please add the business name.']);
+
+        $new = ['name' => trim($data['name']), 'licence_number' => self::clean($data['licence']), 'phone' => self::clean($data['phone']), 'registered_address' => self::clean($data['address'])];
+        $old = $business->only(array_keys($new));
+        if ($old === $new) {
+            return back()->with('success', 'Nothing changed.');
+        }
+        $business->update($new);
+        Audit::log('business.details_updated', $business, ['from' => array_diff_assoc($old, $new), 'to' => array_diff_assoc($new, $old)], businessId: $business->id);
+
+        $tasks = 0;
+        if ($old['name'] !== $new['name']) {
+            ReportTasks::forBusinessChange($business, "Business name changed ({$old['name']} to {$new['name']})", $request->user());
+            $tasks++;
+        }
+        if (filled($old['registered_address']) && $old['registered_address'] !== $new['registered_address']) {
+            ReportTasks::forBusinessChange($business, 'Registered or trading address changed', $request->user());
+            $tasks++;
+        }
+
+        return back()->with('success', $tasks
+            ? 'Business details saved. Report the change on the Sponsor Management System: a Home Office task has been added.'
+            : 'Business details saved.');
+    }
+
+    public function storeAdmin(Request $request, BusinessAdmins $admins): RedirectResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'email' => ['required', 'email', 'max:255'],
+        ], ['name.required' => 'Please add their name.', 'email.required' => 'Please add their email.', 'email.email' => 'Please add a valid email.']);
+        $admin = $admins->invite($request->user()->business, $data['name'], $data['email'], $request->user());
+
+        return back()->with('success', "Invite sent to {$admin->email}. They set a password, then add an authenticator app when they first sign in.");
+    }
+
+    public function resendAdmin(Request $request, User $admin, BusinessAdmins $admins): RedirectResponse
+    {
+        $this->ownAdmin($request, $admin);
+        $admins->resend($admin, $request->user());
+
+        return back()->with('success', "A new invite has been sent to {$admin->email}.");
+    }
+
+    public function destroyAdmin(Request $request, User $admin, BusinessAdmins $admins): RedirectResponse
+    {
+        $this->ownAdmin($request, $admin);
+        $admins->remove($admin, $request->user());
+
+        return back()->with('success', "{$admin->name} can no longer sign in.");
+    }
+
+    /** Only admin logins of the signed-in admin's own business. */
+    private function ownAdmin(Request $request, User $admin): void
+    {
+        abort_unless($admin->business_id === $request->user()->business_id && $admin->isAdmin(), 404);
+    }
+
+    private static function clean(?string $value): ?string
+    {
+        $value = trim((string) $value);
+
+        return $value === '' ? null : $value;
     }
 
     /**

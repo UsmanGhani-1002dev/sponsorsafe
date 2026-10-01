@@ -24,6 +24,7 @@ use App\Http\Controllers\Website\WebsiteController;
 use App\Http\Controllers\Portal\DetailsController;
 use App\Http\Controllers\Portal\DocumentController as PortalDocumentController;
 use App\Http\Controllers\Portal\HomeController;
+use App\Http\Controllers\Portal\PrivacyController;
 use App\Http\Controllers\Portal\LeaveController;
 use App\Http\Controllers\Portal\RequestController as PortalRequestController;
 use Illuminate\Support\Facades\Route;
@@ -115,6 +116,10 @@ Route::middleware(['auth:web', 'business.active', 'role:admin'])->prefix('app')-
     Route::post('/settings/plan', [SettingsController::class, 'changePlan'])->middleware(['stripe', 'throttle:10,1'])->name('plan.change');
     Route::get('/settings/plan/paypal', [SettingsController::class, 'paypalPlan'])->middleware('throttle:10,1')->name('plan.paypal');
     Route::put('/settings/rules', [SettingsController::class, 'updateRules'])->name('rules.update');
+    Route::put('/settings/business', [SettingsController::class, 'updateBusiness'])->name('business.update');
+    Route::post('/settings/admins', [SettingsController::class, 'storeAdmin'])->middleware('throttle:10,1')->name('admins.store');
+    Route::post('/settings/admins/{admin}/resend', [SettingsController::class, 'resendAdmin'])->whereNumber('admin')->middleware('throttle:10,1')->name('admins.resend');
+    Route::delete('/settings/admins/{admin}', [SettingsController::class, 'destroyAdmin'])->whereNumber('admin')->name('admins.destroy');
     Route::post('/settings/people', [SettingsController::class, 'storePerson'])->name('people.store');
     Route::put('/settings/people/{person}', [SettingsController::class, 'updatePerson'])->whereNumber('person')->name('people.update');
     Route::delete('/settings/people/{person}', [SettingsController::class, 'destroyPerson'])->whereNumber('person')->name('people.destroy');
@@ -137,6 +142,7 @@ Route::middleware(['auth:web', 'business.active', 'role:employee'])->prefix('me'
     Route::post('/update-details', [DetailsController::class, 'storeChange'])->middleware('throttle:20,1')->name('change.store');
     Route::get('/requests', PortalRequestController::class)->name('requests');
     Route::get('/details', [DetailsController::class, 'show'])->name('details');
+    Route::get('/privacy', PrivacyController::class)->name('privacy');
     Route::post('/security/two-factor', [DetailsController::class, 'startTwoFactor'])->name('two-factor.start');
     Route::post('/security/two-factor/confirm', [DetailsController::class, 'confirmTwoFactor'])->middleware('throttle:10,1')->name('two-factor.confirm');
     Route::delete('/security/two-factor', [DetailsController::class, 'disableTwoFactor'])->middleware('throttle:10,1')->name('two-factor.disable');

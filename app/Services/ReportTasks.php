@@ -80,6 +80,12 @@ class ReportTasks
         return self::companyTask(Business::findOrFail($person->business_id), $event, today(), 'key_personnel', $what === 'removed' ? null : $person, $by);
     }
 
+    /** Business name or registered/trading address changed in Settings (company level). */
+    public static function forBusinessChange(Business $business, string $event, User $by): ReportTask
+    {
+        return self::companyTask($business, $event, today(), 'business', null, $by);
+    }
+
     /** End of employment for a sponsored worker: 10 working days from the last day (§10). */
     public static function forLeaver(Employee $employee, ?User $by = null): ?ReportTask
     {

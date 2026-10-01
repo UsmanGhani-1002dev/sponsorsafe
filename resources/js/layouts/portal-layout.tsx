@@ -75,6 +75,11 @@ export default function PortalLayout({ title, children }: { title: string; child
                 <main id="main" className="min-w-0 flex-1 px-4 py-6 sm:px-8 sm:py-8">
                     <div className="mx-auto max-w-3xl">
                         {children}
+                        <p className="mt-10 border-t border-line pt-4 text-[13px] text-muted">
+                            <Link href="/me/privacy" className="inline-flex min-h-11 items-center hover:text-ink hover:underline">
+                                How your information is used (privacy notice)
+                            </Link>
+                        </p>
                     </div>
                 </main>
             </div>

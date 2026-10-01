@@ -24,6 +24,7 @@ class ReportTask extends Model
         'change' => 'Employee record',
         'work_site' => 'Work sites',
         'key_personnel' => 'Key personnel',
+        'business' => 'Business details',
         'leaver' => 'End of employment',
         'manual' => 'Added by hand',
     ];
