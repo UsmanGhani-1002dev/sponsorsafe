@@ -5,6 +5,7 @@ namespace App\Http\Controllers\App;
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
 use App\Services\AbsenceRules;
+use App\Services\Reminders;
 use App\Services\Retention;
 use App\Services\WorkingDays;
 use App\Support\Badges;
@@ -16,7 +17,7 @@ use Inertia\Response;
 /** Dashboard: stat tiles (cached briefly), right-to-work watchlist and the next Home Office deadlines. */
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request, Reminders $reminders): Response
     {
         $business = $request->user()->business;
         $counts = DashboardCounts::for($business);
@@ -44,6 +45,12 @@ class DashboardController extends Controller
             }),
             'year' => $year,
             'retentionDue' => Retention::due($business)->count(),
+            // Expiries and follow-up checks coming up (§12). Deadlines and deletions have their own cards.
+            'reminders' => $reminders->current($business)
+                ->whereIn('type', [Reminders::VISA, Reminders::FOLLOW_UP, Reminders::PASSPORT])
+                ->take(8)
+                ->map(fn ($i) => ['key' => "{$i['type']}-{$i['subject']}", 'text' => $i['text'], 'tone' => $i['tone'], 'href' => $i['href']])
+                ->values(),
             'deadlines' => $business->reportTasks()->pending()->with('employee')->orderBy('deadline')->limit(5)->get()
                 ->map(fn ($t) => ReportTaskController::row($t, $wd)),
         ]);

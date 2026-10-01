@@ -37,6 +37,11 @@ return [
         'exempt_absence_types' => ['sick_self', 'sick_fit', 'family', 'jury'],
         'self_cert_max_days' => 7,               // calendar days; longer sickness needs a fit note
         'expiry_alert_days' => [90, 60, 30],
+        // Reminders (compliance-rules §12): follow-up right-to-work check, passport expiry (calendar days
+        // before), and Home Office task deadlines (working days before; overdue is always reminded).
+        'follow_up_alert_days' => 30,
+        'passport_alert_days' => 90,
+        'task_alert_working_days' => 5,
         'payslip_freshness_days' => 35,
         'retention_years' => 1,
         'rtw_retention_years' => 2,

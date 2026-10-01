@@ -16,9 +16,10 @@ interface Props {
     year: string;
     deadlines: TaskRow[];
     retentionDue: number;
+    reminders: { key: string; text: string; tone: Tone; href: string }[];
 }
 
-export default function Dashboard({ business, stats, watchlist, year, deadlines, retentionDue }: Props) {
+export default function Dashboard({ business, stats, watchlist, year, deadlines, retentionDue, reminders }: Props) {
     const tiles = [
         { label: 'Home Office reports pending', value: stats.pending, hint: 'Worker and company events', href: '/app/reports?status=pending', alert: false },
         { label: 'Due within 5 working days', value: stats.urgent, hint: 'Including overdue', href: '/app/reports?status=pending', alert: stats.urgent > 0 },
@@ -60,6 +61,31 @@ export default function Dashboard({ business, stats, watchlist, year, deadlines,
                     );
                 })}
             </div>
+
+            {reminders.length > 0 && (
+                <section aria-labelledby="coming-title" className="mt-8">
+                    <h2 id="coming-title" className="mb-1 text-lg font-semibold">
+                        Coming up
+                    </h2>
+                    <p className="mb-3 text-sm text-ink-2">Expiries and checks to deal with. You also get each reminder by email.</p>
+                    <Card className="overflow-hidden">
+                        <ul>
+                            {reminders.map((r) => (
+                                <li key={r.key} className="border-t border-line first:border-t-0">
+                                    <Link href={r.href} prefetch className="flex items-center gap-3 px-5 py-3 hover:bg-canvas">
+                                        <span
+                                            aria-hidden
+                                            className={cn('size-2.5 shrink-0 rounded-full', r.tone === 'red' ? 'bg-red-600' : r.tone === 'amber' ? 'bg-amber-500' : 'bg-line-strong')}
+                                        />
+                                        <span className="min-w-0 flex-1 text-[15px]">{r.text}</span>
+                                        <span className="sr-only">{r.tone === 'red' ? '(urgent)' : ''}</span>
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </Card>
+                </section>
+            )}
 
             <div className="mt-8 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 <section aria-labelledby="deadlines-title">

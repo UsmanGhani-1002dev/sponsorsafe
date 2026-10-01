@@ -25,9 +25,9 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
 - **Plans by team size (client change, 1 Oct 2026): done and tested** — Starter / Standard / Corporate,
   upgrades and downgrades; 238 PHPUnit tests passing. Waiting for review.
 - **Polish stage part 1 (toasts, Ctrl+K palette): done and tested** — 240 PHPUnit tests passing.
-- **Polish stage part 2 (business details, admin logins, employee privacy notice): done and tested** — 248 PHPUnit
-  tests passing. Waiting for review.
-- **Next:** Stage 8 (reminders), then Stage 7c (AI chat).
+- **Polish stage part 2 (business details, admin logins, employee privacy notice): done and tested** — 248 PHPUnit tests passing.
+- **Stage 8a (reminders and alerts, §12): done and tested** — 256 PHPUnit tests passing. Waiting for review.
+- **Next:** Stage 8b (unexplained absences, §11), then Stage 7c (AI chat).
 - Local setup on this laptop is done (git repo, MySQL databases, PHP 8.4).
 
 ## Local setup (Windows)
@@ -349,6 +349,17 @@ Demo logins (password `password`, local only):
   yourself, never the last admin. Routes scope `{admin}` to the signed-in admin's business (404 otherwise).
 - **Employee privacy notice** at `/me/privacy` (`Portal/Privacy`), linked at the foot of every portal page;
   retention periods read from the business's rules. Draft wording until Enovtec supplies the final text.
+
+## What Stage 8a built (follow these conventions)
+
+- `App\Services\Reminders` is compliance-rules §12: `current($business)` = everything needing attention now
+  (visa / permission expiry at each `expiry_alert_days` lead time and when expired; follow-up check
+  `follow_up_alert_days` before and when overdue; passport `passport_alert_days` before and when expired; pending
+  Home Office tasks `task_alert_working_days` working days before and when overdue; leavers' records due for
+  deletion, monthly). Lead times are business rules (config defaults 90/60/30, 30, 90, 5).
+- `reminders` table records each stage emailed (`type`, `subject` "employee:12", `stage` "60@2026-12-10"), so every
+  stage is sent once; a new expiry date starts again. `reminders:send` (daily 07:00) sends one `ComplianceDigest`
+  email per active business to its active admins. Dashboard "Coming up" card shows the expiry/check items.
 
 ## UI and performance rules ("modern and very fast")
 
