@@ -3,9 +3,14 @@
 namespace App\Http\Controllers\Ops;
 
 use App\Http\Controllers\Controller;
+use App\Billing\Subscriptions;
 use App\Models\Business;
 use App\Support\Audit;
+use App\Support\Pricing;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -28,6 +33,8 @@ class BusinessController extends Controller
                 'admin' => $b->admins->first()?->only(['name', 'email']),
                 'employees' => $b->employees_count,
                 'limit' => $b->employee_limit,
+                'plan' => $b->plan,
+                'planName' => $b->planName(),
                 'price' => $b->plan_price_pence / 100,
                 'payment' => $b->payment_label ?? ($b->payment_provider === 'paypal' ? 'PayPal' : null),
                 'next_payment' => $b->next_payment_on?->format('j M Y'),
@@ -38,6 +45,9 @@ class BusinessController extends Controller
 
         return Inertia::render('Ops/Businesses', [
             'base' => '/'.config('sponsorsafe.ops_path'),
+            'tiers' => collect(Pricing::current()['tiers'])->map(fn ($t, $key) => [
+                'key' => $key, 'name' => Pricing::TIERS[$key], 'price' => Pricing::pounds($t['price_pence']), 'limit' => $t['employee_limit'],
+            ])->values(),
             'businesses' => $businesses->values(),
             'stats' => [
                 'active' => $active->count(),
@@ -46,6 +56,33 @@ class BusinessController extends Controller
                 'employees' => $businesses->sum('employees'),
             ],
         ]);
+    }
+
+    /**
+     * Set a business's plan: Starter or Standard at today's price, or a Corporate package with the price
+     * and employee limit agreed with them. Card subscriptions follow from the next payment.
+     */
+    public function setPlan(Request $request, Business $business, Subscriptions $subscriptions): RedirectResponse
+    {
+        $data = $request->validate([
+            'plan' => ['required', Rule::in([...array_keys(Pricing::TIERS), Pricing::CORPORATE])],
+            'price' => ['required_if:plan,'.Pricing::CORPORATE, 'nullable', 'numeric', 'min:1', 'max:10000'],
+            'limit' => ['required_if:plan,'.Pricing::CORPORATE, 'nullable', 'integer', 'min:1', 'max:1000'],
+        ], ['price.required_if' => 'Add the agreed monthly price.', 'limit.required_if' => 'Add the agreed employee limit.']);
+
+        [$pence, $limit] = $data['plan'] === Pricing::CORPORATE
+            ? [(int) round($data['price'] * 100), (int) $data['limit']]
+            : array_values(Pricing::tier($data['plan']));
+        $employees = $business->currentEmployeeCount();
+        if ($limit < $employees) {
+            throw ValidationException::withMessages(['limit' => "{$business->name} has {$employees} current employees; the plan must cover at least that many."]);
+        }
+
+        if ($problem = $subscriptions->setPlan($business, $data['plan'], $pence, $limit)) {
+            return back()->with('error', $problem);
+        }
+
+        return back()->with('success', "{$business->name} is now on ".Pricing::name($data['plan']).': £'.Pricing::pounds($pence)." a month for up to {$limit} employees. The new price applies from their next payment.");
     }
 
     /** Suspend or activate by hand. A manual suspension is never lifted by a payment arriving. */

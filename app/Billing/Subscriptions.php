@@ -13,7 +13,7 @@ use App\Support\Audit;
 use App\Support\DashboardCounts;
 use App\Support\Pricing;
 use Carbon\CarbonInterface;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
@@ -25,6 +25,7 @@ use Throwable;
  * sign-up (pending) → paid (active, set-password email) → payment failed (grace period, email)
  * → paid again (grace cleared) or grace over / cancelled (suspended, data kept, email).
  * A business the super admin suspended by hand is never reactivated by a payment.
+ * Plans: Starter / Standard (self-service, Settings) or a Corporate price set by the super admin.
  * Price moves: existing subscribers are emailed 30 days ahead, then moved on the date.
  */
 class Subscriptions
@@ -35,12 +36,13 @@ class Subscriptions
     public function __construct(private PasswordLinks $links, private StripeGateway $stripe, private PayPalGateway $paypal) {}
 
     /**
-     * Website sign-up, before payment: a pending business and its first admin (no usable password yet).
-     * Signing up again with the same email before paying replaces the earlier, unpaid attempt.
+     * Website sign-up, before payment: a pending business and its first admin (no usable password yet), on
+     * the plan they chose ($data['employees'] is starter|standard). Signing up again with the same email
+     * before paying replaces the earlier, unpaid attempt.
      */
     public function start(array $data, string $provider): Business
     {
-        $plan = Pricing::current();
+        $plan = Pricing::tier($data['employees']);
         $email = mb_strtolower(trim($data['email']));
 
         return DB::transaction(function () use ($data, $provider, $plan, $email) {
@@ -53,6 +55,7 @@ class Subscriptions
                 'phone' => $data['phone'] ?? null,
                 'employees_band' => $data['employees'],
                 'status' => Business::PENDING,
+                'plan' => $data['employees'],
                 'plan_price_pence' => $plan['price_pence'],
                 'employee_limit' => $plan['employee_limit'],
                 'payment_provider' => $provider,
@@ -120,39 +123,162 @@ class Subscriptions
         $this->suspend($business, Business::SUSPENDED_CANCELLED);
     }
 
-    /** Subscribers still on an older price or employee limit than the current plan. */
-    public function onOlderPlan(): Builder
-    {
-        $plan = Pricing::current();
+    // ---- Changing plan ----
 
-        return Business::query()->whereIn('status', [Business::ACTIVE, Business::SUSPENDED])
-            ->where(fn ($q) => $q->where('plan_price_pence', '!=', $plan['price_pence'])->orWhere('employee_limit', '!=', $plan['employee_limit']));
+    /**
+     * The self-service plans for this business's Settings: price, limit, and whether it can switch now.
+     * Corporate businesses change plan through us; a downgrade needs few enough current employees.
+     *
+     * @return list<array{key: string, name: string, price: string, limit: int, current: bool, allowed: bool, reason: ?string}>
+     */
+    public function planOptions(Business $business, int $employees): array
+    {
+        $options = [];
+        foreach (Pricing::current()['tiers'] as $key => $tier) {
+            $current = $business->plan === $key && $business->plan_price_pence === $tier['price_pence'] && $business->employee_limit === $tier['employee_limit'];
+            $reason = match (true) {
+                $current => null,
+                $business->plan === Pricing::CORPORATE => 'You are on a Corporate package. Contact us to change it.',
+                $employees > $tier['employee_limit'] => "You have {$employees} current employees; this plan covers up to {$tier['employee_limit']}.",
+                default => null,
+            };
+            $options[] = [
+                'key' => $key, 'name' => Pricing::TIERS[$key], 'price' => Pricing::pounds($tier['price_pence']), 'limit' => $tier['employee_limit'],
+                'current' => $current, 'allowed' => ! $current && $reason === null, 'reason' => $reason,
+            ];
+        }
+
+        return $options;
     }
 
     /**
-     * Super admin "Move to the current plan": email every subscriber on an older plan now, and schedule the
-     * change for 30 days' time (applied by `billing:check`). Returns how many were notified.
+     * Admin switches between Starter and Standard. The limit changes straight away; the new price applies
+     * from the next payment (Stripe: swap without proration). PayPal asks the customer to approve the new
+     * price first: this returns PayPal's approval URL, and confirmPaypalPlan() finishes on the way back.
+     * A business without online billing (invoiced) just changes.
+     */
+    public function changePlan(Business $business, string $tier, string $returnUrl, string $cancelUrl): ?string
+    {
+        $plan = Pricing::tier($tier);
+
+        if ($business->payment_provider === 'paypal' && filled($business->paypal_subscription_id)) {
+            [$approve] = $this->paypal->revise($business->paypal_subscription_id, $plan['price_pence'], $returnUrl, $cancelUrl);
+
+            return $approve;
+        }
+        if ($business->payment_provider === 'stripe' && filled($business->stripe_id)) {
+            $this->stripe->changePrice($business, $plan['price_pence']);
+        }
+        $this->applyPlan($business, $tier, $plan['price_pence'], $plan['employee_limit'], 'billing.plan_changed');
+
+        return null;
+    }
+
+    /** Back from approving a plan change on PayPal: applied only once PayPal shows the subscription on the new plan. */
+    public function confirmPaypalPlan(Business $business, string $tier): bool
+    {
+        $plan = Pricing::tier($tier);
+        $planId = $this->paypal->planId($plan['price_pence']);
+        if ($this->paypal->subscription((string) $business->paypal_subscription_id)['plan_id'] !== $planId) {
+            return false;
+        }
+        $business->update(['paypal_plan_id' => $planId]);
+        $this->applyPlan($business, $tier, $plan['price_pence'], $plan['employee_limit'], 'billing.plan_changed');
+
+        return true;
+    }
+
+    /**
+     * Super admin sets a business's plan: a standard tier, or a Corporate package with an agreed price and
+     * limit. Card subscriptions move to the new price from the next payment. PayPal needs the customer's own
+     * approval for a new price, so a PayPal price change is refused (they can change tier in Settings).
+     * Returns null when done, or the reason it could not be done.
+     */
+    public function setPlan(Business $business, string $plan, int $pence, int $limit): ?string
+    {
+        if ($pence !== $business->plan_price_pence && $business->payment_provider === 'paypal' && filled($business->paypal_subscription_id)) {
+            return "{$business->name} pays by PayPal, and PayPal needs the customer to approve a new price. Ask them to change plan in their Settings, or to pay by card.";
+        }
+        if ($pence !== $business->plan_price_pence && $business->payment_provider === 'stripe' && filled($business->stripe_id)) {
+            $this->stripe->changePrice($business, $pence);
+        }
+        $this->applyPlan($business, $plan, $pence, $limit, 'ops.plan_set');
+
+        return null;
+    }
+
+    private function applyPlan(Business $business, string $plan, int $pence, int $limit, string $action): void
+    {
+        $from = [$business->plan, $business->plan_price_pence, $business->employee_limit];
+        $business->update([
+            'plan' => $plan, 'plan_price_pence' => $pence, 'employee_limit' => $limit,
+            'price_change_pence' => null, 'price_change_limit' => null, 'price_change_plan' => null, 'price_change_on' => null,
+        ]);
+        Audit::log($action, $business, ['from' => $from, 'to' => [$plan, $pence, $limit]], businessId: $business->id);
+        DashboardCounts::forget($business->id);
+    }
+
+    // ---- Moving existing subscribers to the current prices (30 days' notice) ----
+
+    /**
+     * Subscribers whose price or limit differs from today's plan for them, with where they would move:
+     * Starter and Standard businesses to today's price for their tier; businesses on the original single
+     * plan to the tier that fits their current employees. Original-plan businesses with more employees
+     * than the largest tier get target null: they need a Corporate price (Businesses → Set plan).
+     * Corporate businesses are never moved.
+     *
+     * @return Collection<int, array{business: Business, employees: int, target: ?array{plan: string, price_pence: int, employee_limit: int}}>
+     */
+    public function moveCandidates(): Collection
+    {
+        $tiers = Pricing::current()['tiers'];
+
+        return Business::query()
+            ->whereIn('status', [Business::ACTIVE, Business::SUSPENDED])
+            ->where(fn ($q) => $q->whereNull('plan')->orWhere('plan', '!=', Pricing::CORPORATE))
+            ->withCount(['employees as current_employees' => fn ($q) => $q->current()])
+            ->with(['admins' => fn ($q) => $q->orderBy('id')])
+            ->orderBy('name')
+            ->get()
+            ->map(function (Business $b) use ($tiers) {
+                $key = $b->plan ?? Pricing::tierFor($b->current_employees);
+                $target = $key ? ['plan' => $key, ...$tiers[$key]] : null;
+
+                return ['business' => $b, 'employees' => $b->current_employees, 'target' => $target];
+            })
+            ->filter(fn ($c) => $c['target'] === null || $c['business']->plan === null
+                || $c['business']->plan_price_pence !== $c['target']['price_pence'] || $c['business']->employee_limit !== $c['target']['employee_limit'])
+            ->values();
+    }
+
+    /** Already emailed about exactly this move. */
+    public static function isScheduled(Business $business, ?array $target): bool
+    {
+        return $target !== null && $business->price_change_on !== null && $business->price_change_plan === $target['plan']
+            && $business->price_change_pence === $target['price_pence'] && $business->price_change_limit === $target['employee_limit'];
+    }
+
+    /**
+     * Super admin "Email N and move them": email every subscriber that can move and has not been told yet,
+     * and schedule the change for 30 days' time (applied by `billing:check`). Returns how many were notified.
      */
     public function schedulePriceChange(): int
     {
-        $plan = Pricing::current();
         $on = today()->addDays(self::NOTICE_DAYS);
-        $businesses = $this->onOlderPlan()
-            ->where(fn ($q) => $q->whereNull('price_change_on')
-                ->orWhere('price_change_pence', '!=', $plan['price_pence'])->orWhere('price_change_limit', '!=', $plan['employee_limit']))
-            ->get();
+        $due = $this->moveCandidates()->filter(fn ($c) => $c['target'] !== null && ! self::isScheduled($c['business'], $c['target']));
 
-        foreach ($businesses as $business) {
-            $business->update(['price_change_pence' => $plan['price_pence'], 'price_change_limit' => $plan['employee_limit'], 'price_change_on' => $on]);
-            Notification::send($business->admins()->where('active', true)->get(), new PriceChangeNotice(
-                $business->name, $business->plan_price_pence, $plan['price_pence'], $business->employee_limit, $plan['employee_limit'], $on,
+        foreach ($due as ['business' => $business, 'target' => $target]) {
+            $business->update(['price_change_plan' => $target['plan'], 'price_change_pence' => $target['price_pence'], 'price_change_limit' => $target['employee_limit'], 'price_change_on' => $on]);
+            Notification::send($business->admins->where('active', true), new PriceChangeNotice(
+                $business->name, $business->plan_price_pence, $target['price_pence'], $business->employee_limit, $target['employee_limit'], $on, Pricing::TIERS[$target['plan']],
             ));
             Audit::log('billing.price_change_scheduled', $business, [
-                'from' => [$business->plan_price_pence, $business->employee_limit], 'to' => [$plan['price_pence'], $plan['employee_limit']], 'on' => $on->toDateString(),
+                'from' => [$business->plan, $business->plan_price_pence, $business->employee_limit],
+                'to' => [$target['plan'], $target['price_pence'], $target['employee_limit']], 'on' => $on->toDateString(),
             ], businessId: $business->id);
         }
 
-        return $businesses->count();
+        return $due->count();
     }
 
     /**
@@ -204,13 +330,14 @@ class Subscriptions
                 continue;
             }
 
-            $from = [$business->plan_price_pence, $business->employee_limit];
+            $from = [$business->plan, $business->plan_price_pence, $business->employee_limit];
             $business->update([
+                'plan' => $business->price_change_plan ?? $business->plan,
                 'plan_price_pence' => $business->price_change_pence,
                 'employee_limit' => $business->price_change_limit ?? $business->employee_limit,
-                'price_change_pence' => null, 'price_change_limit' => null, 'price_change_on' => null,
+                'price_change_pence' => null, 'price_change_limit' => null, 'price_change_plan' => null, 'price_change_on' => null,
             ]);
-            Audit::log('billing.price_changed', $business, ['from' => $from, 'to' => [$business->plan_price_pence, $business->employee_limit]], businessId: $business->id);
+            Audit::log('billing.price_changed', $business, ['from' => $from, 'to' => [$business->plan, $business->plan_price_pence, $business->employee_limit]], businessId: $business->id);
             $moved++;
         }
 

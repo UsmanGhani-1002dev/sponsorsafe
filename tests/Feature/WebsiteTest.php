@@ -51,15 +51,20 @@ class WebsiteTest extends TestCase
     public function test_the_home_page_shows_the_live_plan(): void
     {
         $this->get('/')->assertOk()->assertInertia(fn (Assert $p) => $p->component('Website/Home')
-            ->where('plan', ['price' => '20', 'limit' => 15, 'training' => '49'])
+            ->where('plans', ['tiers' => [
+                ['key' => 'starter', 'name' => 'Starter', 'price' => '20', 'limit' => 5, 'from' => 1],
+                ['key' => 'standard', 'name' => 'Standard', 'price' => '35', 'limit' => 10, 'from' => 6],
+            ], 'training' => '49', 'corporateFrom' => 11])
             ->where('topic', 'General question')
             ->has('formToken')
             ->where('signedIn', null));
 
-        PlatformSetting::put(Pricing::KEY, ['price_pence' => 2450, 'employee_limit' => 20, 'training_price_pence' => 5900]);
-        $this->get('/?topic=1-to-1%20training')->assertInertia(fn (Assert $p) => $p
-            ->where('plan', ['price' => '24.50', 'limit' => 20, 'training' => '59'])
-            ->where('topic', '1-to-1 training'));
+        PlatformSetting::put(Pricing::KEY, ['tiers' => ['starter' => ['price_pence' => 2450, 'employee_limit' => 4]], 'training_price_pence' => 5900]);
+        $this->get('/?topic=Corporate%20package')->assertInertia(fn (Assert $p) => $p
+            ->where('plans.tiers.0', ['key' => 'starter', 'name' => 'Starter', 'price' => '24.50', 'limit' => 4, 'from' => 1])
+            ->where('plans.tiers.1.from', 5)
+            ->where('plans.training', '59')
+            ->where('topic', 'Corporate package'));
     }
 
     public function test_signed_in_people_can_still_see_the_website_with_a_link_back(): void
@@ -102,7 +107,13 @@ class WebsiteTest extends TestCase
 
     public function test_other_public_pages(): void
     {
-        $this->get('/signup')->assertOk()->assertInertia(fn (Assert $p) => $p->component('Website/Signup')->where('plan.price', '20'));
+        $this->get('/signup?plan=standard')->assertOk()->assertInertia(fn (Assert $p) => $p->component('Website/Signup')
+            ->where('plans.tiers.1.price', '35')->where('chosen', 'standard')
+            ->where('bands', [
+                ['value' => 'starter', 'label' => '1–5 (Starter, £20 a month)'],
+                ['value' => 'standard', 'label' => '6–10 (Standard, £35 a month)'],
+                ['value' => 'corporate', 'label' => 'More than 10 (Corporate)'],
+            ]));
         $this->get('/privacy')->assertOk()->assertInertia(fn (Assert $p) => $p->component('Website/Legal')->where('page', 'privacy'));
         $this->get('/terms')->assertOk()->assertInertia(fn (Assert $p) => $p->component('Website/Legal')->where('page', 'terms'));
     }
@@ -111,25 +122,41 @@ class WebsiteTest extends TestCase
 
     public function test_super_admin_changes_the_website_pricing_and_existing_subscribers_keep_theirs(): void
     {
-        $business = Business::factory()->create(['plan_price_pence' => 2000, 'employee_limit' => 15]);
+        $business = Business::factory()->create(['plan' => 'starter', 'plan_price_pence' => 2000, 'employee_limit' => 5]);
         $this->actingAs($this->superAdmin(), 'ops');
 
-        $this->get("{$this->ops}/pricing")->assertInertia(fn (Assert $p) => $p->component('Ops/Pricing')->where('values', ['price' => '20.00', 'limit' => '15', 'training' => '49.00', 'grace' => '7']));
-        $this->put("{$this->ops}/pricing", ['price' => '25', 'limit' => '20', 'training' => '59.50', 'grace' => '10'])->assertSessionHas('success');
+        $this->get("{$this->ops}/pricing")->assertInertia(fn (Assert $p) => $p->component('Ops/Pricing')->where('values', [
+            'tiers' => ['starter' => ['price' => '20.00', 'limit' => '5'], 'standard' => ['price' => '35.00', 'limit' => '10']],
+            'training' => '49.00', 'grace' => '7',
+        ]));
+        $this->put("{$this->ops}/pricing", [
+            'tiers' => ['starter' => ['price' => '22', 'limit' => '6'], 'standard' => ['price' => '39.50', 'limit' => '12']],
+            'training' => '59.50', 'grace' => '10',
+        ])->assertSessionHas('success');
 
-        $this->assertSame(['price_pence' => 2500, 'employee_limit' => 20, 'training_price_pence' => 5950, 'grace_days' => 10], Pricing::current());
-        $this->assertSame([2000, 15], [$business->fresh()->plan_price_pence, $business->fresh()->employee_limit]);
+        $this->assertSame([
+            'tiers' => ['starter' => ['price_pence' => 2200, 'employee_limit' => 6], 'standard' => ['price_pence' => 3950, 'employee_limit' => 12]],
+            'training_price_pence' => 5950, 'grace_days' => 10,
+        ], Pricing::current());
+        $this->assertSame([2000, 5], [$business->fresh()->plan_price_pence, $business->fresh()->employee_limit]);
         $this->assertTrue(AuditLog::where('action', 'ops.pricing_changed')->exists());
-        $this->get('/')->assertInertia(fn (Assert $p) => $p->where('plan', ['price' => '25', 'limit' => 20, 'training' => '59.50']));
+        $this->get('/')->assertInertia(fn (Assert $p) => $p->where('plans.tiers.1', ['key' => 'standard', 'name' => 'Standard', 'price' => '39.50', 'limit' => 12, 'from' => 7])
+            ->where('plans.corporateFrom', 13));
     }
 
     public function test_pricing_is_validated_and_only_for_the_super_admin(): void
     {
         $this->actingAs(User::factory()->admin()->create())->get("{$this->ops}/pricing")->assertRedirect("{$this->ops}/login");
-        $this->put("{$this->ops}/pricing", ['price' => '1', 'limit' => '1', 'training' => '1'])->assertRedirect("{$this->ops}/login");
+        $this->put("{$this->ops}/pricing", ['training' => '1'])->assertRedirect("{$this->ops}/login");
 
-        $this->actingAs($this->superAdmin(), 'ops')->put("{$this->ops}/pricing", ['price' => '0', 'limit' => 'x', 'training' => '-1', 'grace' => '60'])
-            ->assertSessionHasErrors(['price', 'limit', 'training', 'grace']);
+        $this->actingAs($this->superAdmin(), 'ops')->put("{$this->ops}/pricing", [
+            'tiers' => ['starter' => ['price' => '0', 'limit' => 'x'], 'standard' => ['price' => '35', 'limit' => '10']], 'training' => '-1', 'grace' => '60',
+        ])->assertSessionHasErrors(['tiers.starter.price', 'tiers.starter.limit', 'training', 'grace']);
+
+        // Standard must cover more people than Starter.
+        $this->put("{$this->ops}/pricing", [
+            'tiers' => ['starter' => ['price' => '20', 'limit' => '10'], 'standard' => ['price' => '35', 'limit' => '10']], 'training' => '49', 'grace' => '7',
+        ])->assertSessionHasErrors(['tiers.standard.limit' => 'Standard must cover more employees than the plan before it.']);
     }
 
     // ---- Super admin: enquiries ----

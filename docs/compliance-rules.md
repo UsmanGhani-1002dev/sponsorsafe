@@ -157,7 +157,7 @@ integration: build the alert model and screens, stub the import interface.
 - [ ] "Mark reported" requires date and reported-by, and turns the absence badge green.
 - [ ] A scheduled day with no clock-in and no absence creates an unexplained-absence alert.
 - [ ] Visa expiry alerts fire at 90, 60 and 30 days.
-- [ ] Adding a 16th active employee is blocked.
+- [ ] Adding an employee over the plan's limit is blocked (6th on Starter, 11th on Standard; the agreed limit on Corporate).
 - [ ] An employee cannot open the admin area; an admin of one business cannot see another business's data.
 - [ ] Documents cannot be opened by URL without signing in; every view and download is in the audit log.
 - [ ] Passport and NI numbers are stored encrypted and shown as last 4 only.

@@ -11,7 +11,7 @@ class Enquiry extends Model
     public const NEW = 'new';
     public const HANDLED = 'handled';
 
-    public const TOPICS = ['General question', 'Book a free demo', '1-to-1 training', 'Existing customer support'];
+    public const TOPICS = ['General question', 'Book a free demo', 'Corporate package', '1-to-1 training', 'Existing customer support'];
 
     protected $fillable = ['name', 'email', 'phone', 'topic', 'message', 'source', 'transcript', 'status', 'handled_by', 'handled_at', 'ip'];
 

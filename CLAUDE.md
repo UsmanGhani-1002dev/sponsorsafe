@@ -5,8 +5,9 @@ UKVI compliance only, not payroll or general HR. It keeps every record the Home
 Office expects, tells the business when something must be reported on the Sponsor
 Management System (SMS), and gives employees a simple portal.
 
-Target customer: up to 15 employees, payroll done by an accountant, no technical
-knowledge. Keep every screen minimal and plain-English.
+Target customer: up to 10 employees (Starter £20 / 5, Standard £35 / 10; Corporate
+by agreement above that), payroll done by an accountant, no technical knowledge.
+Keep every screen minimal and plain-English.
 
 Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each stage.
 
@@ -17,11 +18,14 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
 - **Stage 3 (documents + absence): done and tested.**
 - **Stage 4 (Home Office reports + end of employment): done and tested.**
 - **Stage 5 (employee portal + Requests inbox): done and tested.**
-- **Stage 6 (compliance check, compliance pack PDF, retention review): done and tested** — 193 PHPUnit tests passing. Waiting for Shaf's review.
+- **Stage 6 (compliance check, compliance pack PDF, retention review): done and tested** — 193 PHPUnit tests passing.
 - **Stage 7a (public website, pricing, enquiries): done and tested** — 203 PHPUnit tests passing.
 - **Stage 7b part 1 (sign-up + Stripe billing): done and tested** — 219 PHPUnit tests passing.
-- **Stage 7b part 2 (PayPal + price moves with 30 days' notice): done and tested** — 229 PHPUnit tests passing. Waiting for review.
-- **Next: Stage 7c (AI chat assistant).** See "Build order" below.
+- **Stage 7b part 2 (PayPal + price moves with 30 days' notice): done and tested** — 229 PHPUnit tests passing.
+- **Plans by team size (client change, 1 Oct 2026): done and tested** — Starter / Standard / Corporate,
+  upgrades and downgrades; 238 PHPUnit tests passing. Waiting for review.
+- **Next (agreed order is Shaf's call):** a polish stage (Ctrl+K palette, toasts, editable business
+  details, second admin, employee privacy notice), Stage 8 (reminders), Stage 7c (AI chat).
 - Local setup on this laptop is done (git repo, MySQL databases, PHP 8.4).
 
 ## Local setup (Windows)
@@ -102,7 +106,7 @@ Demo logins (password `password`, local only):
   (`admin` | `employee`). Always scope queries through `$request->user()->business`;
   never trust a business_id from the request. Suspended business → users are signed
   out by `EnsureBusinessActive`.
-- `config/sponsorsafe.php` — ops path/IPs, plan defaults (£20, 15 employees, £49
+- `config/sponsorsafe.php` — ops path/IPs, plan defaults (Starter £20 / 5, Standard £35 / 10, £49
   training) and rule defaults. `Business::rule('key')` reads a per-business override
   from `businesses.settings` and falls back to the config default. Never hard-code
   thresholds in logic.
@@ -309,6 +313,23 @@ Demo logins (password `password`, local only):
   update-pricing-schemes once per shared plan; a gateway error leaves it scheduled for the next day.
   Admins see "From {date}: £X per month" on the subscription card.
 
+## Plans by team size (client change, 1 Oct 2026; follow these conventions)
+
+- `App\Support\Pricing`: tiers `starter` (£20 / 5) and `standard` (£35 / 10) in `platform_settings.plan.tiers`
+  (super admin edits both); above the largest limit is **Corporate** (`Pricing::CORPORATE`), a price and
+  limit set per business by the super admin. `Pricing::tier()`, `tierFor($employees)`, `forDisplay()`.
+- `businesses.plan`: starter | standard | corporate | null = the original single plan (£20 / 15), kept
+  until moved. The business's own `plan_price_pence` / `employee_limit` are what it pays and may use.
+  `Business::limitMessage()` / `nextTier()` drive the "plan full" message (upgrade, or Corporate).
+- Sign-up: "Number of employees" picks the tier (1–5 Starter, 6–10 Standard, more than 10 → Corporate
+  contact). Website: three plan cards; contact topic "Corporate package".
+- `Subscriptions::changePlan()` (Settings → Subscription): limit now, price from the next payment
+  (Stripe swap without proration; PayPal `revise` → customer approves → `confirmPaypalPlan()` only when
+  PayPal shows the new plan; invoiced businesses just change). Downgrade only if current employees fit.
+  `setPlan()` = super admin Businesses → Set plan (tiers or Corporate); refuses a PayPal price change.
+- Price moves are per tier: `moveCandidates()` targets today's price for the business's tier, or for the
+  original plan the tier that fits its current employees (none above 10 → "Needs a Corporate price").
+
 ## UI and performance rules ("modern and very fast")
 
 - Build shared pieces once and reuse them: DataTable (server-side sort, filter,
@@ -331,7 +352,7 @@ Demo logins (password `password`, local only):
 - Reportable events create a Home Office report task automatically; deadlines are
   in working days from the trigger date. Reportable rules apply to sponsored
   workers only; for everyone else, log only.
-- Enforce the plan's employee limit (default 15) when adding employees.
+- Enforce the plan's employee limit (Starter 5, Standard 10, Corporate as agreed) when adding employees.
 - Tests for every rule in compliance-rules.md before the UI that uses it.
 - Business admins must use 2FA (authenticator app, set up on first sign-in);
   optional for employees. Self-service password reset by email.
@@ -367,7 +388,7 @@ Demo logins (password `password`, local only):
 
 ### Stage 7 details
 
-- Pricing: £20/month for up to 15 employees; optional 1-to-1 training £49 per
+- Pricing: Starter £20/month up to 5 employees, Standard £35 up to 10, Corporate agreed; optional 1-to-1 training £49 per
   person; both editable by the super admin. Gateway keys entered by the super
   admin, encrypted at rest, shown masked (last 4) afterwards.
 - AI chat on the public website: streamed replies from the Anthropic Messages API

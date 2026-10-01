@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Pricing;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -21,9 +22,9 @@ class Business extends Model
     public const SUSPENDED_CANCELLED = 'cancelled';
 
     protected $fillable = [
-        'name', 'licence_number', 'authorising_officer', 'phone', 'status', 'plan_price_pence', 'employee_limit', 'employees_band',
+        'name', 'licence_number', 'authorising_officer', 'phone', 'status', 'plan', 'plan_price_pence', 'employee_limit', 'employees_band',
         'payment_provider', 'payment_label', 'next_payment_on', 'payment_failed_on', 'grace_ends_on', 'settings', 'suspended_at', 'suspended_reason',
-        'paypal_subscription_id', 'paypal_plan_id', 'price_change_pence', 'price_change_limit', 'price_change_on',
+        'paypal_subscription_id', 'paypal_plan_id', 'price_change_pence', 'price_change_limit', 'price_change_plan', 'price_change_on',
     ];
 
     protected function casts(): array
@@ -73,6 +74,44 @@ class Business extends Model
     public function employeeLimitReached(): bool
     {
         return $this->employees()->current()->count() >= $this->employee_limit;
+    }
+
+    public function currentEmployeeCount(): int
+    {
+        return $this->employees()->current()->count();
+    }
+
+    public function planName(): string
+    {
+        return Pricing::name($this->plan);
+    }
+
+    /** The smallest self-service plan with room for more employees than now, if any (never for Corporate). */
+    public function nextTier(): ?string
+    {
+        if ($this->plan === Pricing::CORPORATE) {
+            return null;
+        }
+        foreach (Pricing::current()['tiers'] as $key => $tier) {
+            if ($tier['employee_limit'] > $this->employee_limit) {
+                return $key;
+            }
+        }
+
+        return null;
+    }
+
+    /** What to say when the employee limit is reached: upgrade in Settings, or ask about Corporate. */
+    public function limitMessage(): string
+    {
+        $covers = "Your plan covers up to {$this->employee_limit} employees.";
+        if ($next = $this->nextTier()) {
+            $tier = Pricing::tier($next);
+
+            return "{$covers} Upgrade to ".Pricing::TIERS[$next].' (£'.Pricing::pounds($tier['price_pence'])." a month, up to {$tier['employee_limit']}) in Settings to add more.";
+        }
+
+        return "{$covers} Contact us about a Corporate package to add more.";
     }
 
     public function isActive(): bool

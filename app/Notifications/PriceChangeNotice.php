@@ -17,6 +17,7 @@ class PriceChangeNotice extends Notification
         public int $oldLimit,
         public int $newLimit,
         public CarbonInterface $on,
+        public ?string $planName = null,
     ) {}
 
     public function via(object $notifiable): array
@@ -31,6 +32,10 @@ class PriceChangeNotice extends Notification
             ->subject("Your plan changes on {$date}")
             ->greeting('Hello '.strtok($notifiable->name, ' ').',')
             ->line("We're giving you 30 days' notice of a change to the plan for {$this->business}.");
+
+        if ($this->planName) {
+            $mail->line("From {$date} you will be on our {$this->planName} plan.");
+        }
 
         if ($this->oldPence !== $this->newPence) {
             $mail->line('From '.$date.' the price changes from £'.Pricing::pounds($this->oldPence).' to £'.Pricing::pounds($this->newPence).' per month. The new price applies from your first payment after that date.');

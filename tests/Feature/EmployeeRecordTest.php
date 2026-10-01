@@ -236,7 +236,8 @@ class EmployeeRecordTest extends TestCase
             ->where('employees.data.0.status', 'Skilled Worker (sponsored)')
             ->where('employees.data.0.expiry', ['text' => '10 Dec 2026 · 73 days', 'tone' => 'amber'])
             ->where('employees.data.1.expiry', ['text' => 'No time limit', 'tone' => 'grey'])
-            ->where('plan', ['used' => 2, 'limit' => 15, 'reached' => false]));
+            ->where('plan', ['used' => 2, 'limit' => 15, 'reached' => false,
+                'message' => 'Your plan covers up to 15 employees. Contact us about a Corporate package to add more.', 'canUpgrade' => false]));
     }
 
     public function test_list_searches_sorts_and_filters_on_the_server(): void

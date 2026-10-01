@@ -8,7 +8,7 @@ decisions behind them. When they disagree, ask Shaf.
 ## 1. Positioning and scope
 
 - A SaaS for small UK sponsor licence holders. **Purely UKVI compliance.**
-- Customer: up to 15 employees; payroll and accounts are done by an outside
+- Customer: up to 10 employees (Corporate package for more); payroll and accounts are done by an outside
   accountant; no HR department; no technical knowledge.
 - Every screen minimal: only what is really needed. Plain English, UK spelling,
   dates as "24 Sep 2026".
@@ -48,7 +48,7 @@ business's data.
   passwords are rate-limited.
 - Suspended business: its users cannot sign in ("Access for X is paused. Please
   contact support…") and are signed out if already signed in.
-- Forgot password: self-service reset link by email (not built yet).
+- Forgot password: self-service reset link by email.
 - Employees are invited by their employer (invite email with a set-password link).
 - **Super admin**: completely separate table, guard and login at a secret URL
   that is never linked anywhere; IP allow-list (others get 404); password +
@@ -58,42 +58,56 @@ business's data.
 
 ## 4. Plans, billing and sign-up
 
-- One plan: **£20 per month for up to 15 employees**. No setup fee, no contract,
-  cancel any time. Adding a 16th active employee is blocked with "Your plan covers
-  up to 15 employees. Contact us to add more."
+- **Plans by team size** (client change, 1 Oct 2026; replaced the single £20 / 15 plan):
+  - **Starter: £20 per month for up to 5 employees.**
+  - **Standard: £35 per month for up to 10 employees.**
+  - **Corporate: more than 10 employees**, a price agreed with the client ("Contact us").
+    The super admin sets the agreed price and limit on that business (Businesses → Set plan).
+  No setup fee, no contract, cancel any time. Adding an employee over the plan's limit
+  is blocked: on Starter with "Upgrade to Standard … in Settings", on Standard with
+  "Contact us about a Corporate package".
+- Changing plan (Settings → Subscription): upgrade Starter → Standard any time; downgrade
+  only with 5 or fewer current employees. The limit changes straight away; the new
+  price applies from the next payment (no part-month charge). PayPal customers approve
+  the new price on PayPal first. Corporate businesses change plan through Enovtec.
+- Businesses on the original single plan (£20 / 15) keep it until the super admin moves
+  them (30 days' notice) to the plan that fits their current employees; more than 10 →
+  agree a Corporate price.
 - Optional **1-to-1 training: £49 per person** (online session: set up the business,
   add first employees, show the monthly routine). Booked from the website contact
   form or from Settings → Subscription.
 - Payments by **Stripe** (card, via Laravel Cashier) or **PayPal** subscriptions.
-- Super admin can change the price, employee limit and training price. New
-  prices show on the website straight away; existing subscribers keep their price
-  until moved and are emailed 30 days before any change.
+- Super admin can change each plan's price and employee limit, and the training
+  price. New prices show on the website straight away; existing subscribers keep
+  their price until moved and are emailed 30 days before any change.
 - Super admin enters Stripe keys (publishable, secret, webhook secret, test/live)
-  and PayPal credentials (client ID, secret, plan ID, sandbox/live). Secrets are
-  encrypted at rest and only the last 4 characters are ever shown again.
+  and PayPal credentials (client ID, secret, webhook ID, sandbox/live; the PayPal
+  plan is created automatically). Secrets are encrypted at rest and only the last
+  4 characters are ever shown again.
 - Sign-up form: business name, sponsor licence number, your name, your email
-  (becomes the login), phone, number of employees (1–5, 6–10, 11–15, more than
-  15 → "contact us"), pay by card or PayPal, agree to terms and privacy policy →
-  secure payment → email with a set-password link.
+  (becomes the login), phone, number of employees (1–5 → Starter, 6–10 → Standard,
+  more than 10 → "contact us about Corporate"), pay by card or PayPal, agree to terms
+  and privacy policy → secure payment → email with a set-password link.
 - Webhooks activate the business; a failed payment starts a **grace period**
-  (length is an open question, see §12), then the business is suspended. Data is
-  kept while suspended.
+  (7 days by default, a setting), then the business is suspended. Data is kept
+  while suspended.
 - Super admin can suspend or activate any business by hand.
 
 ## 5. Public website (see `prototype-website.dc.html`)
 
 - Header: logo, Features, Pricing, Training, Contact, **Log in**, **Start subscription**.
-- Hero: "Keep your sponsor licence safe, without the paperwork." Buttons: start for
-  £20 a month, book a free demo. Ticks: up to 15 employees, no setup fee, cancel any time.
+- Hero: "Keep your sponsor licence safe, without the paperwork." Buttons: start from
+  £20 a month, book a free demo. Ticks: plans for 1 to 10 employees, no setup fee, cancel any time.
 - Features (6): right-to-work checks; absence rules built in; Home Office
   deadlines; document vault; employee app; audit-ready in one click.
 - Who it's for: small sponsors whose accountant runs payroll. States clearly
   that it is not payroll or accounts software.
-- Pricing: the plan card and the training card.
+- Pricing: Starter, Standard and Corporate cards, "every plan includes", and the training card.
 - FAQ: does it report for me (no); do I need payroll software (no); is our data
-  safe (UK, encrypted, logged); more than 15 employees (contact us).
+  safe (UK, encrypted, logged); what if we grow (move up in Settings; more than 10 →
+  Corporate).
 - Contact form: name, email, phone (optional), topic (general question, book a free
-  demo, 1-to-1 training, existing customer support), message → creates an Enquiry
+  demo, Corporate package, 1-to-1 training, existing customer support), message → creates an Enquiry
   in the super admin area; reply promised within one working day.
 - Footer: not-legal-advice line; "A service by Enovtec, Southampton".
 - AI chat bubble (§6).
@@ -229,6 +243,6 @@ requests · My details**.
 
 1. Unpaid-leave limit year: calendar year from 1 January (current default) or a
    rolling 12 months? Keep it a setting either way.
-2. Grace period after a failed payment before suspension: suggest 7 days.
+2. ~~Grace period after a failed payment before suspension~~ — 7 days by default (a setting).
 3. Final product name and domain.
 4. 2FA for employees: currently optional.

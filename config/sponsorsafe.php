@@ -12,8 +12,12 @@ return [
 
     // Defaults for new businesses and the public plan (super admin can change them).
     'plan' => [
-        'price_pence' => 2000,
-        'employee_limit' => 15,
+        // Plans by size. More than the largest limit is the Corporate package: a price agreed with
+        // the super admin and set on that business (Businesses → Set plan).
+        'tiers' => [
+            'starter' => ['price_pence' => 2000, 'employee_limit' => 5],
+            'standard' => ['price_pence' => 3500, 'employee_limit' => 10],
+        ],
         'training_price_pence' => 4900,
         // Days a business keeps access after a failed payment, then it is suspended (data kept).
         'grace_days' => 7,

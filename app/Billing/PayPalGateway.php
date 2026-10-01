@@ -78,9 +78,9 @@ class PayPalGateway
 
     /**
      * The subscription as PayPal sees it: status (APPROVAL_PENDING, APPROVED, ACTIVE, SUSPENDED, CANCELLED,
-     * EXPIRED), our business id and the next billing date.
+     * EXPIRED), its plan, our business id and the next billing date.
      *
-     * @return array{id: string, status: string, business_id: int, next: ?CarbonImmutable, email: ?string}
+     * @return array{id: string, status: string, plan_id: ?string, business_id: int, next: ?CarbonImmutable, email: ?string}
      */
     public function subscription(string $id): array
     {
@@ -90,10 +90,39 @@ class PayPalGateway
         return [
             'id' => (string) $data['id'],
             'status' => (string) $data['status'],
+            'plan_id' => $data['plan_id'] ?? null,
             'business_id' => (int) ($data['custom_id'] ?? 0),
             'next' => $next ? CarbonImmutable::parse($next) : null,
             'email' => $data['subscriber']['email_address'] ?? null,
         ];
+    }
+
+    /**
+     * Move a subscription to the plan for another amount (upgrade or downgrade). PayPal asks the customer
+     * to approve the new price, so this returns [approve URL, plan id]; the new price applies from the next
+     * payment.
+     *
+     * @return array{string, string}
+     */
+    public function revise(string $subscriptionId, int $pence, string $returnUrl, string $cancelUrl): array
+    {
+        $plan = $this->planId($pence);
+        $data = $this->call('post', '/v1/billing/subscriptions/'.rawurlencode($subscriptionId).'/revise', [
+            'plan_id' => $plan,
+            'application_context' => [
+                'brand_name' => config('app.name'),
+                'locale' => 'en-GB',
+                'shipping_preference' => 'NO_SHIPPING',
+                'return_url' => $returnUrl,
+                'cancel_url' => $cancelUrl,
+            ],
+        ]);
+        $approve = collect($data['links'] ?? [])->firstWhere('rel', 'approve')['href'] ?? null;
+        if (! $approve) {
+            throw new PayPalException('PayPal did not return an approval link.');
+        }
+
+        return [$approve, $plan];
     }
 
     /** PayPal's own check that a webhook really came from PayPal for our webhook ID. */

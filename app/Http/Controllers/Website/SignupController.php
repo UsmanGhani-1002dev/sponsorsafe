@@ -30,23 +30,27 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
  */
 class SignupController extends Controller
 {
-    public const BANDS = ['1-5' => '1–5', '6-10' => '6–10', '11-15' => '11–15', '16+' => 'More than 15'];
-
     public function show(Request $request): Response
     {
         $pending = $this->pendingBusiness($request);
         $admin = $pending?->admins()->orderBy('id')->first();
+        $plans = Pricing::forDisplay();
 
         return Inertia::render('Website/Signup', [
-            'plan' => Pricing::forDisplay(),
-            'bands' => collect(self::BANDS)->map(fn ($label, $value) => ['value' => $value, 'label' => $label])->values(),
+            'plans' => $plans,
+            // "Number of employees" picks the plan: 1–5 Starter, 6–10 Standard, more than 10 Corporate (contact us).
+            'bands' => [
+                ...array_map(fn ($t) => ['value' => $t['key'], 'label' => "{$t['from']}–{$t['limit']} ({$t['name']}, £{$t['price']} a month)"], $plans['tiers']),
+                ['value' => Pricing::CORPORATE, 'label' => 'More than '.($plans['corporateFrom'] - 1).' (Corporate)'],
+            ],
+            'chosen' => in_array($request->query('plan'), array_keys(Pricing::TIERS), true) ? $request->query('plan') : null,
             'formToken' => FormToken::issue(),
             'gateways' => ['card' => Gateways::stripeReady(), 'paypal' => Gateways::paypalReady()],
             'cancelled' => $request->boolean('cancelled') && $pending !== null,
             // Coming back from a cancelled payment: keep what they typed.
             'previous' => $pending ? [
                 'business' => $pending->name, 'licence' => $pending->licence_number, 'name' => $admin?->name,
-                'email' => $admin?->email, 'phone' => $pending->phone, 'employees' => $pending->employees_band,
+                'email' => $admin?->email, 'phone' => $pending->phone, 'employees' => $pending->plan,
             ] : null,
         ]);
     }
@@ -62,7 +66,7 @@ class SignupController extends Controller
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
-            'employees' => ['required', Rule::in(array_keys(self::BANDS))],
+            'employees' => ['required', Rule::in([...array_keys(Pricing::TIERS), Pricing::CORPORATE])],
             'pay' => ['required', Rule::in(['card', 'paypal'])],
             'agree' => ['accepted'],
         ], [
@@ -74,9 +78,9 @@ class SignupController extends Controller
             'agree.accepted' => 'Please agree to the terms and privacy policy.',
         ]);
 
-        $limit = Pricing::current()['employee_limit'];
-        if ($data['employees'] === '16+') {
-            throw ValidationException::withMessages(['employees' => "The plan covers up to {$limit} employees. Please contact us for a larger plan."]);
+        if ($data['employees'] === Pricing::CORPORATE) {
+            $largest = Pricing::largestLimit();
+            throw ValidationException::withMessages(['employees' => "For more than {$largest} employees we offer a Corporate package. Please contact us and we'll agree a price."]);
         }
         $existing = User::with('business')->where('email', mb_strtolower(trim($data['email'])))->first();
         if ($existing && ! $existing->business?->isPending()) {

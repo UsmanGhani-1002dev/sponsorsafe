@@ -23,7 +23,7 @@ interface Props {
     employees: Page<Row>;
     table: TableState;
     bases: { value: string; label: string }[];
-    plan: { used: number; limit: number; reached: boolean };
+    plan: { used: number; limit: number; reached: boolean; message: string; canUpgrade: boolean };
 }
 
 const portal: Record<Row['portal'], { text: string; tone: Tone }> = {
@@ -84,7 +84,18 @@ export default function EmployeesIndex({ employees, table, bases, plan }: Props)
             />
             {plan.reached && (
                 <div className="mb-5">
-                    <Alert tone="info">Your plan covers up to {plan.limit} employees. Contact us to add more.</Alert>
+                    <Alert tone="info">
+                        {plan.message}{' '}
+                        {plan.canUpgrade ? (
+                            <Link href="/app/settings" className="font-semibold underline">
+                                Change plan
+                            </Link>
+                        ) : (
+                            <a href="/?topic=Corporate%20package#contact" className="font-semibold underline">
+                                Contact us
+                            </a>
+                        )}
+                    </Alert>
                 </div>
             )}
             <DataTable

@@ -51,7 +51,7 @@ class BillingTest extends TestCase
     {
         return $this->post('/signup', [
             'business' => 'Northgate Care Ltd', 'licence' => 'KX7Q2M9P1', 'name' => 'Imran Ali', 'email' => 'Imran@Northgate.example',
-            'phone' => '023 8000 0000', 'employees' => '6-10', 'pay' => 'card', 'agree' => true,
+            'phone' => '023 8000 0000', 'employees' => 'standard', 'pay' => 'card', 'agree' => true,
             'form_token' => Crypt::encryptString((string) (now()->timestamp - 30)), 'website' => '',
             ...$overrides,
         ]);
@@ -87,7 +87,7 @@ class BillingTest extends TestCase
     public function test_the_signup_page_only_offers_card_once_stripe_is_connected(): void
     {
         $this->get('/signup')->assertOk()->assertInertia(fn (Assert $p) => $p->component('Website/Signup')
-            ->where('gateways', ['card' => false, 'paypal' => false])->where('plan.price', '20')->has('bands', 4)->where('previous', null));
+            ->where('gateways', ['card' => false, 'paypal' => false])->where('plans.tiers.0.price', '20')->has('bands', 3)->where('previous', null));
 
         $this->signup()->assertSessionHasErrors(['pay' => 'Card payments are not switched on yet. Please contact us to subscribe.']);
         $this->assertSame(0, Business::count());
@@ -106,7 +106,8 @@ class BillingTest extends TestCase
             'email' => 'Please add a valid email.',
             'agree' => 'Please agree to the terms and privacy policy.',
         ]);
-        $this->signup(['employees' => '16+'])->assertSessionHasErrors(['employees' => 'The plan covers up to 15 employees. Please contact us for a larger plan.']);
+        $this->signup(['employees' => 'corporate'])->assertSessionHasErrors(['employees' => "For more than 10 employees we offer a Corporate package. Please contact us and we'll agree a price."]);
+        $this->signup(['employees' => '6-10'])->assertSessionHasErrors('employees');
         $this->signup(['pay' => 'paypal'])->assertSessionHasErrors(['pay' => 'PayPal is not switched on yet. Please pay by card, or contact us to subscribe.']);
 
         User::factory()->admin()->create(['email' => 'imran@northgate.example']);
@@ -121,13 +122,14 @@ class BillingTest extends TestCase
     public function test_signup_creates_a_pending_business_and_sends_the_visitor_to_stripe_checkout(): void
     {
         $this->connectStripe();
-        PlatformSetting::put(Pricing::KEY, ['price_pence' => 2500, 'employee_limit' => 12, 'training_price_pence' => 4900]);
+        PlatformSetting::put(Pricing::KEY, ['tiers' => ['standard' => ['price_pence' => 3900, 'employee_limit' => 12]]]);
 
         $this->signup()->assertRedirect('https://checkout.stripe.test/c/pay/cs_test_123');
 
+        // 6–10 employees chose Standard at today's Standard price.
         $business = Business::sole();
-        $this->assertSame([Business::PENDING, 'Northgate Care Ltd', 'KX7Q2M9P1', '6-10', 2500, 12, 'stripe'],
-            [$business->status, $business->name, $business->licence_number, $business->employees_band, $business->plan_price_pence, $business->employee_limit, $business->payment_provider]);
+        $this->assertSame([Business::PENDING, 'Northgate Care Ltd', 'KX7Q2M9P1', 'standard', 3900, 12, 'stripe'],
+            [$business->status, $business->name, $business->licence_number, $business->plan, $business->plan_price_pence, $business->employee_limit, $business->payment_provider]);
         $admin = $business->admins()->sole();
         $this->assertSame(['Imran Ali', 'imran@northgate.example', 'admin'], [$admin->name, $admin->email, $admin->role]);
         $this->assertStringContainsString('/signup/done?session_id={CHECKOUT_SESSION_ID}', $this->stripe->checkouts[0]['successUrl']);

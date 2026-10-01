@@ -120,11 +120,21 @@ class AddEmployeeRulesTest extends TestCase
 
     public function test_the_plan_employee_limit_is_enforced(): void
     {
-        $this->admin->business->update(['employee_limit' => 2]);
-        Employee::factory()->count(2)->create(['business_id' => $this->admin->business_id]);
+        // Starter covers 5: the 6th is blocked, with the way to upgrade.
+        $this->admin->business->update(['plan' => 'starter', 'plan_price_pence' => 2000, 'employee_limit' => 5]);
+        Employee::factory()->count(5)->create(['business_id' => $this->admin->business_id]);
 
-        $this->add($this->payload('british_irish'))->assertSessionHasErrors(['form' => 'Your plan covers up to 2 employees. Contact us to add more.']);
-        $this->assertSame(2, Employee::count());
+        $this->add($this->payload('british_irish'))->assertSessionHasErrors(['form' => 'Your plan covers up to 5 employees. Upgrade to Standard (£35 a month, up to 10) in Settings to add more.']);
+        $this->assertSame(5, Employee::count());
+    }
+
+    public function test_standard_at_its_limit_points_to_the_corporate_package(): void
+    {
+        $this->admin->business->update(['plan' => 'standard', 'plan_price_pence' => 3500, 'employee_limit' => 10]);
+        Employee::factory()->count(10)->create(['business_id' => $this->admin->business_id]);
+
+        $this->add($this->payload('british_irish'))->assertSessionHasErrors(['form' => 'Your plan covers up to 10 employees. Contact us about a Corporate package to add more.']);
+        $this->assertSame(10, Employee::count());
     }
 
     public function test_leavers_do_not_count_towards_the_limit(): void

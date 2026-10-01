@@ -12,8 +12,10 @@ use App\Services\Retention;
 use App\Services\WorkingDays;
 use App\Models\WorkSite;
 use App\Services\EmployeeRecorder;
+use App\Billing\PayPalException;
 use App\Billing\PayPalGateway;
 use App\Billing\StripeGateway;
+use App\Billing\Subscriptions;
 use App\Models\Business;
 use App\Support\Audit;
 use App\Support\Pricing;
@@ -29,7 +31,7 @@ use Inertia\Response;
 /** Settings: business details, plan, and work sites (add, rename, close, move an employee). */
 class SettingsController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, Subscriptions $subscriptions): Response
     {
         $business = $request->user()->business;
         $sites = $business->workSites()->with(['employees' => fn ($q) => $q->current()->orderBy('full_name'), 'reportTasks' => fn ($q) => $q->latest('id')])->orderByRaw('closed_on is not null')->orderBy('name')->get();
@@ -46,6 +48,9 @@ class SettingsController extends Controller
                 ->map(fn (KeyPerson $p) => ['id' => $p->id, 'role' => $p->role, 'roleLabel' => $p->roleLabel(), 'name' => $p->name, 'email' => $p->email, 'phone' => $p->phone]),
             'roles' => collect(KeyPerson::ROLES)->map(fn ($label, $value) => ['value' => $value, 'label' => $label, 'single' => in_array($value, KeyPerson::SINGLE_ROLES, true)])->values(),
             'plan' => [
+                'key' => $business->plan,
+                'name' => $business->planName(),
+                'options' => $subscriptions->planOptions($business, $employees->count()),
                 'price' => number_format($business->plan_price_pence / 100, 2),
                 'limit' => $business->employee_limit,
                 'used' => $employees->count(),
@@ -217,6 +222,54 @@ class SettingsController extends Controller
         Audit::log('billing.portal_opened', $business, ['provider' => 'stripe'], businessId: $business->id);
 
         return Inertia::location($url);
+    }
+
+    /**
+     * Switch between Starter and Standard. The limit changes now; the new price applies from the next
+     * payment. PayPal customers approve the new price on PayPal first and come back to paypalPlan().
+     */
+    public function changePlan(Request $request, Subscriptions $subscriptions): HttpResponse
+    {
+        $business = $request->user()->business;
+        $data = $request->validate(['plan' => ['required', Rule::in(array_keys(Pricing::TIERS))]]);
+        $option = collect($subscriptions->planOptions($business, $business->currentEmployeeCount()))->firstWhere('key', $data['plan']);
+        if (! $option['allowed']) {
+            return back()->with('error', $option['reason'] ?? "You're already on {$option['name']}.");
+        }
+
+        try {
+            $approve = $subscriptions->changePlan($business, $data['plan'], route('app.plan.paypal', ['plan' => $data['plan']]), route('app.settings'));
+        } catch (PayPalException|ApiErrorException $e) {
+            Log::warning('Plan change failed', ['business' => $business->id, 'error' => $e->getMessage()]);
+
+            return back()->with('error', 'We could not change your plan just now. Please try again in a moment.');
+        }
+        if ($approve) {
+            return Inertia::location($approve);
+        }
+
+        return back()->with('success', "You're now on {$option['name']}: up to {$option['limit']} employees. The new price, £{$option['price']} a month, applies from your next payment.");
+    }
+
+    /** Back from approving a plan change on PayPal. Applied only once PayPal shows the new plan. */
+    public function paypalPlan(Request $request, Subscriptions $subscriptions): RedirectResponse
+    {
+        $business = $request->user()->business;
+        $tier = $request->query('plan');
+        if (! in_array($tier, array_keys(Pricing::TIERS), true) || $business->payment_provider !== 'paypal') {
+            return redirect()->route('app.settings');
+        }
+        try {
+            $done = $subscriptions->confirmPaypalPlan($business, $tier);
+        } catch (PayPalException $e) {
+            Log::warning('PayPal plan change could not be confirmed', ['business' => $business->id, 'error' => $e->getMessage()]);
+            $done = false;
+        }
+        $tierInfo = Pricing::tier($tier);
+
+        return redirect()->route('app.settings')->with($done ? 'success' : 'error', $done
+            ? "You're now on ".Pricing::TIERS[$tier].": up to {$tierInfo['employee_limit']} employees. The new price applies from your next PayPal payment."
+            : "PayPal hasn't confirmed the plan change yet. If you approved it, please check back in a few minutes.");
     }
 
     private static function canManageBilling(Business $business): bool

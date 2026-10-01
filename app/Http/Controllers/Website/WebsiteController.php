@@ -21,7 +21,7 @@ class WebsiteController extends Controller
     public function home(Request $request): Response
     {
         return Inertia::render('Website/Home', [
-            'plan' => Pricing::forDisplay(),
+            'plans' => Pricing::forDisplay(),
             'topics' => Enquiry::TOPICS,
             'topic' => in_array($request->query('topic'), Enquiry::TOPICS, true) ? $request->query('topic') : Enquiry::TOPICS[0],
             'formToken' => FormToken::issue(),

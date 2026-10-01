@@ -93,7 +93,7 @@ class EmployeeController extends Controller
     {
         $business = $request->user()->business;
         if ($business->employeeLimitReached()) {
-            return back()->withErrors(['form' => "Your plan covers up to {$business->employee_limit} employees. Contact us to add more."]);
+            return back()->withErrors(['form' => $business->limitMessage()]);
         }
         $invite = $request->boolean('portal_invite');
         $data = EmployeeRules::validate($request->except('portal_invite'), $business, $invite);
@@ -261,7 +261,7 @@ class EmployeeController extends Controller
     {
         $used = $business->employees()->current()->count();
 
-        return ['used' => $used, 'limit' => $business->employee_limit, 'reached' => $used >= $business->employee_limit];
+        return ['used' => $used, 'limit' => $business->employee_limit, 'reached' => $used >= $business->employee_limit, 'message' => $business->limitMessage(), 'canUpgrade' => $business->nextTier() !== null];
     }
 
     /** Documents tab: every category with its status, files and any open request (§2). */

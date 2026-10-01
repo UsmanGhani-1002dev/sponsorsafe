@@ -27,7 +27,7 @@ interface Props {
         sites: { id: number; name: string }[];
         requiredDocs: { standard: string[]; sponsored: string[] };
     };
-    plan: { used: number; limit: number; reached: boolean };
+    plan: { used: number; limit: number; reached: boolean; message: string; canUpgrade: boolean };
     canFillDemo: boolean;
 }
 
@@ -149,7 +149,18 @@ export default function CreateEmployee({ options, plan, canFillDemo }: Props) {
         return (
             <AppLayout title="Add employee">
                 <PageHeader title="Add employee" back={{ href: '/app/employees', label: 'All employees' }} />
-                <Alert tone="info">Your plan covers up to {plan.limit} employees. Contact us to add more.</Alert>
+                <Alert tone="info">
+                    {plan.message}{' '}
+                    {plan.canUpgrade ? (
+                        <Link href="/app/settings" className="font-semibold underline">
+                            Change plan
+                        </Link>
+                    ) : (
+                        <a href="/?topic=Corporate%20package#contact" className="font-semibold underline">
+                            Contact us
+                        </a>
+                    )}
+                </Alert>
             </AppLayout>
         );
     }

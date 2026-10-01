@@ -7,30 +7,41 @@ import { Link, useForm } from '@inertiajs/react';
 import { Lock } from 'lucide-react';
 import type { FormEvent } from 'react';
 
+interface Tier {
+    key: string;
+    name: string;
+    price: string;
+    limit: number;
+    from: number;
+}
+
 interface Props {
-    plan: { price: string; limit: number; training: string };
+    plans: { tiers: Tier[]; training: string; corporateFrom: number };
     bands: { value: string; label: string }[];
+    chosen: string | null;
     formToken: string;
     gateways: { card: boolean; paypal: boolean };
     cancelled: boolean;
     previous: { business: string; licence: string | null; name: string | null; email: string | null; phone: string | null; employees: string | null } | null;
 }
 
-/** "Create your account" from the prototype: business details, then Stripe's own secure payment page. */
-export default function Signup({ plan, bands, formToken, gateways, cancelled, previous }: Props) {
+/** "Create your account" from the prototype: business details and team size (which picks the plan), then the gateway's own payment page. */
+export default function Signup({ plans, bands, chosen, formToken, gateways, cancelled, previous }: Props) {
     const form = useForm({
         business: previous?.business ?? '',
         licence: previous?.licence ?? '',
         name: previous?.name ?? '',
         email: previous?.email ?? '',
         phone: previous?.phone ?? '',
-        employees: previous?.employees ?? '1-5',
+        employees: previous?.employees ?? chosen ?? plans.tiers[0].key,
         pay: 'card',
         agree: false,
         form_token: formToken,
         website: '',
     });
     const online = gateways.card || gateways.paypal;
+    const plan = plans.tiers.find((t) => t.key === form.data.employees) ?? null; // null = Corporate (contact us)
+    const largest = plans.corporateFrom - 1;
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
@@ -40,10 +51,10 @@ export default function Signup({ plan, bands, formToken, gateways, cancelled, pr
     return (
         <WebsiteLayout title="Start your subscription">
             <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
-                <p className="text-sm font-semibold tracking-wide text-accent uppercase">Sponsor plan</p>
+                <p className="text-sm font-semibold tracking-wide text-accent uppercase">Plans by team size</p>
                 <h1 className="mt-2 text-3xl font-semibold">Start your subscription</h1>
                 <p className="mt-3 text-[17px] text-ink-2">
-                    £{plan.price} per month for up to {plan.limit} employees. No setup fee, no contract, cancel any time.
+                    {plans.tiers.map((t) => `${t.name} £${t.price} a month for up to ${t.limit} employees`).join(' · ')}. No setup fee, no contract, cancel any time.
                 </p>
 
                 <form onSubmit={submit} noValidate className="mt-8 flex flex-col gap-5 rounded-2xl border border-line bg-surface p-6 shadow-[0_12px_16px_-4px_rgba(16,24,40,0.08)] sm:p-8">
@@ -53,9 +64,7 @@ export default function Signup({ plan, bands, formToken, gateways, cancelled, pr
                     </div>
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
                         <h2 className="text-[22px] font-semibold">Create your account</h2>
-                        <span className="text-[15px] text-muted">
-                            £{plan.price}/month · up to {plan.limit} employees
-                        </span>
+                        <span className="text-[15px] text-muted">{plan ? `${plan.name} · £${plan.price}/month · up to ${plan.limit} employees` : 'Corporate · price agreed with you'}</span>
                     </div>
 
                     {cancelled && <Alert tone="info">Payment cancelled, nothing was charged. Your details are below if you'd like to try again.</Alert>}
@@ -95,6 +104,16 @@ export default function Signup({ plan, bands, formToken, gateways, cancelled, pr
                             </Select>
                         </Field>
                     </div>
+
+                    {!plan && (
+                        <Alert tone="info">
+                            For more than {largest} employees we offer a Corporate package with a price agreed for your business.{' '}
+                            <a href="/?topic=Corporate%20package#contact" className="font-semibold underline">
+                                Contact us
+                            </a>{' '}
+                            and we'll reply within one working day.
+                        </Alert>
+                    )}
 
                     <fieldset className="flex flex-col gap-2">
                         <legend className="mb-2 text-sm font-medium text-ink-2">Pay with</legend>
@@ -142,7 +161,7 @@ export default function Signup({ plan, bands, formToken, gateways, cancelled, pr
                     {(form.errors as Record<string, string>).form && <Alert>{(form.errors as Record<string, string>).form}</Alert>}
 
                     <div className="flex flex-col gap-3 sm:flex-row">
-                        <Button type="submit" disabled={form.processing || !online} className="min-h-12 flex-1 text-base">
+                        <Button type="submit" disabled={form.processing || !online || !plan} className="min-h-12 flex-1 text-base">
                             {form.processing ? 'Opening secure payment…' : 'Continue to secure payment'}
                         </Button>
                         <Link href="/#pricing" className="inline-flex min-h-12 items-center justify-center rounded-lg border border-line-strong bg-surface px-5 font-semibold text-ink-2 hover:bg-canvas">
@@ -150,7 +169,7 @@ export default function Signup({ plan, bands, formToken, gateways, cancelled, pr
                         </Link>
                     </div>
                     <p className="inline-flex items-center gap-2 text-[13px] text-muted">
-                        <Lock size={14} aria-hidden /> You'll be taken to {form.data.pay === 'paypal' ? 'PayPal' : 'Stripe'} to pay £{plan.price} a month. Your card and PayPal details never touch our servers.
+                        <Lock size={14} aria-hidden /> You'll be taken to {form.data.pay === 'paypal' ? 'PayPal' : 'Stripe'} to pay £{plan?.price ?? '…'} a month. Your card and PayPal details never touch our servers.
                     </p>
                 </form>
 

@@ -110,6 +110,8 @@ Route::middleware(['auth:web', 'business.active', 'role:admin'])->prefix('app')-
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
     Route::post('/settings/billing', [SettingsController::class, 'billing'])->middleware(['stripe', 'throttle:10,1'])->name('billing');
+    Route::post('/settings/plan', [SettingsController::class, 'changePlan'])->middleware(['stripe', 'throttle:10,1'])->name('plan.change');
+    Route::get('/settings/plan/paypal', [SettingsController::class, 'paypalPlan'])->middleware('throttle:10,1')->name('plan.paypal');
     Route::put('/settings/rules', [SettingsController::class, 'updateRules'])->name('rules.update');
     Route::post('/settings/people', [SettingsController::class, 'storePerson'])->name('people.store');
     Route::put('/settings/people/{person}', [SettingsController::class, 'updatePerson'])->whereNumber('person')->name('people.update');
@@ -148,6 +150,7 @@ Route::prefix(config('sponsorsafe.ops_path'))->middleware('ops.ip')->name('ops.'
     Route::middleware('ops.auth')->group(function () {
         Route::get('/', [BusinessController::class, 'index'])->name('businesses');
         Route::post('/businesses/{business}/toggle', [BusinessController::class, 'toggle'])->name('businesses.toggle');
+        Route::post('/businesses/{business}/plan', [BusinessController::class, 'setPlan'])->middleware('stripe')->name('businesses.plan');
         Route::get('/pricing', [PricingController::class, 'show'])->name('pricing');
         Route::put('/pricing', [PricingController::class, 'update'])->name('pricing.update');
         Route::get('/gateways', [GatewayController::class, 'show'])->name('gateways');

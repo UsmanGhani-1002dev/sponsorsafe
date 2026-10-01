@@ -7,8 +7,17 @@ import { Link, useForm, usePage } from '@inertiajs/react';
 import { Check, Mail, MapPin, Minus } from 'lucide-react';
 import type { FormEvent } from 'react';
 
+
+interface Tier {
+    key: string;
+    name: string;
+    price: string;
+    limit: number;
+    from: number;
+}
+
 interface Props {
-    plan: { price: string; limit: number; training: string };
+    plans: { tiers: Tier[]; training: string; corporateFrom: number };
     topics: string[];
     topic: string;
     formToken: string;
@@ -26,18 +35,19 @@ const features = [
 
 const forList = ['Sponsored or not, every employee in one place', 'Payroll and accounts handled by your accountant', 'No HR department and no technical knowledge needed', 'Works on phone, tablet and computer'];
 
-const faqs = [
-    { q: 'Does it report to the Home Office for me?', a: 'No. It tells you exactly what to report and by when; you report on the Sponsor Management System and tick it off here.' },
-    { q: 'Do I need payroll software?', a: 'No. Your accountant keeps running payroll. You upload the payslips they send you as evidence of pay.' },
-    { q: 'Is our data safe?', a: 'Data is stored in the UK, encrypted, and only your admins can see documents. Every view is logged.' },
-    { q: 'What if we grow past the employee limit?', a: 'Contact us and we will move you to a larger plan.' },
-];
+const planIncludes = ['Right-to-work checks and expiry reminders', 'Absence tracking with Home Office rules', 'Reporting tasks and deadlines', 'Document vault and compliance pack', 'Employee app for your staff', 'Email support'];
 
 const primary = 'inline-flex min-h-12 items-center justify-center rounded-lg bg-accent-fill px-5 text-base font-semibold text-white hover:bg-accent-fill-hover';
 const secondary = 'inline-flex min-h-12 items-center justify-center rounded-lg border border-line-strong bg-surface px-5 text-base font-semibold text-ink hover:bg-canvas';
 
-export default function Home({ plan, topics, topic, formToken, signedIn }: Props) {
-    const planIncludes = [`Up to ${plan.limit} employees`, 'Right-to-work checks and expiry reminders', 'Absence tracking with Home Office rules', 'Reporting tasks and deadlines', 'Employee app for your staff', 'Email support'];
+export default function Home({ plans, topics, topic, formToken, signedIn }: Props) {
+    const largest = plans.corporateFrom - 1;
+    const faqs = [
+        { q: 'Does it report to the Home Office for me?', a: 'No. It tells you exactly what to report and by when; you report on the Sponsor Management System and tick it off here.' },
+        { q: 'Do I need payroll software?', a: 'No. Your accountant keeps running payroll. You upload the payslips they send you as evidence of pay.' },
+        { q: 'Is our data safe?', a: 'Data is stored in the UK, encrypted, and only your admins can see documents. Every view is logged.' },
+        { q: 'What if we grow?', a: `Move up to the next plan yourself in Settings at any time. For more than ${largest} employees, contact us about a Corporate package.` },
+    ];
 
     return (
         <WebsiteLayout title="UKVI compliance for sponsor licence holders" signedIn={signedIn}>
@@ -51,14 +61,14 @@ export default function Home({ plan, topics, topic, formToken, signedIn }: Props
                     </p>
                     <div className="mt-7 flex flex-wrap gap-3">
                         <Link href="/signup" className={primary}>
-                            Start for £{plan.price} a month
+                            Start from £{plans.tiers[0].price} a month
                         </Link>
                         <a href="/?topic=Book%20a%20free%20demo#contact" className={secondary}>
                             Book a free demo
                         </a>
                     </div>
                     <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-2">
-                        {[`Up to ${plan.limit} employees`, 'No setup fee', 'Cancel any time'].map((t) => (
+                        {[`Plans for 1 to ${largest} employees`, 'No setup fee', 'Cancel any time'].map((t) => (
                             <li key={t} className="inline-flex items-center gap-1.5">
                                 <Check size={16} aria-hidden className="text-accent" /> {t}
                             </li>
@@ -95,7 +105,7 @@ export default function Home({ plan, topics, topic, formToken, signedIn }: Props
                     </p>
                 </div>
                 <ul className="flex flex-col justify-center gap-3">
-                    {[...forList, `Up to ${plan.limit} employees`].map((t) => (
+                    {[...forList, `Up to ${largest} employees, or a Corporate package for more`].map((t) => (
                         <li key={t} className="flex items-center gap-3 text-[16px]">
                             <Check size={20} aria-hidden className="shrink-0 text-accent" /> {t}
                         </li>
@@ -109,41 +119,62 @@ export default function Home({ plan, topics, topic, formToken, signedIn }: Props
             {/* Pricing and training */}
             <section id="pricing" className="scroll-mt-20 border-t border-line bg-canvas">
                 <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-                    <SectionHeading eyebrow="Pricing" title="One simple plan" intro="No setup fee, no contract. Cancel whenever you like." />
-                    <div id="training" className="mt-10 grid scroll-mt-24 gap-6 lg:grid-cols-[1.2fr_1fr]">
-                        <div className="rounded-2xl border-2 border-accent bg-surface p-7">
-                            <div className="flex items-center justify-between gap-3">
-                                <p className="text-lg font-semibold">Sponsor plan</p>
-                                <span className="rounded-full bg-accent-soft px-3 py-1 text-[13px] font-semibold text-accent-strong">Most small sponsors</span>
+                    <SectionHeading eyebrow="Pricing" title="Simple plans by team size" intro="No setup fee, no contract. Move up as you grow, or cancel whenever you like." />
+                    <div className="mt-10 grid gap-6 md:grid-cols-3">
+                        {plans.tiers.map((t, i) => (
+                            <div key={t.key} className={cn('flex flex-col rounded-2xl bg-surface p-7', i === 0 ? 'border-2 border-accent' : 'border border-line')}>
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="text-lg font-semibold">{t.name}</p>
+                                    {i === 0 && <span className="rounded-full bg-accent-soft px-3 py-1 text-[13px] font-semibold text-accent-strong">Most small sponsors</span>}
+                                </div>
+                                <p className="mt-4">
+                                    <span className="text-5xl font-semibold tracking-tight">£{t.price}</span>
+                                    <span className="ml-2 text-ink-2">per month</span>
+                                </p>
+                                <p className="mt-2 flex-1 text-[15px] font-medium text-ink-2">
+                                    {t.from === 1 ? `Up to ${t.limit} employees` : `${t.from} to ${t.limit} employees`}
+                                </p>
+                                <Link href={`/signup?plan=${t.key}`} className={cn(i === 0 ? primary : secondary, 'mt-6 w-full')}>
+                                    Start {t.name}
+                                </Link>
                             </div>
-                            <p className="mt-4">
-                                <span className="text-5xl font-semibold tracking-tight">£{plan.price}</span>
-                                <span className="ml-2 text-ink-2">per month · up to {plan.limit} employees</span>
-                            </p>
-                            <ul className="mt-6 grid gap-2.5 sm:grid-cols-2">
-                                {planIncludes.map((t) => (
-                                    <li key={t} className="flex items-start gap-2 text-[15px]">
-                                        <Check size={18} aria-hidden className="mt-0.5 shrink-0 text-accent" /> {t}
-                                    </li>
-                                ))}
-                            </ul>
-                            <Link href="/signup" className={`${primary} mt-7 w-full`}>
-                                Start subscription
-                            </Link>
-                        </div>
+                        ))}
                         <div className="flex flex-col rounded-2xl border border-line bg-surface p-7">
-                            <p className="text-lg font-semibold">1-to-1 training (optional)</p>
+                            <p className="text-lg font-semibold">Corporate</p>
                             <p className="mt-4">
-                                <span className="text-4xl font-semibold tracking-tight">£{plan.training}</span>
-                                <span className="ml-2 text-ink-2">per person</span>
+                                <span className="text-4xl font-semibold tracking-tight">Let's talk</span>
                             </p>
-                            <p className="mt-4 flex-1 text-[15px] leading-relaxed text-ink-2">
-                                A friendly one-to-one session online. We set up your business with you, add your first employees and show you exactly what to do each month. No technical knowledge needed.
-                            </p>
-                            <a href="/?topic=1-to-1%20training#contact" className={`${secondary} mt-6 w-full`}>
-                                Ask about training
+                            <p className="mt-2 flex-1 text-[15px] font-medium text-ink-2">More than {largest} employees, with a price agreed for your business</p>
+                            <a href="/?topic=Corporate%20package#contact" className={`${secondary} mt-6 w-full`}>
+                                Contact us
                             </a>
                         </div>
+                    </div>
+
+                    <div className="mt-6 rounded-2xl border border-line bg-surface p-7">
+                        <p className="font-semibold">Every plan includes</p>
+                        <ul className="mt-4 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                            {planIncludes.map((t) => (
+                                <li key={t} className="flex items-start gap-2 text-[15px]">
+                                    <Check size={18} aria-hidden className="mt-0.5 shrink-0 text-accent" /> {t}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    <div id="training" className="mt-6 flex scroll-mt-24 flex-col gap-5 rounded-2xl border border-line bg-surface p-7 md:flex-row md:items-center md:justify-between">
+                        <div className="max-w-2xl">
+                            <p className="text-lg font-semibold">
+                                1-to-1 training (optional) <span className="ml-2 text-2xl font-semibold tracking-tight">£{plans.training}</span>
+                                <span className="ml-1 text-ink-2">per person</span>
+                            </p>
+                            <p className="mt-2 text-[15px] leading-relaxed text-ink-2">
+                                A friendly one-to-one session online. We set up your business with you, add your first employees and show you exactly what to do each month. No technical knowledge needed.
+                            </p>
+                        </div>
+                        <a href="/?topic=1-to-1%20training#contact" className={`${secondary} shrink-0`}>
+                            Ask about training
+                        </a>
                     </div>
                 </div>
             </section>

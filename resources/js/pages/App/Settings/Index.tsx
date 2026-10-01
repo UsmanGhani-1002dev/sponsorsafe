@@ -27,11 +27,21 @@ interface Site {
     staff: string[];
     sms: { text: string; tone: Tone; taskId: number | null };
 }
+interface PlanOption {
+    key: string;
+    name: string;
+    price: string;
+    limit: number;
+    current: boolean;
+    allowed: boolean;
+    reason: string | null;
+}
+
 interface Props {
     business: { name: string; licence: string | null; admins: string[] };
     people: Person[];
     roles: { value: string; label: string; single: boolean }[];
-    plan: { price: string; limit: number; used: number; nextPayment: string | null; method: string | null; graceEnds: string | null; canManage: boolean; training: string; provider: 'stripe' | 'paypal' | null; priceChange: { on: string; price: string; limit: number | null } | null };
+    plan: { key: string | null; name: string; options: PlanOption[]; price: string; limit: number; used: number; nextPayment: string | null; method: string | null; graceEnds: string | null; canManage: boolean; training: string; provider: 'stripe' | 'paypal' | null; priceChange: { on: string; price: string; limit: number | null } | null };
     sites: Site[];
     employees: { id: number; name: string; siteId: number | null }[];
     rules: RulesProps;
@@ -59,7 +69,7 @@ export default function Settings({ business, people, roles, plan, sites, employe
 
                 <Card className="flex flex-col gap-4 p-5 sm:p-6">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-[17px] font-semibold">Subscription</h2>
+                        <h2 className="text-[17px] font-semibold">Subscription · {plan.name}</h2>
                         {plan.graceEnds ? <Badge tone="red">Payment failed</Badge> : <Badge tone="green">Active</Badge>}
                     </div>
                     <p>
@@ -87,6 +97,7 @@ export default function Settings({ business, people, roles, plan, sites, employe
                             From {plan.priceChange.on}: £{plan.priceChange.price} per month{plan.priceChange.limit ? ` for up to ${plan.priceChange.limit} employees` : ''}.
                         </p>
                     )}
+                    <ChangePlan plan={plan} />
                     <div className="flex flex-wrap items-center gap-2">
                         {plan.canManage ? (
                             <Button variant="secondary" className="min-h-10 text-sm" onClick={() => router.post('/app/settings/billing')}>
@@ -118,6 +129,56 @@ export default function Settings({ business, people, roles, plan, sites, employe
             <SectionTitle title="Compliance rules" description="The thresholds and deadlines behind every Home Office check. Changes apply to checks from now on; past records keep their result." />
             <RulesForm {...rules} />
         </AppLayout>
+    );
+}
+
+/** Starter / Standard, with a switch button. Limits change now; the new price applies from the next payment. */
+function ChangePlan({ plan }: { plan: Props['plan'] }) {
+    const [choosing, setChoosing] = useState<PlanOption | null>(null);
+    const [processing, setProcessing] = useState(false);
+    if (plan.key === 'corporate') {
+        return <p className="text-sm text-ink-2">You're on a Corporate package. To change it, contact us.</p>;
+    }
+    const upgrade = choosing !== null && choosing.limit > plan.limit;
+
+    return (
+        <div className="flex flex-col gap-2">
+            <p className="text-sm font-medium text-ink-2">Plans</p>
+            <ul className="grid gap-2 sm:grid-cols-2">
+                {plan.options.map((o) => (
+                    <li key={o.key} className={`flex flex-col gap-2 rounded-lg border p-3 ${o.current ? 'border-accent bg-accent-soft/40' : 'border-line'}`}>
+                        <p className="text-sm">
+                            <span className="font-semibold">{o.name}</span> · £{o.price} a month · up to {o.limit} employees
+                        </p>
+                        {o.current ? (
+                            <Badge tone="blue">Your plan</Badge>
+                        ) : o.allowed ? (
+                            <Button variant="secondary" className="min-h-10 self-start text-sm" onClick={() => setChoosing(o)}>
+                                Switch to {o.name}
+                            </Button>
+                        ) : (
+                            <p className="text-[13px] text-muted">{o.reason}</p>
+                        )}
+                    </li>
+                ))}
+            </ul>
+            <ConfirmDialog
+                open={choosing !== null}
+                title={`Switch to ${choosing?.name ?? ''}?`}
+                confirmLabel={plan.provider === 'paypal' ? 'Continue to PayPal' : `Switch to ${choosing?.name ?? ''}`}
+                processing={processing}
+                onClose={() => setChoosing(null)}
+                onConfirm={() => {
+                    if (!choosing) return;
+                    setProcessing(true);
+                    router.post('/app/settings/plan', { plan: choosing.key }, { ...opts, onFinish: () => (setProcessing(false), setChoosing(null)) });
+                }}
+            >
+                {upgrade ? `You can add up to ${choosing?.limit} employees straight away.` : `Your plan will cover up to ${choosing?.limit} employees.`} The new price, £{choosing?.price} a month,
+                applies from your next payment.
+                {plan.provider === 'paypal' ? ' PayPal will ask you to approve the new price.' : ''}
+            </ConfirmDialog>
+        </div>
     );
 }
 

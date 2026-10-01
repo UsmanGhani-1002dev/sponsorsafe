@@ -6,6 +6,7 @@ use App\Billing\Gateways;
 use App\Billing\StripeGateway;
 use App\Models\AuditLog;
 use App\Models\Business;
+use App\Models\Employee;
 use App\Models\PlatformSetting;
 use App\Models\SuperAdmin;
 use App\Models\User;
@@ -74,7 +75,7 @@ class PayPalBillingTest extends TestCase
     {
         return $this->post('/signup', [
             'business' => 'Harbour Dental Ltd', 'licence' => 'PQ8R3T1', 'name' => 'Sara Jones', 'email' => 'sara@harbour.example',
-            'phone' => '', 'employees' => '1-5', 'pay' => 'paypal', 'agree' => true,
+            'phone' => '', 'employees' => 'starter', 'pay' => 'paypal', 'agree' => true,
             'form_token' => Crypt::encryptString((string) (now()->timestamp - 30)), 'website' => '',
             ...$overrides,
         ]);
@@ -243,28 +244,37 @@ class PayPalBillingTest extends TestCase
     {
         $this->connectPaypal();
         $this->travelTo(CarbonImmutable::parse('2026-10-01 09:00'));
+        // Original single plan (£20 / 15) with 7 employees → Standard; with 12 → needs a Corporate price.
         $card = Business::factory()->create(['name' => 'Card Ltd', 'payment_provider' => 'stripe', 'stripe_id' => 'cus_1']);
-        $pp1 = $this->paypalCustomer(['name' => 'PayPal One Ltd']);
-        $pp2 = $this->paypalCustomer(['name' => 'PayPal Two Ltd', 'paypal_subscription_id' => 'I-LIVE2']);
+        $big = Business::factory()->create(['name' => 'Big Ltd']);
+        Employee::factory()->count(7)->create(['business_id' => $card->id]);
+        Employee::factory()->count(12)->create(['business_id' => $big->id]);
+        // Starter at £20 while today's Starter price is £22 → Starter £22. Corporate is never moved.
+        $pp1 = $this->paypalCustomer(['name' => 'PayPal One Ltd', 'plan' => 'starter', 'employee_limit' => 5]);
+        $pp2 = $this->paypalCustomer(['name' => 'PayPal Two Ltd', 'plan' => 'starter', 'employee_limit' => 5, 'paypal_subscription_id' => 'I-LIVE2']);
+        Business::factory()->create(['name' => 'Corporate Ltd', 'plan' => 'corporate', 'plan_price_pence' => 9900, 'employee_limit' => 40]);
         User::factory()->admin()->create(['business_id' => $card->id]);
-        PlatformSetting::put(Pricing::KEY, ['price_pence' => 2500, 'employee_limit' => 20, 'training_price_pence' => 4900]);
+        PlatformSetting::put(Pricing::KEY, ['tiers' => ['starter' => ['price_pence' => 2200, 'employee_limit' => 5]]]);
         $this->actingAs($this->superAdmin(), 'ops');
 
-        $this->get("{$this->ops}/pricing")->assertInertia(fn (Assert $p) => $p->where('subscribers.older', 3)->where('subscribers.waiting', 3)
-            ->where('subscribers.plans', ['£20 · 15 employees (3)'])->where('subscribers.moveOn', '31 Oct 2026')
-            ->has('subscribers.list', 3)
-            ->where('subscribers.list.0', ['id' => $card->id, 'name' => 'Card Ltd', 'admin' => $card->admins()->sole()->email, 'plan' => '£20 · 15 employees', 'payment' => null, 'suspended' => false, 'movesOn' => null]));
+        $this->get("{$this->ops}/pricing")->assertInertia(fn (Assert $p) => $p->where('subscribers.older', 4)->where('subscribers.waiting', 3)
+            ->where('subscribers.corporate', 1)->where('subscribers.moveOn', '31 Oct 2026')
+            ->where('subscribers.list.0.name', 'Big Ltd')->where('subscribers.list.0.moveTo', null)
+            ->where('subscribers.list.1', ['id' => $card->id, 'name' => 'Card Ltd', 'admin' => $card->admins()->sole()->email, 'employees' => 7,
+                'now' => 'Original plan · £20 · 15 employees', 'moveTo' => 'Standard · £35 · 10 employees', 'payment' => null, 'suspended' => false, 'movesOn' => null])
+            ->where('subscribers.list.2.moveTo', 'Starter · £22 · 5 employees'));
 
-        $this->post("{$this->ops}/pricing/move")->assertSessionHas('success', 'Emailed 3 subscriber(s). They move to the current plan on 31 Oct 2026.');
-        Notification::assertSentTo($card->admins()->sole(), PriceChangeNotice::class, fn (PriceChangeNotice $n) => $n->oldPence === 2000 && $n->newPence === 2500
-            && $n->newLimit === 20 && $n->on->toDateString() === '2026-10-31');
-        $this->assertSame('2026-10-31', $card->fresh()->price_change_on->toDateString());
-        $this->post("{$this->ops}/pricing/move")->assertSessionHas('success', 'Everyone is already on the current plan or has been told about it.');
-        $this->get("{$this->ops}/pricing")->assertInertia(fn (Assert $p) => $p->where('subscribers.waiting', 0)->where('subscribers.scheduled', 3)->where('subscribers.scheduledOn', '31 Oct 2026')
-            ->where('subscribers.list.0.name', 'Card Ltd')->where('subscribers.list.0.movesOn', '31 Oct 2026')->where('subscribers.list.2.payment', 'PayPal'));
+        $this->post("{$this->ops}/pricing/move")->assertSessionHas('success', 'Emailed 3 subscriber(s). They move on 31 Oct 2026.');
+        Notification::assertSentTo($card->admins()->sole(), PriceChangeNotice::class, fn (PriceChangeNotice $n) => $n->oldPence === 2000 && $n->newPence === 3500
+            && $n->newLimit === 10 && $n->planName === 'Standard' && $n->on->toDateString() === '2026-10-31');
+        $this->assertSame(['standard', '2026-10-31'], [$card->fresh()->price_change_plan, $card->fresh()->price_change_on->toDateString()]);
+        $this->assertNull($big->fresh()->price_change_on);
+        $this->post("{$this->ops}/pricing/move")->assertSessionHas('success', 'Everyone who can move has already been told.');
+        $this->get("{$this->ops}/pricing")->assertInertia(fn (Assert $p) => $p->where('subscribers.waiting', 0)->where('subscribers.scheduled', 3)
+            ->where('subscribers.list.1.movesOn', '31 Oct 2026')->where('subscribers.list.2.payment', 'PayPal'));
 
         // The admin sees it coming in Settings.
-        $this->actingAs($card->admins()->sole(), 'web')->get('/app/settings')->assertInertia(fn (Assert $p) => $p->where('plan.priceChange', ['on' => '31 Oct 2026', 'price' => '25', 'limit' => 20]));
+        $this->actingAs($card->admins()->sole(), 'web')->get('/app/settings')->assertInertia(fn (Assert $p) => $p->where('plan.priceChange', ['on' => '31 Oct 2026', 'price' => '35', 'limit' => 10]));
 
         // Nothing moves before the date.
         $this->travelTo(CarbonImmutable::parse('2026-10-30 09:00'));
@@ -272,14 +282,15 @@ class PayPalBillingTest extends TestCase
 
         $this->travelTo(CarbonImmutable::parse('2026-10-31 06:00'));
         $this->artisan('billing:check')->expectsOutputToContain('moved 3 to a new price');
-        $this->assertSame([$card->id => 2500], $this->stripe->priceChanges);
+        $this->assertSame([$card->id => 3500], $this->stripe->priceChanges);
         // Both PayPal businesses share one plan: its price is changed once.
         $updates = Http::recorded(fn (HttpRequest $r) => str_ends_with($r->url(), '/update-pricing-schemes'))->values();
         $this->assertCount(1, $updates);
         $this->assertStringContainsString('/v1/billing/plans/P-PLAN20.00/', $updates[0][0]->url());
-        $this->assertSame('25.00', $updates[0][0]['pricing_schemes'][0]['pricing_scheme']['fixed_price']['value']);
-        $this->assertSame([2500, 20, null], [$card->fresh()->plan_price_pence, $card->fresh()->employee_limit, $card->fresh()->price_change_on]);
-        $this->assertSame([2500, 2500], [$pp1->fresh()->plan_price_pence, $pp2->fresh()->plan_price_pence]);
+        $this->assertSame('22.00', $updates[0][0]['pricing_schemes'][0]['pricing_scheme']['fixed_price']['value']);
+        $this->assertSame(['standard', 3500, 10, null], [$card->fresh()->plan, $card->fresh()->plan_price_pence, $card->fresh()->employee_limit, $card->fresh()->price_change_on]);
+        $this->assertSame([2200, 2200], [$pp1->fresh()->plan_price_pence, $pp2->fresh()->plan_price_pence]);
+        $this->assertSame([null, 2000, 15], [$big->fresh()->plan, $big->fresh()->plan_price_pence, $big->fresh()->employee_limit]);
         $this->assertSame(3, AuditLog::where('action', 'billing.price_changed')->count());
     }
 
