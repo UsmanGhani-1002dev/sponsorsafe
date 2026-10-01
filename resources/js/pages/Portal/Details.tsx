@@ -1,3 +1,4 @@
+import { ChangePasswordForm } from '@/components/change-password';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -8,10 +9,11 @@ import type { FormEvent } from 'react';
 
 interface Props {
     sections: { title: string; fields: { label: string; value: string }[] }[];
+    password: { needsCode: boolean };
     twoFactor: { enabled: boolean; setup: { secret: string; otpauth: string } | null };
 }
 
-export default function MyDetails({ sections, twoFactor }: Props) {
+export default function MyDetails({ sections, password, twoFactor }: Props) {
     return (
         <PortalLayout title="My details">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -35,6 +37,10 @@ export default function MyDetails({ sections, twoFactor }: Props) {
                         </dl>
                     </Card>
                 ))}
+                <Card className="p-4 sm:p-6">
+                    <h2 className="mb-3 text-[17px] font-semibold">Change password</h2>
+                    <ChangePasswordForm action="/me/security/password" needsCode={password.needsCode} />
+                </Card>
                 <TwoStep {...twoFactor} />
             </div>
         </PortalLayout>

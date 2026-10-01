@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { RulesForm, type RulesProps } from '@/components/settings/rules-form';
+import { ChangePasswordForm } from '@/components/change-password';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Field, Input, Select, Textarea } from '@/components/ui/field';
 import { PageHeader } from '@/components/ui/page-header';
@@ -50,6 +51,7 @@ interface PlanOption {
 interface Props {
     business: { name: string; licence: string | null; phone: string | null; address: string | null };
     admins: Admin[];
+    login: { email: string; needsCode: boolean };
     people: Person[];
     roles: { value: string; label: string; single: boolean }[];
     plan: { key: string | null; name: string; options: PlanOption[]; price: string; limit: number; used: number; nextPayment: string | null; method: string | null; graceEnds: string | null; accessEnds: string | null; canManage: boolean; training: string; provider: 'stripe' | 'paypal' | null; priceChange: { on: string; price: string; limit: number | null } | null };
@@ -62,7 +64,7 @@ interface Props {
 
 const opts = { preserveScroll: true, preserveState: true } as const;
 
-export default function Settings({ business, admins, people, roles, plan, sites, employees, rules, retentionDue, clockIn }: Props) {
+export default function Settings({ business, admins, login, people, roles, plan, sites, employees, rules, retentionDue, clockIn }: Props) {
     const pct = Math.min(100, Math.round((plan.used / plan.limit) * 100));
 
     return (
@@ -132,6 +134,14 @@ export default function Settings({ business, admins, people, roles, plan, sites,
             </div>
 
             <AdminLogins admins={admins} />
+
+            <div id="password" className="scroll-mt-20">
+                <SectionTitle title="Your password" description={`For your own login, ${login.email}. To change someone else's, they use "Forgot password?" on the sign-in page.`} />
+                <Card className="max-w-xl p-5 sm:p-6">
+                    <ChangePasswordForm action="/app/settings/password" needsCode={login.needsCode} />
+                </Card>
+            </div>
+
             <KeyPersonnel people={people} roles={roles} />
             <WorkSites sites={sites} employees={employees} />
 

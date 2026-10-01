@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Portal;
 
 use App\Models\EmployeeRequest;
 use App\Services\EmployeeRequests;
+use App\Services\PasswordChange;
 use App\Support\Audit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -46,6 +47,7 @@ class DetailsController extends PortalController
                     ['label' => 'Last checked', 'value' => $e->rtw_check_date->format('j M Y')],
                 ]],
             ],
+            'password' => ['needsCode' => PasswordChange::needsCode($user)],
             'twoFactor' => [
                 'enabled' => $user->two_factor_confirmed_at !== null,
                 'setup' => $user->two_factor_secret && ! $user->two_factor_confirmed_at ? [

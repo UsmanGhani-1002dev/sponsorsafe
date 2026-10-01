@@ -33,6 +33,8 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
   Privacy policy, Terms of service (with Article 28 data processing terms) and employee privacy notice written;
   company details from `.env` (`COMPANY_*`, `SUPPORT_EMAIL`); hosting SMTP in `deploy/production.env.example`.
   268 PHPUnit tests passing.
+- **Change password and super admins (after go-live): done and tested** — Change password for admins, employees and
+  super admins; super admins add other super admins from the super admin area. 281 PHPUnit tests passing.
 - **Next:** Stage 7c (AI chat assistant).
 - Local setup on this laptop is done (git repo, MySQL databases, PHP 8.4).
 
@@ -396,6 +398,22 @@ Demo logins (password `password`, local only):
   name, number, address, ICO number, contact email and "last updated" date from `config('sponsorsafe.company')`
   (`WebsiteController::company()`), and prices / grace days live. If the service changes what it stores, who it
   shares with, retention or billing, update this wording and `legal_updated` in the same change.
+
+## Change password and super admins (follow these conventions)
+
+- **Every signed-in password change goes through `App\Services\PasswordChange`**: current password, plus the authenticator
+  code when two-step sign-in is on (always for admins and super admins); new password min 8 (super admins 12), confirmed,
+  not the current one; 5 wrong tries per 5 minutes. New remember-me token, audited (`auth.password_changed`), and a
+  `PasswordChanged` email. Screens share `components/change-password.tsx`: Settings → Your password (`PUT
+  /app/settings/password`, palette "Change my password"), My details → Change password (`PUT /me/security/password`),
+  super admin My account in the header (`PUT /{ops}/account/password`).
+- `EndSessionsAfterPasswordChange` (web group, prioritised before `auth`) keeps a fingerprint of the password hash per
+  guard (web, ops) in the session; any password change (Change password, reset link, `ops:create-admin`) signs out every
+  other session on its next request, while the session that made the change keeps going.
+- Super admins page (`/{ops}/super-admins`, `App\Services\SuperAdmins`): invite by email (`SuperAdminInvite`, 7-day
+  single-use link to `/{ops}/set-password/{token}`, hash stored on `super_admins.password_token`), resend until first
+  sign-in, remove — never yourself, never the last. New super admins still need their IP in `OPS_ALLOWED_IPS` (the page
+  shows the list and your current IP). `php artisan ops:create-admin` still works as the server-side fallback.
 
 ## UI and performance rules ("modern and very fast")
 

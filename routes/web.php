@@ -17,6 +17,8 @@ use App\Http\Controllers\Ops\BusinessController;
 use App\Http\Controllers\Ops\EnquiryController;
 use App\Http\Controllers\Ops\OpsAuthController;
 use App\Http\Controllers\Ops\PricingController;
+use App\Http\Controllers\Ops\SuperAdminController;
+use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Billing\PayPalWebhookController;
 use App\Http\Controllers\Billing\StripeWebhookController;
 use App\Http\Controllers\Ops\GatewayController;
@@ -119,6 +121,7 @@ Route::middleware(['auth:web', 'business.active', 'role:admin'])->prefix('app')-
     Route::get('/settings/plan/paypal', [SettingsController::class, 'paypalPlan'])->middleware('throttle:10,1')->name('plan.paypal');
     Route::put('/settings/rules', [SettingsController::class, 'updateRules'])->name('rules.update');
     Route::put('/settings/business', [SettingsController::class, 'updateBusiness'])->name('business.update');
+    Route::put('/settings/password', PasswordController::class)->middleware('throttle:10,1')->name('password.update');
     Route::put('/settings/clock-in', [ClockInController::class, 'toggle'])->name('clock-in.toggle');
     Route::post('/settings/clock-ins', [ClockInController::class, 'import'])->middleware('throttle:20,1')->name('clock-in.import');
     Route::post('/unexplained/{alert}/worked', [ClockInController::class, 'worked'])->whereNumber('alert')->name('unexplained.worked');
@@ -148,6 +151,7 @@ Route::middleware(['auth:web', 'business.active', 'role:employee'])->prefix('me'
     Route::get('/requests', PortalRequestController::class)->name('requests');
     Route::get('/details', [DetailsController::class, 'show'])->name('details');
     Route::get('/privacy', PrivacyController::class)->name('privacy');
+    Route::put('/security/password', PasswordController::class)->middleware('throttle:10,1')->name('password.update');
     Route::post('/security/two-factor', [DetailsController::class, 'startTwoFactor'])->name('two-factor.start');
     Route::post('/security/two-factor/confirm', [DetailsController::class, 'confirmTwoFactor'])->middleware('throttle:10,1')->name('two-factor.confirm');
     Route::delete('/security/two-factor', [DetailsController::class, 'disableTwoFactor'])->middleware('throttle:10,1')->name('two-factor.disable');
@@ -159,6 +163,9 @@ Route::prefix(config('sponsorsafe.ops_path'))->middleware('ops.ip')->name('ops.'
     Route::post('/login', [OpsAuthController::class, 'store'])->middleware('throttle:10,1')->name('login.store');
     Route::get('/verify', [OpsAuthController::class, 'twoFactor'])->name('two-factor');
     Route::post('/verify', [OpsAuthController::class, 'verify'])->middleware('throttle:10,1')->name('two-factor.verify');
+    // Link from a super admin invite (7 days, single use).
+    Route::get('/set-password/{token}', [OpsAuthController::class, 'setPassword'])->name('password.set');
+    Route::post('/set-password/{token}', [OpsAuthController::class, 'storePassword'])->middleware('throttle:10,1')->name('password.store');
 
     Route::middleware('ops.auth')->group(function () {
         Route::get('/', [BusinessController::class, 'index'])->name('businesses');
@@ -172,6 +179,12 @@ Route::prefix(config('sponsorsafe.ops_path'))->middleware('ops.ip')->name('ops.'
         Route::post('/pricing/move', [PricingController::class, 'move'])->middleware('throttle:5,1')->name('pricing.move');
         Route::get('/enquiries', [EnquiryController::class, 'index'])->name('enquiries');
         Route::post('/enquiries/{enquiry}/handled', [EnquiryController::class, 'handle'])->whereNumber('enquiry')->name('enquiries.handle');
+        Route::get('/super-admins', [SuperAdminController::class, 'index'])->name('admins');
+        Route::post('/super-admins', [SuperAdminController::class, 'store'])->middleware('throttle:10,1')->name('admins.store');
+        Route::post('/super-admins/{admin}/resend', [SuperAdminController::class, 'resend'])->whereNumber('admin')->middleware('throttle:10,1')->name('admins.resend');
+        Route::delete('/super-admins/{admin}', [SuperAdminController::class, 'destroy'])->whereNumber('admin')->name('admins.destroy');
+        Route::get('/account', [SuperAdminController::class, 'account'])->name('account');
+        Route::put('/account/password', [SuperAdminController::class, 'password'])->middleware('throttle:10,1')->name('account.password');
         Route::post('/logout', [OpsAuthController::class, 'destroy'])->name('logout');
     });
 });

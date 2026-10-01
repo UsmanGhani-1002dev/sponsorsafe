@@ -4,7 +4,7 @@ import type { SharedProps } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 
-/** Super admin: dark header, sidebar with the five sections (unbuilt ones show "Soon"). */
+/** Super admin: dark header (My account, Log out), sidebar with the sections (unbuilt ones show "Soon"). */
 export default function OpsLayout({ title, base, children }: { title: string; base: string; children: ReactNode }) {
     const { ops } = usePage<SharedProps>().props;
     const path = usePage().url.split('?')[0];
@@ -13,6 +13,7 @@ export default function OpsLayout({ title, base, children }: { title: string; ba
         { label: 'Plans and pricing', href: `${base}/pricing`, ready: true },
         { label: 'Payment gateways', href: `${base}/gateways`, ready: true },
         { label: 'Enquiries and training', href: `${base}/enquiries`, ready: true, count: ops?.newEnquiries ?? 0 },
+        { label: 'Super admins', href: `${base}/super-admins`, ready: true },
         { label: 'AI chat assistant', href: `${base}/assistant`, ready: false },
     ];
 
@@ -27,9 +28,18 @@ export default function OpsLayout({ title, base, children }: { title: string; ba
                     <span className="font-semibold">Super admin</span>
                     <span className="hidden rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/70 sm:inline">2FA verified</span>
                 </span>
-                <button onClick={() => router.post(`${base}/logout`)} className="min-h-10 rounded-lg border border-white/20 px-3 text-sm font-semibold hover:bg-white/10">
-                    Log out
-                </button>
+                <span className="flex items-center gap-2">
+                    <Link
+                        href={`${base}/account`}
+                        aria-current={path === `${base}/account` ? 'page' : undefined}
+                        className="inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-semibold text-white/80 hover:bg-white/10 hover:text-white"
+                    >
+                        My account
+                    </Link>
+                    <button onClick={() => router.post(`${base}/logout`)} className="min-h-10 rounded-lg border border-white/20 px-3 text-sm font-semibold hover:bg-white/10">
+                        Log out
+                    </button>
+                </span>
             </header>
             <div className="flex min-h-0 flex-1 flex-col md:flex-row">
                 <nav aria-label="Super admin" className="flex shrink-0 gap-1 overflow-x-auto border-b border-line bg-surface p-3 md:w-60 md:flex-col md:border-r md:border-b-0">

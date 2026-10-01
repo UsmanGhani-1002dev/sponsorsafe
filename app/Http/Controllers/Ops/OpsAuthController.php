@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Ops;
 
 use App\Http\Controllers\Controller;
 use App\Models\SuperAdmin;
+use App\Services\SuperAdmins;
 use App\Support\Audit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -98,6 +100,32 @@ class OpsAuthController extends Controller
         Audit::log('ops.login', $admin, actor: $admin);
 
         return redirect()->route('ops.businesses');
+    }
+
+    /** The emailed link for a new super admin: choose a password, then sign in with the authenticator setup. */
+    public function setPassword(string $token): Response
+    {
+        $admin = SuperAdmins::findByToken($token);
+
+        return Inertia::render('Ops/SetPassword', [
+            'base' => '/'.config('sponsorsafe.ops_path'),
+            'token' => $token,
+            'account' => $admin ? ['name' => $admin->name, 'email' => $admin->email] : null,
+        ]);
+    }
+
+    public function storePassword(Request $request, string $token, SuperAdmins $admins): RedirectResponse
+    {
+        $admin = SuperAdmins::findByToken($token);
+        if (! $admin) {
+            return redirect()->route('ops.password.set', $token);
+        }
+        $request->validate(['password' => ['required', 'confirmed', Password::min(12)]], [
+            'password.confirmed' => 'The two passwords do not match.',
+        ]);
+        $admins->setPassword($admin, $request->input('password'));
+
+        return redirect()->route('ops.login')->with('success', 'Password saved. Sign in to set up your authenticator app.');
     }
 
     public function destroy(Request $request): RedirectResponse

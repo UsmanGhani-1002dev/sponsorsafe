@@ -59,6 +59,10 @@ expiry, follow-up check and Home Office deadline reminders), and `absences:check
 ## 5. Sign in
 - Businesses and employees: `https://app.yourdomain.co.uk/login`
 - Super admin: `https://app.yourdomain.co.uk/<OPS_PATH>/login` (first sign-in shows a key for your authenticator app)
+- More super admins: super admin → **Super admins** → Add a super admin (they get an email with a set-password link).
+  Add their IP address to `OPS_ALLOWED_IPS` in `.env` and run `php artisan config:cache`, or they will see "Not found".
+- Change password: business admins in Settings, employees in My details, super admins under **My account**. If a super
+  admin is locked out (lost password or phone), run `php artisan ops:create-admin their@email` on the server.
 
 ### Demo data on a test site only
 Set `APP_ENV=local`, run `php artisan db:seed --force`, then set it back to `production`.
@@ -71,5 +75,10 @@ Demo logins, password `password`:
 **Never load demo data on the live site.**
 
 ## Updating to the next stage
-Upload the new zip over the old folder (keep `.env` and `storage/`), then run
-`php artisan migrate --force` and the three `cache` commands again.
+1. Back up the database (cPanel → phpMyAdmin → Export, or cPanel → Backup).
+2. `php artisan down` (visitors see a short maintenance page while files change).
+3. Upload the new zip and extract it over the old folder. The zip never contains `.env` or `storage/`, so your
+   settings and uploaded documents stay.
+4. `php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan up`
+
+Never run `migrate:fresh`, `db:wipe` or the demo seeder on the live site: they delete real data.

@@ -19,6 +19,7 @@ use App\Billing\Subscriptions;
 use App\Models\Business;
 use App\Models\User;
 use App\Services\BusinessAdmins;
+use App\Services\PasswordChange;
 use App\Services\UnexplainedAbsences;
 use App\Models\ClockIn;
 use Illuminate\Support\Carbon;
@@ -62,6 +63,7 @@ class SettingsController extends Controller
                 },
                 'invited' => $u->last_login_at === null,
             ]),
+            'login' => ['email' => $request->user()->email, 'needsCode' => PasswordChange::needsCode($request->user())],
             'people' => $business->keyPersonnel()->orderByRaw("field(role, 'authorising_officer', 'key_contact', 'level1_user')")->orderBy('name')->get()
                 ->map(fn (KeyPerson $p) => ['id' => $p->id, 'role' => $p->role, 'roleLabel' => $p->roleLabel(), 'name' => $p->name, 'email' => $p->email, 'phone' => $p->phone]),
             'roles' => collect(KeyPerson::ROLES)->map(fn ($label, $value) => ['value' => $value, 'label' => $label, 'single' => in_array($value, KeyPerson::SINGLE_ROLES, true)])->values(),
