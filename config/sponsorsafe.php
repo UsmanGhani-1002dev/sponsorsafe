@@ -10,6 +10,16 @@ return [
     // Where website enquiries are emailed (the log file locally).
     'support_email' => env('SUPPORT_EMAIL', 'support@sponsorsafe.example'),
 
+    // Who runs the service: shown in the privacy policy, terms and employee privacy notice. Anything left
+    // blank is simply not shown (set the real values in the live .env).
+    'company' => [
+        'name' => env('COMPANY_NAME', 'Enovtec'),                    // legal name, e.g. "Enovtec Ltd"
+        'number' => env('COMPANY_NUMBER'),                           // Companies House number
+        'address' => env('COMPANY_ADDRESS', 'Southampton, United Kingdom'),
+        'ico' => env('COMPANY_ICO_NUMBER'),                          // ICO data protection registration
+        'legal_updated' => '1 October 2026',                         // date of the current privacy policy and terms
+    ],
+
     // Defaults for new businesses and the public plan (super admin can change them).
     'plan' => [
         // Plans by size. More than the largest limit is the Corporate package: a price agreed with

@@ -50,8 +50,25 @@ class WebsiteController extends Controller
         return redirect(route('home').'#contact')->with('contactSent', ['first' => strtok($data['name'], ' '), 'email' => $data['email']]);
     }
 
+    /** Privacy policy and terms, with the live company details, prices and grace period filled in. */
     public function legal(string $page): Response
     {
-        return Inertia::render('Website/Legal', ['page' => $page]);
+        return Inertia::render('Website/Legal', [
+            'page' => $page,
+            'company' => self::company(),
+            'plans' => Pricing::forDisplay(),
+            'graceDays' => Pricing::current()['grace_days'],
+        ]);
+    }
+
+    /** @return array{name: string, number: ?string, address: ?string, ico: ?string, email: string, updated: string, product: string} */
+    public static function company(): array
+    {
+        $c = config('sponsorsafe.company');
+
+        return [
+            'name' => $c['name'], 'number' => $c['number'] ?: null, 'address' => $c['address'] ?: null, 'ico' => $c['ico'] ?: null,
+            'email' => config('sponsorsafe.support_email'), 'updated' => $c['legal_updated'], 'product' => config('app.name'),
+        ];
     }
 }

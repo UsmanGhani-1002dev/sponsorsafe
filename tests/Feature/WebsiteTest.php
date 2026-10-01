@@ -118,6 +118,16 @@ class WebsiteTest extends TestCase
         $this->get('/terms')->assertOk()->assertInertia(fn (Assert $p) => $p->component('Website/Legal')->where('page', 'terms'));
     }
 
+    public function test_the_privacy_policy_and_terms_use_the_company_details_and_live_prices(): void
+    {
+        config(['sponsorsafe.company.name' => 'Enovtec Ltd', 'sponsorsafe.company.number' => '12345678', 'sponsorsafe.company.ico' => '', 'sponsorsafe.support_email' => 'support@example.co.uk']);
+
+        $this->get('/terms')->assertInertia(fn (Assert $p) => $p
+            ->where('company.name', 'Enovtec Ltd')->where('company.number', '12345678')->where('company.ico', null)
+            ->where('company.email', 'support@example.co.uk')->where('company.updated', '1 October 2026')
+            ->where('plans.tiers.0.price', '20')->where('plans.tiers.1.limit', 10)->where('graceDays', 7));
+    }
+
     // ---- Super admin: plans and pricing ----
 
     public function test_super_admin_changes_the_website_pricing_and_existing_subscribers_keep_theirs(): void

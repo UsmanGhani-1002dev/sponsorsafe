@@ -1,4 +1,3 @@
-import { Alert } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import PortalLayout from '@/layouts/portal-layout';
@@ -11,6 +10,7 @@ interface Props {
     retentionYears: number;
     rtwRetentionYears: number;
     sponsored: boolean;
+    company: { name: string; number: string | null; address: string | null; ico: string | null; email: string; updated: string; product: string };
 }
 
 const years = (n: number) => `${n} year${n === 1 ? '' : 's'}`;
@@ -24,19 +24,21 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
     );
 }
 
-/** Privacy notice for employees. Plain English; draft until the final wording is supplied. */
-export default function Privacy({ business, contacts, retentionYears, rtwRetentionYears, sponsored }: Props) {
+/** Privacy notice for employees, in plain English. */
+export default function Privacy({ business, contacts, retentionYears, rtwRetentionYears, sponsored, company }: Props) {
+    const processor = [company.name + (company.number ? ` (company number ${company.number})` : ''), company.address].filter(Boolean).join(', ');
+
     return (
         <PortalLayout title="Privacy notice">
-            <PageHeader title="Your information and privacy" description={`How ${business} uses the information in this portal.`} />
-            <div className="mb-5">
-                <Alert tone="warning">Draft wording. The final privacy notice will be confirmed before this service goes live.</Alert>
-            </div>
+            <PageHeader title="Your information and privacy" description={`How ${business} uses the information in this portal. Last updated ${company.updated}.`} />
             <Card className="p-5 sm:p-7">
                 <Section title="Who is responsible">
                     <p>
-                        {business} is your employer and decides how your information is used. SponsorSafe, a service run by Enovtec (Southampton), stores it securely on {business}'s
-                        behalf and does not use it for anything else.
+                        {business} is your employer and decides how your information is used: it is the <strong>data controller</strong>.
+                    </p>
+                    <p>
+                        {company.product} is provided by {processor}. It stores your information securely on {business}'s behalf, only as {business} instructs, and does not use it
+                        for anything else: it is the <strong>data processor</strong>.
                     </p>
                 </Section>
 
@@ -62,12 +64,16 @@ export default function Privacy({ business, contacts, retentionYears, rtwRetenti
                     ) : (
                         <p>Where an employer sponsors workers, the Home Office also expects records to be kept for all staff, so they are kept the same way for everyone.</p>
                     )}
+                    <p>
+                        So the main legal reason for keeping it is that the law requires it (legal obligation). Some of it, such as your contact details and leave requests, is kept to
+                        run your employment (contract).
+                    </p>
                 </Section>
 
                 <Section title="Who can see it">
                     <p>
-                        Only {business}'s admins and you. You see your own details and documents here. A Home Office compliance officer may ask {business} to show the records during a
-                        visit. Your information is never sold or used for marketing.
+                        {business}'s admins and you. You see your own details and documents here. A Home Office compliance officer may ask {business} to show the records during a
+                        visit. {company.name} can reach the systems only where needed to keep the service running. Your information is never sold or used for marketing.
                     </p>
                 </Section>
 
@@ -84,20 +90,25 @@ export default function Privacy({ business, contacts, retentionYears, rtwRetenti
                         <li>Most of your record is deleted {years(retentionYears)} after your last day.</li>
                         <li>Right-to-work records are deleted {years(rtwRetentionYears)} after your last day, as the law requires them to be kept for that long.</li>
                     </ul>
+                    <p>{business} is reminded when each deletion is due and confirms it; deleted files cannot be recovered.</p>
                 </Section>
 
                 <Section title="Your rights">
+                    <p>You can ask {business} to:</p>
+                    <ul className="list-disc space-y-1 pl-5">
+                        <li>give you a copy of the information held about you;</li>
+                        <li>correct anything that is wrong or incomplete;</li>
+                        <li>delete or restrict information it no longer needs, or that it is not allowed to keep;</li>
+                        <li>stop using information where you object, unless it has to keep it by law.</li>
+                    </ul>
                     <p>
-                        You can ask for a copy of the information held about you, and ask for anything wrong to be corrected. You can update your address, phone and email yourself
-                        under{' '}
+                        You can update your address, phone and email yourself under{' '}
                         <Link href="/me/update-details" className="font-semibold text-accent hover:underline">
                             Update my details
                         </Link>
-                        .
+                        . Requests are answered within one month.
                     </p>
-                    <p>
-                        If you are unhappy with how your information is handled, you can complain to the Information Commissioner's Office (ico.org.uk).
-                    </p>
+                    <p>If you are unhappy with how your information is handled, you can complain to the Information Commissioner's Office at ico.org.uk or on 0303 123 1113.</p>
                 </Section>
 
                 <Section title="Questions">

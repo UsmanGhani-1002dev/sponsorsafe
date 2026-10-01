@@ -30,6 +30,7 @@ class BusinessController extends Controller
                 'status' => $b->status,
                 'suspendedReason' => $b->suspended_reason,
                 'graceEnds' => $b->grace_ends_on?->format('j M Y'),
+                'accessEnds' => $b->access_ends_on?->format('j M Y'),
                 'admin' => $b->admins->first()?->only(['name', 'email']),
                 'employees' => $b->employees_count,
                 'limit' => $b->employee_limit,

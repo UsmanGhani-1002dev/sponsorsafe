@@ -19,7 +19,7 @@ Upload the zip to `/home/USER/` and extract it, giving `/home/USER/sponsorsafe/`
 ```bash
 cd ~/sponsorsafe
 cp deploy/production.env.example .env
-nano .env                 # APP_URL, DB_*, MAIL_*, OPS_PATH, OPS_ALLOWED_IPS
+nano .env                 # APP_URL, DB_*, MAIL_* (hosting email), SUPPORT_EMAIL, COMPANY_*, OPS_PATH, OPS_ALLOWED_IPS
 php artisan key:generate
 php artisan migrate --force
 php artisan db:seed --force            # bank holidays (demo data is skipped in production)

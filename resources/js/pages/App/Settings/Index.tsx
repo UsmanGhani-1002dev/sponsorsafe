@@ -52,7 +52,7 @@ interface Props {
     admins: Admin[];
     people: Person[];
     roles: { value: string; label: string; single: boolean }[];
-    plan: { key: string | null; name: string; options: PlanOption[]; price: string; limit: number; used: number; nextPayment: string | null; method: string | null; graceEnds: string | null; canManage: boolean; training: string; provider: 'stripe' | 'paypal' | null; priceChange: { on: string; price: string; limit: number | null } | null };
+    plan: { key: string | null; name: string; options: PlanOption[]; price: string; limit: number; used: number; nextPayment: string | null; method: string | null; graceEnds: string | null; accessEnds: string | null; canManage: boolean; training: string; provider: 'stripe' | 'paypal' | null; priceChange: { on: string; price: string; limit: number | null } | null };
     sites: Site[];
     employees: { id: number; name: string; siteId: number | null }[];
     rules: RulesProps;
@@ -75,7 +75,13 @@ export default function Settings({ business, admins, people, roles, plan, sites,
                 <Card className="flex flex-col gap-4 p-5 sm:p-6">
                     <div className="flex items-center justify-between">
                         <h2 className="text-[17px] font-semibold">Subscription · {plan.name}</h2>
-                        {plan.graceEnds ? <Badge tone="red">Payment failed</Badge> : <Badge tone="green">Active</Badge>}
+                        {plan.graceEnds ? (
+                            <Badge tone="red">Payment failed</Badge>
+                        ) : plan.accessEnds ? (
+                            <Badge tone="amber">Cancelled</Badge>
+                        ) : (
+                            <Badge tone="green">Active</Badge>
+                        )}
                     </div>
                     <p>
                         <span className="text-3xl font-semibold tracking-tight">£{plan.price}</span> <span className="text-sm text-muted">per month · up to {plan.limit} employees</span>
@@ -97,6 +103,11 @@ export default function Settings({ business, admins, people, roles, plan, sites,
                         </p>
                     )}
                     {plan.graceEnds && <p className="text-sm text-red-700 dark:text-red-300">Update your payment details by {plan.graceEnds} to keep access.</p>}
+                    {plan.accessEnds && (
+                        <p className="text-sm text-ink-2">
+                            Your subscription was cancelled. You have access until {plan.accessEnds}; your records are kept after that. Changed your mind? Contact us.
+                        </p>
+                    )}
                     {plan.priceChange && (
                         <p className="rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink-2">
                             From {plan.priceChange.on}: £{plan.priceChange.price} per month{plan.priceChange.limit ? ` for up to ${plan.priceChange.limit} employees` : ''}.

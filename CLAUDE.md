@@ -29,6 +29,10 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
 - **Stage 8a (reminders and alerts, §12): done and tested** — 256 PHPUnit tests passing.
 - **Stage 8b (unexplained absences, §11): done and tested** — 265 PHPUnit tests passing; all 13 go-live
   acceptance tests in compliance-rules §13 now have passing tests. Waiting for review.
+- **Go-live preparation:** payments checked against real Stripe test mode and PayPal sandbox (3 fixes); full
+  Privacy policy, Terms of service (with Article 28 data processing terms) and employee privacy notice written;
+  company details from `.env` (`COMPANY_*`, `SUPPORT_EMAIL`); hosting SMTP in `deploy/production.env.example`.
+  268 PHPUnit tests passing.
 - **Next:** Stage 7c (AI chat assistant).
 - Local setup on this laptop is done (git repo, MySQL databases, PHP 8.4).
 
@@ -379,6 +383,19 @@ Demo logins (password `password`, local only):
 - Dashboard "Unexplained absences" (prototype wording): **Classify absence** opens Record absence with
   `?unexplained=ID` (pre-filled unauthorised for that day, with the prototype's note); badge red after
   `unexplained_red_after_days` (2) working days. Open alerts are in the next morning's reminder email.
+
+## Go-live conventions (payments and legal)
+
+- Saved Stripe prices / PayPal plans are re-checked with the gateway before use (gone, inactive or wrong
+  amount → a new one is created). Stripe plan changes find the live subscription through Stripe's API, never
+  Cashier's local table (only webhooks fill that). PayPal returns amounts like "35.0": compare in pence.
+- Cancelling keeps access until the end of the paid period (terms of service): `Subscriptions::cancelled()` sets
+  `businesses.access_ends_on` = next payment date when there is paid time left (PayPal ends subscriptions at
+  once; Stripe at period end); `billing:check` suspends on that date. Settings and super admin show "Cancelled".
+- `/privacy` and `/terms` (`Website/Legal.tsx`) and the employee notice (`Portal/Privacy.tsx`) take the company
+  name, number, address, ICO number, contact email and "last updated" date from `config('sponsorsafe.company')`
+  (`WebsiteController::company()`), and prices / grace days live. If the service changes what it stores, who it
+  shares with, retention or billing, update this wording and `legal_updated` in the same change.
 
 ## UI and performance rules ("modern and very fast")
 

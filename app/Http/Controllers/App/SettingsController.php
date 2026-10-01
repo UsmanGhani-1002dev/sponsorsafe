@@ -75,6 +75,7 @@ class SettingsController extends Controller
                 'nextPayment' => Employee::formatDate($business->next_payment_on),
                 'method' => $business->payment_label,
                 'graceEnds' => Employee::formatDate($business->grace_ends_on),
+                'accessEnds' => Employee::formatDate($business->access_ends_on),
                 'canManage' => self::canManageBilling($business),
                 'provider' => $business->payment_provider,
                 'priceChange' => $business->price_change_on ? ['on' => Employee::formatDate($business->price_change_on), 'price' => Pricing::pounds($business->price_change_pence), 'limit' => $business->price_change_limit] : null,

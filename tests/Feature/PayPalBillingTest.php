@@ -197,6 +197,26 @@ class PayPalBillingTest extends TestCase
         Http::assertSent(fn (HttpRequest $r) => str_ends_with($r->url(), 'verify-webhook-signature') && $r['webhook_id'] === 'WH12345678' && $r['transmission_sig'] === 'sig');
     }
 
+    public function test_cancelling_keeps_access_until_the_end_of_the_paid_month(): void
+    {
+        $this->connectPaypal();
+        $this->travelTo(CarbonImmutable::parse('2026-10-05 09:00'));
+        $business = $this->paypalCustomer(['next_payment_on' => '2026-10-20']);
+        $admin = $business->admins()->sole();
+
+        $this->webhook('BILLING.SUBSCRIPTION.CANCELLED', ['id' => 'I-LIVE1'])->assertOk();
+        $this->assertSame([Business::ACTIVE, '2026-10-20'], [$business->fresh()->status, $business->fresh()->access_ends_on->toDateString()]);
+        $this->actingAs($admin)->get('/app/settings')->assertInertia(fn (Assert $p) => $p->where('plan.accessEnds', '20 Oct 2026'));
+
+        $this->travelTo(CarbonImmutable::parse('2026-10-19 06:00'));
+        $this->artisan('billing:check');
+        $this->assertSame(Business::ACTIVE, $business->fresh()->status);
+
+        $this->travelTo(CarbonImmutable::parse('2026-10-20 06:00'));
+        $this->artisan('billing:check');
+        $this->assertSame([Business::SUSPENDED, Business::SUSPENDED_CANCELLED, null], [$business->fresh()->status, $business->fresh()->suspended_reason, $business->fresh()->access_ends_on]);
+    }
+
     public function test_paypal_payment_failed_then_paid_then_cancelled(): void
     {
         $this->connectPaypal();

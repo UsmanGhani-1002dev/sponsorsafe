@@ -84,7 +84,7 @@ class Subscriptions
             'payment_label' => $label,
             'next_payment_on' => $next?->toDateString(),
         ]));
-        $business->fill(['payment_failed_on' => null, 'grace_ends_on' => null]);
+        $business->fill(['payment_failed_on' => null, 'grace_ends_on' => null, 'access_ends_on' => null]);
         if ($wasPending || $reactivate) {
             $business->fill(['status' => Business::ACTIVE, 'suspended_at' => null, 'suspended_reason' => null]);
         }
@@ -118,8 +118,20 @@ class Subscriptions
     }
 
     /** The subscription ended (cancelled by the customer, or Stripe gave up retrying). */
+    /**
+     * The subscription ended. If the customer cancelled with time already paid for (PayPal ends the subscription
+     * straight away), access stays open until then (terms: "your access continues until the end of the period
+     * you have paid for"); `daily()` pauses it on that date. Otherwise (Stripe ends it at the period end, or
+     * the payment had failed) access is paused now. Data is kept either way.
+     */
     public function cancelled(Business $business): void
     {
+        if ($business->isActive() && ! $business->inGrace() && $business->next_payment_on?->isAfter(today())) {
+            $business->update(['access_ends_on' => $business->next_payment_on]);
+            Audit::log('billing.cancelled', $business, ['access_until' => $business->next_payment_on->toDateString()], businessId: $business->id);
+
+            return;
+        }
         $this->suspend($business, Business::SUSPENDED_CANCELLED);
     }
 
@@ -294,6 +306,10 @@ class Subscriptions
         $late = Business::query()->where('status', Business::ACTIVE)->whereDate('grace_ends_on', '<', today())->get();
         $late->each(fn (Business $b) => $this->suspend($b, Business::SUSPENDED_PAYMENT));
 
+        // Cancelled subscriptions whose paid-for period has now run out.
+        Business::query()->where('status', Business::ACTIVE)->whereDate('access_ends_on', '<=', today())->get()
+            ->each(fn (Business $b) => $this->suspend($b, Business::SUSPENDED_CANCELLED));
+
         $abandoned = Business::query()->where('status', Business::PENDING)
             ->where('updated_at', '<', now()->subDays(config('sponsorsafe.abandoned_signup_days')))->get();
         $abandoned->each(function (Business $b) {
@@ -349,7 +365,7 @@ class Subscriptions
         if ($business->status !== Business::ACTIVE) {
             return;
         }
-        $business->update(['status' => Business::SUSPENDED, 'suspended_at' => now(), 'suspended_reason' => $reason, 'grace_ends_on' => null]);
+        $business->update(['status' => Business::SUSPENDED, 'suspended_at' => now(), 'suspended_reason' => $reason, 'grace_ends_on' => null, 'access_ends_on' => null]);
         Notification::send($business->admins()->where('active', true)->get(), new AccessPaused($business->name, $reason));
         Audit::log('billing.suspended', $business, ['reason' => $reason], businessId: $business->id);
         DashboardCounts::forget($business->id);

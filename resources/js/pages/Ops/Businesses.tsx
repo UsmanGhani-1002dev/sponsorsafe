@@ -12,6 +12,7 @@ interface Row {
     status: 'active' | 'suspended' | 'pending';
     suspendedReason: 'manual' | 'payment' | 'cancelled' | null;
     graceEnds: string | null;
+    accessEnds: string | null;
     admin: { name: string; email: string } | null;
     employees: number;
     limit: number;
@@ -29,6 +30,7 @@ function Status({ b }: { b: Row }) {
     if (b.status === 'pending') return <Badge tone="blue">Awaiting payment</Badge>;
     if (b.status === 'suspended') return <Badge tone="red">Suspended{b.suspendedReason ? ` · ${reasons[b.suspendedReason]}` : ''}</Badge>;
     if (b.graceEnds) return <Badge tone="amber">Payment failed · until {b.graceEnds}</Badge>;
+    if (b.accessEnds) return <Badge tone="amber">Cancelled · until {b.accessEnds}</Badge>;
     return <Badge tone="green">Active</Badge>;
 }
 
