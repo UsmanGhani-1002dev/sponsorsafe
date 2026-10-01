@@ -7,6 +7,8 @@ use App\Models\Employee;
 use App\Services\AbsenceRules;
 use App\Services\Reminders;
 use App\Services\Retention;
+use App\Services\UnexplainedAbsences;
+use App\Models\UnexplainedAbsence;
 use App\Services\WorkingDays;
 use App\Support\Badges;
 use App\Support\DashboardCounts;
@@ -17,7 +19,7 @@ use Inertia\Response;
 /** Dashboard: stat tiles (cached briefly), right-to-work watchlist and the next Home Office deadlines. */
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request, Reminders $reminders): Response
+    public function __invoke(Request $request, Reminders $reminders, UnexplainedAbsences $unexplained): Response
     {
         $business = $request->user()->business;
         $counts = DashboardCounts::for($business);
@@ -45,6 +47,16 @@ class DashboardController extends Controller
             }),
             'year' => $year,
             'retentionDue' => Retention::due($business)->count(),
+            // §11: scheduled working days with no clock-in and no absence, waiting to be classified.
+            'unexplained' => [
+                'enabled' => UnexplainedAbsences::enabled($business),
+                'items' => $unexplained->open($business)->map(fn (UnexplainedAbsence $u) => [
+                    'id' => $u->id,
+                    'name' => $u->employee->full_name,
+                    'date' => $u->date->format('D j M Y'),
+                    'badge' => $u->badge($wd, (int) $business->rule('unexplained_red_after_days')),
+                ]),
+            ],
             // Expiries and follow-up checks coming up (§12). Deadlines and deletions have their own cards.
             'reminders' => $reminders->current($business)
                 ->whereIn('type', [Reminders::VISA, Reminders::FOLLOW_UP, Reminders::PASSPORT])

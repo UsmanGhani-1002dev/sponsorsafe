@@ -1,12 +1,13 @@
 import { Alert } from '@/components/ui/alert';
 import type { TaskRow } from '@/components/report-task';
 import { Badge, type Tone } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/ui/page-header';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/cn';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { CheckCircle2, ShieldCheck } from 'lucide-react';
 
 interface Props {
@@ -17,9 +18,10 @@ interface Props {
     deadlines: TaskRow[];
     retentionDue: number;
     reminders: { key: string; text: string; tone: Tone; href: string }[];
+    unexplained: { enabled: boolean; items: { id: number; name: string; date: string; badge: { text: string; tone: Tone } }[] };
 }
 
-export default function Dashboard({ business, stats, watchlist, year, deadlines, retentionDue, reminders }: Props) {
+export default function Dashboard({ business, stats, watchlist, year, deadlines, retentionDue, reminders, unexplained }: Props) {
     const tiles = [
         { label: 'Home Office reports pending', value: stats.pending, hint: 'Worker and company events', href: '/app/reports?status=pending', alert: false },
         { label: 'Due within 5 working days', value: stats.urgent, hint: 'Including overdue', href: '/app/reports?status=pending', alert: stats.urgent > 0 },
@@ -61,6 +63,43 @@ export default function Dashboard({ business, stats, watchlist, year, deadlines,
                     );
                 })}
             </div>
+
+            {(unexplained.enabled || unexplained.items.length > 0) && (
+                <section aria-labelledby="unexplained-title" className="mt-8">
+                    <h2 id="unexplained-title" className="mb-1 text-lg font-semibold">
+                        Unexplained absences
+                    </h2>
+                    <p className="mb-3 text-sm text-ink-2">From the clock-in system: a scheduled working day with no clock-in and no absence recorded.</p>
+                    {unexplained.items.length === 0 ? (
+                        <Card className="px-5 py-4 text-[15px] text-ink-2">All clear: every scheduled day is accounted for.</Card>
+                    ) : (
+                        <ul className="flex flex-col gap-3">
+                            {unexplained.items.map((u) => (
+                                <li key={u.id}>
+                                    <Card className="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
+                                        <div className="min-w-0">
+                                            <p className="text-base font-semibold">
+                                                {u.name} · {u.date}
+                                            </p>
+                                            <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
+                                                No clock-in, no absence recorded <Badge tone={u.badge.tone}>{u.badge.text}</Badge>
+                                            </p>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            <Link href={`/app/absence/create?unexplained=${u.id}`} className="inline-flex min-h-11 items-center rounded-lg bg-accent-fill px-4 text-sm font-semibold text-white hover:bg-accent-fill-hover">
+                                                Classify absence
+                                            </Link>
+                                            <Button variant="secondary" className="min-h-11 text-sm" onClick={() => router.post(`/app/unexplained/${u.id}/worked`, {}, { preserveScroll: true })}>
+                                                Worked – clock-in missed
+                                            </Button>
+                                        </div>
+                                    </Card>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </section>
+            )}
 
             {reminders.length > 0 && (
                 <section aria-labelledby="coming-title" className="mt-8">

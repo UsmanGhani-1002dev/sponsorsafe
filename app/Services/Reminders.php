@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Business;
 use App\Models\Employee;
 use App\Models\Reminder;
+use App\Models\UnexplainedAbsence;
 use App\Notifications\ComplianceDigest;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Notification;
  *   passport expiry            — `passport_alert_days` (90) before, and when expired
  *   Home Office task deadline  — `task_alert_working_days` (5) working days before, and when overdue
  *   leavers' records due for deletion — once a month while any are due (the Stage 6 review)
+ *   unexplained absence (§11) — the morning after it is found
  * A stage includes the date it is about ("60@2026-12-10"), so a new visa expiry starts the reminders again.
  */
 class Reminders
@@ -26,6 +28,7 @@ class Reminders
     public const PASSPORT = 'passport_expiry';
     public const TASK = 'task_deadline';
     public const RETENTION = 'retention_due';
+    public const UNEXPLAINED = 'unexplained_absence';
 
     /**
      * Everything that needs attention now, soonest first.
@@ -92,6 +95,12 @@ class Reminders
                 $items->push($this->item(self::TASK, "report_task:{$t->id}", 'soon', $t->deadline,
                     "Home Office report due ".($left === 0 ? 'today' : "on {$this->date($t->deadline)}").": {$t->event}{$who}", $left <= 1 ? 'red' : 'amber', '/app/reports'));
             }
+        }
+
+        // §11/§12: an unexplained absence is in the next morning's email (it turns red on the dashboard later).
+        foreach (UnexplainedAbsence::open()->where('business_id', $business->id)->with('employee:id,full_name')->orderBy('date')->get() as $u) {
+            $items->push($this->item(self::UNEXPLAINED, "employee:{$u->employee_id}", 'open', $u->date,
+                "{$u->employee->full_name} had no clock-in and no absence recorded on {$this->date($u->date)}: please classify it", 'amber', '/app'));
         }
 
         $due = Retention::due($business)->count();

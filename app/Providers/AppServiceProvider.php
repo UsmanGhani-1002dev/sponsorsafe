@@ -8,6 +8,8 @@ use App\Models\Employee;
 use App\Models\EmployeeChange;
 use App\Models\KeyPerson;
 use App\Models\WorkSite;
+use App\Services\ClockIns\ClockInSource;
+use App\Services\ClockIns\NoClockInSource;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
@@ -19,6 +21,9 @@ class AppServiceProvider extends ServiceProvider
     {
         // Our own webhook route (keys from the super admin, signature always required).
         Cashier::ignoreRoutes();
+
+        // Clock-in data: nothing connected yet (businesses upload a CSV). A real integration replaces this binding.
+        $this->app->bind(ClockInSource::class, NoClockInSource::class);
     }
 
     public function boot(): void

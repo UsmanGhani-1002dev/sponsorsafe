@@ -127,6 +127,7 @@ class EmployeeController extends Controller
                 'expiry' => Badges::expiry($e->visa_expiry),
                 'portal' => $e->portalStatus(),
                 'email' => $e->email,
+                'workDays' => $e->workDays(),
                 'left' => $e->ended_on !== null,
                 'leftText' => $e->ended_on ? 'Left '.Employee::formatDate($e->ended_on).' · '.$e->end_reason : null,
                 'startIso' => $e->start_date->format('Y-m-d'),
@@ -187,6 +188,15 @@ class EmployeeController extends Controller
         return back()->with('success', $changes
             ? 'Saved. '.count($changes).' '.str('correction')->plural(count($changes)).' logged in the history.'
             : 'Nothing changed.');
+    }
+
+    /** Usual working days, used by the clock-in check. Logged in the history; never reportable. */
+    public function workDays(Request $request, int $employee): RedirectResponse
+    {
+        $e = $this->find($request, $employee);
+        $changes = $this->recorder->update($e, EmployeeRules::validateWorkDays($request->all()), $request->user());
+
+        return back()->with('success', $changes ? 'Working days saved.' : 'Nothing changed.');
     }
 
     /** Record a change (§5). Tells HR straight away if a sponsored worker's change must be reported. */
@@ -381,6 +391,7 @@ class EmployeeController extends Controller
             ['title' => 'Employment and retention', 'fields' => [
                 $f('Start date', $d($e->start_date)),
                 $f('Working pattern', Employee::displayValue('days_per_week', $e->days_per_week).' per week'),
+                $f('Usual working days', Employee::workDaysText($e->workDays()).($e->work_days ? '' : ' (not set: Monday to Friday assumed)')),
                 $f('Contract type', $e->contract_type),
                 $f('Employment end date', $e->ended_on ? $d($e->ended_on).' ('.$e->end_reason.')' : 'Still employed'),
                 $f('Employee portal', $portal),

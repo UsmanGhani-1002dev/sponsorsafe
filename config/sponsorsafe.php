@@ -42,6 +42,9 @@ return [
         'follow_up_alert_days' => 30,
         'passport_alert_days' => 90,
         'task_alert_working_days' => 5,
+        // Unexplained absences (compliance-rules §11): off until the business has clock-in data.
+        'clock_in_check' => false,
+        'unexplained_red_after_days' => 2, // working days unclassified before the alert turns red
         'payslip_freshness_days' => 35,
         'retention_years' => 1,
         'rtw_retention_years' => 2,

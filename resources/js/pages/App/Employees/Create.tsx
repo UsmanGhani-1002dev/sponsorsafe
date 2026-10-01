@@ -5,6 +5,7 @@ import { Field, Input, Select } from '@/components/ui/field';
 import { PageHeader } from '@/components/ui/page-header';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/cn';
+import { WEEKDAYS, WorkDaysPicker } from '@/components/employee/work-days-picker';
 import { Link, useForm } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
 
@@ -63,6 +64,7 @@ export default function CreateEmployee({ options, plan, canFillDemo }: Props) {
         start_date: '',
         work_site_id: options.sites[0] ? String(options.sites[0].id) : '',
         days_per_week: '5',
+        work_days: WEEKDAYS,
         contracted_hours: '37.5',
         contract_type: options.contractTypes[0],
         portal_invite: true,
@@ -254,6 +256,9 @@ export default function CreateEmployee({ options, plan, canFillDemo }: Props) {
                             </Select>
                         </Field>
                     </Grid>
+                    <div className="mt-4">
+                        <WorkDaysPicker value={data.work_days} onChange={(d) => setData('work_days', d)} error={errors.work_days} />
+                    </div>
                 </Section>
 
                 <Section title="Documents required for this employee">

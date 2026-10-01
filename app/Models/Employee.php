@@ -52,6 +52,7 @@ class Employee extends Model
         'start_date' => 'Start date',
         'work_site_id' => 'Work site',
         'days_per_week' => 'Working days per week',
+        'work_days' => 'Usual working days',
         'contracted_hours' => 'Contracted weekly hours',
         'contract_type' => 'Contract type',
     ];
@@ -60,7 +61,7 @@ class Employee extends Model
         'business_id', 'user_id', 'work_site_id', 'full_name', 'date_of_birth', 'nationality', 'email', 'phone', 'address',
         'ni_number', 'passport_number', 'passport_expiry', 'rtw_basis', 'visa_type', 'rtw_check_method', 'rtw_check_date',
         'rtw_checked_by', 'share_code', 'visa_start', 'visa_expiry', 'work_restrictions', 'follow_up_check_due', 'cos_number',
-        'cos_assigned_on', 'soc_code', 'job_title', 'salary', 'start_date', 'days_per_week', 'contracted_hours', 'contract_type',
+        'cos_assigned_on', 'soc_code', 'job_title', 'salary', 'start_date', 'days_per_week', 'work_days', 'contracted_hours', 'contract_type',
         'ended_on', 'end_reason', 'delete_after', 'rtw_delete_after',
     ];
 
@@ -86,6 +87,7 @@ class Employee extends Model
             'rtw_delete_after' => 'date',
             'salary' => 'decimal:2',
             'days_per_week' => 'decimal:1',
+            'work_days' => 'array',
             'contracted_hours' => 'decimal:2',
         ];
     }
@@ -205,8 +207,32 @@ class Employee extends Model
             $field === 'salary' => '£'.number_format((float) $value, 2),
             $field === 'contracted_hours' => rtrim(rtrim((string) $value, '0'), '.').' hours',
             $field === 'days_per_week' => rtrim(rtrim((string) $value, '0'), '.').' days',
+            $field === 'work_days' => self::workDaysText((array) $value),
             default => (string) $value,
         };
+    }
+
+    /** Days of the week, in order, as stored in `work_days`. */
+    public const WEEK = ['mon' => 'Mon', 'tue' => 'Tue', 'wed' => 'Wed', 'thu' => 'Thu', 'fri' => 'Fri', 'sat' => 'Sat', 'sun' => 'Sun'];
+
+    /** Usual working days; Monday to Friday when not set. */
+    public function workDays(): array
+    {
+        return $this->work_days ?: ['mon', 'tue', 'wed', 'thu', 'fri'];
+    }
+
+    /** Is this a day they are scheduled to work (their usual day, and not a bank holiday)? */
+    public function scheduledOn(CarbonInterface $date, \App\Services\WorkingDays $wd): bool
+    {
+        $isBankHoliday = $date->isWeekday() && ! $wd->isWorkingDay($date);
+
+        return in_array(strtolower($date->format('D')), $this->workDays(), true) && ! $isBankHoliday;
+    }
+
+    /** "Mon, Tue, Wed" in week order. */
+    public static function workDaysText(array $days): string
+    {
+        return collect(self::WEEK)->only($days)->values()->implode(', ');
     }
 
     /** UK display format used everywhere: "24 Sep 2026". */

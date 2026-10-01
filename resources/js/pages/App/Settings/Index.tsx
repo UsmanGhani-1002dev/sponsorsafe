@@ -57,11 +57,12 @@ interface Props {
     employees: { id: number; name: string; siteId: number | null }[];
     rules: RulesProps;
     retentionDue: number;
+    clockIn: { enabled: boolean; lastImport: string | null; latestDay: string | null };
 }
 
 const opts = { preserveScroll: true, preserveState: true } as const;
 
-export default function Settings({ business, admins, people, roles, plan, sites, employees, rules, retentionDue }: Props) {
+export default function Settings({ business, admins, people, roles, plan, sites, employees, rules, retentionDue, clockIn }: Props) {
     const pct = Math.min(100, Math.round((plan.used / plan.limit) * 100));
 
     return (
@@ -123,7 +124,9 @@ export default function Settings({ business, admins, people, roles, plan, sites,
             <KeyPersonnel people={people} roles={roles} />
             <WorkSites sites={sites} employees={employees} />
 
-            <SectionTitle title="Leavers' records" description="Records are deleted when the retention period after employment ends has passed, after you review them." />
+            <ClockInCheck clockIn={clockIn} />
+
+            <SectionTitle title="Leavers' records"description="Records are deleted when the retention period after employment ends has passed, after you review them." />
             <Card className="flex flex-wrap items-center justify-between gap-3 p-5">
                 <p className="text-sm text-ink-2">{retentionDue ? `${retentionDue} due for deletion now.` : "Nothing is due for deletion."}</p>
                 <Link href="/app/retention" className="inline-flex min-h-11 items-center rounded-lg border border-line-strong bg-surface px-4 text-[15px] font-semibold text-ink-2 hover:bg-canvas">
@@ -402,6 +405,65 @@ function BusinessCard({ business }: Pick<Props, 'business'>) {
                 </div>
             </form>
         </Card>
+    );
+}
+
+/* ---------------- Clock-in check ---------------- */
+
+/** Compliance-rules §11: switch the check on, then upload the clock-in system's CSV export. */
+function ClockInCheck({ clockIn }: Pick<Props, 'clockIn'>) {
+    const upload = useForm<{ file: File | null }>({ file: null });
+    const [inputKey, setInputKey] = useState(0);
+    const submit = (e: FormEvent) => {
+        e.preventDefault();
+        upload.post('/app/settings/clock-ins', { ...opts, forceFormData: true, onSuccess: () => (upload.reset(), setInputKey((k) => k + 1)) });
+    };
+
+    return (
+        <>
+            <SectionTitle
+                title="Clock-in check"
+                description="Spots scheduled working days with no clock-in and no absence recorded, so nothing slips through. The absence log stays your record."
+            />
+            <Card className="flex flex-col gap-4 p-5 sm:p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-[15px]">
+                        Clock-in check is <strong>{clockIn.enabled ? 'on' : 'off'}</strong>.
+                        {clockIn.enabled && clockIn.lastImport && <span className="text-ink-2"> Last upload {clockIn.lastImport}, up to {clockIn.latestDay}.</span>}
+                    </p>
+                    <Button variant={clockIn.enabled ? 'secondary' : 'primary'} onClick={() => router.put('/app/settings/clock-in', { enabled: !clockIn.enabled }, opts)}>
+                        {clockIn.enabled ? 'Turn off' : 'Turn on'}
+                    </Button>
+                </div>
+                {clockIn.enabled && (
+                    <form onSubmit={submit} noValidate className="flex flex-col gap-3 border-t border-line pt-4">
+                        <Field
+                            id="clock-file"
+                            label="Upload your clock-in system's export (CSV)"
+                            error={upload.errors.file}
+                            hint={'First row: email, date, time. One row per clock-in, e.g. "aisha.rahman@demo-retail.example, 2026-10-05, 08:57". Dates like 05/10/2026 work too.'}
+                        >
+                            <input
+                                key={inputKey}
+                                id="clock-file"
+                                type="file"
+                                accept=".csv,text/csv"
+                                onChange={(e) => upload.setData('file', e.target.files?.[0] ?? null)}
+                                className="block w-full text-sm file:mr-3 file:min-h-11 file:rounded-lg file:border file:border-line-strong file:bg-surface file:px-4 file:font-semibold file:text-ink-2 hover:file:bg-canvas"
+                            />
+                        </Field>
+                        <div>
+                            <Button type="submit" disabled={upload.processing || !upload.data.file}>
+                                {upload.processing ? 'Checking…' : 'Upload and check'}
+                            </Button>
+                        </div>
+                        <p className="text-[13px] text-muted">
+                            Each day in the file is checked against everyone's usual working days (set on each employee) and the absence log. Days not in the file are never flagged.
+                        </p>
+                    </form>
+                )}
+            </Card>
+        </>
     );
 }
 

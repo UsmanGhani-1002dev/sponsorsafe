@@ -37,7 +37,8 @@ If `php` on the command line is an older version, use the full path, e.g.
 
 The scheduler also runs `billing:check` daily at 06:00 (suspends businesses whose payment grace period has
 ended, removes sign-ups that never paid) and `reminders:send` at 07:00 (emails each business its new
-expiry, follow-up check and Home Office deadline reminders). Without this cron job no reminders go out.
+expiry, follow-up check and Home Office deadline reminders), and `absences:check-clock-ins` at 20:00
+(the clock-in check, for businesses that switched it on). Without this cron job no reminders go out.
 
 ## 4a. Stripe (card payments)
 1. In the Stripe dashboard (live mode): Developers → API keys. Copy the publishable and secret keys.

@@ -65,6 +65,8 @@ class AbsenceRecorder
             ]);
             Audit::log('absence.recorded', $absence, ['employee_id' => $employee->id, 'type' => $type->value, 'days' => $check->days, 'check' => $check->status], $by);
             ReportTasks::forAbsence($absence->setRelation('employee', $employee), $by);
+            // An unexplained absence (no clock-in) on one of these days is now explained.
+            app(UnexplainedAbsences::class)->resolveCoveredBy($absence, $by);
 
             return $absence;
         });

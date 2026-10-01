@@ -26,8 +26,10 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
   upgrades and downgrades; 238 PHPUnit tests passing. Waiting for review.
 - **Polish stage part 1 (toasts, Ctrl+K palette): done and tested** — 240 PHPUnit tests passing.
 - **Polish stage part 2 (business details, admin logins, employee privacy notice): done and tested** — 248 PHPUnit tests passing.
-- **Stage 8a (reminders and alerts, §12): done and tested** — 256 PHPUnit tests passing. Waiting for review.
-- **Next:** Stage 8b (unexplained absences, §11), then Stage 7c (AI chat).
+- **Stage 8a (reminders and alerts, §12): done and tested** — 256 PHPUnit tests passing.
+- **Stage 8b (unexplained absences, §11): done and tested** — 265 PHPUnit tests passing; all 13 go-live
+  acceptance tests in compliance-rules §13 now have passing tests. Waiting for review.
+- **Next:** Stage 7c (AI chat assistant).
 - Local setup on this laptop is done (git repo, MySQL databases, PHP 8.4).
 
 ## Local setup (Windows)
@@ -360,6 +362,23 @@ Demo logins (password `password`, local only):
 - `reminders` table records each stage emailed (`type`, `subject` "employee:12", `stage` "60@2026-12-10"), so every
   stage is sent once; a new expiry date starts again. `reminders:send` (daily 07:00) sends one `ComplianceDigest`
   email per active business to its active admins. Dashboard "Coming up" card shows the expiry/check items.
+
+## What Stage 8b built (follow these conventions)
+
+- `employees.work_days` (["mon".."sun"], null = Monday to Friday): set on Add employee and on the profile
+  (Details → Employment → Working days, logged in the history). `Employee::scheduledOn($date, $wd)` = a usual
+  day that is not a bank holiday.
+- `clock_ins` (one row per person per day, earliest time) and `unexplained_absences` (open | absence | worked).
+  **`App\Services\UnexplainedAbsences`**: `importCsv` (columns email, date, optional time; Y-m-d or d/m/Y),
+  `scan($business, $date)` flags scheduled people with no clock-in and no absence — only when the check is on
+  (`clock_in_check` rule, Settings → Clock-in check) **and** the business has clock-in data for that day; a late
+  clock-in clears the alert. `AbsenceRecorder::record` calls `resolveCoveredBy()`, so recording an absence for the
+  day classifies it. "Worked – clock-in missed" = `markWorked`.
+- The live clock-in integration is stubbed: `App\Services\ClockIns\ClockInSource` (bound to `NoClockInSource` in
+  AppServiceProvider); `absences:check-clock-ins` (daily 20:00) fetches from it and checks today.
+- Dashboard "Unexplained absences" (prototype wording): **Classify absence** opens Record absence with
+  `?unexplained=ID` (pre-filled unauthorised for that day, with the prototype's note); badge red after
+  `unexplained_red_after_days` (2) working days. Open alerts are in the next morning's reminder email.
 
 ## UI and performance rules ("modern and very fast")
 

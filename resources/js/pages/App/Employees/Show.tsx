@@ -9,6 +9,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Tabs } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
 import { AbsenceTab } from '@/components/employee/absence-tab';
+import { WorkDaysPicker } from '@/components/employee/work-days-picker';
 import { DocumentsTab, type DocumentCategoryRow } from '@/components/employee/documents-tab';
 import type { AbsenceRow } from '@/components/absence';
 import { ReportDialog, reopenTask, type TaskRow } from '@/components/report-task';
@@ -30,6 +31,7 @@ interface Props {
         expiry: { text: string; tone: Tone };
         portal: 'none' | 'invited' | 'active';
         email: string;
+        workDays: string[];
         left: boolean;
         leftText: string | null;
         startIso: string;
@@ -277,6 +279,7 @@ function HomeOfficeTab({ tasks, reporter, today }: { tasks: TaskRow[]; reporter:
 
 function Details({ employee, sections, waitingFor, personal }: Props) {
     const [correcting, setCorrecting] = useState(false);
+    const [days, setDays] = useState(false);
 
     return (
         <div className="flex flex-col gap-4">
@@ -295,6 +298,11 @@ function Details({ employee, sections, waitingFor, personal }: Props) {
                                     <Pencil size={15} aria-hidden /> Correct details
                                 </Button>
                             )}
+                            {s.title === 'Employment and retention' && !days && !employee.left && (
+                                <Button variant="ghost" className="min-h-10 px-2 text-sm" onClick={() => setDays(true)}>
+                                    <Pencil size={15} aria-hidden /> Working days
+                                </Button>
+                            )}
                         </div>
                         {s.title === 'Personal and contact' && correcting ? (
                             <CorrectForm employeeId={employee.id} personal={personal} onDone={() => setCorrecting(false)} />
@@ -311,10 +319,35 @@ function Details({ employee, sections, waitingFor, personal }: Props) {
                                 ))}
                             </dl>
                         )}
+                        {s.title === 'Employment and retention' && days && <WorkDaysForm employeeId={employee.id} days={employee.workDays} onDone={() => setDays(false)} />}
                     </Card>
                 ))}
             </div>
         </div>
+    );
+}
+
+/** The days they normally work, so the clock-in check knows which days to expect them. */
+function WorkDaysForm({ employeeId, days, onDone }: { employeeId: number; days: string[]; onDone: () => void }) {
+    const form = useForm({ work_days: days });
+    const submit = (e: FormEvent) => {
+        e.preventDefault();
+        form.put(`/app/employees/${employeeId}/work-days`, { preserveScroll: true, preserveState: true, onSuccess: onDone });
+    };
+
+    return (
+        <form onSubmit={submit} noValidate className="mt-3 flex flex-col gap-3 border-t border-line pt-4">
+            <WorkDaysPicker value={form.data.work_days} onChange={(d) => form.setData('work_days', d)} error={form.errors.work_days} />
+            <p className="text-[13px] text-muted">Used to spot days with no clock-in and no absence recorded. Bank holidays are never expected.</p>
+            <div className="flex gap-2">
+                <Button type="submit" disabled={form.processing}>
+                    Save
+                </Button>
+                <Button type="button" variant="secondary" onClick={onDone}>
+                    Cancel
+                </Button>
+            </div>
+        </form>
     );
 }
 

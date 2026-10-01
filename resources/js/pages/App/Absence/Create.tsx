@@ -14,6 +14,7 @@ interface Props {
     types: { value: string; label: string; pay: string }[];
     preselect: number | null;
     maxUploadMb: number;
+    classify: { employeeId: number; date: string; note: string } | null;
 }
 
 interface Check {
@@ -32,13 +33,13 @@ const today = () => {
 };
 const fmt = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
-export default function RecordAbsence({ employees, types, preselect, maxUploadMb }: Props) {
+export default function RecordAbsence({ employees, types, preselect, maxUploadMb, classify }: Props) {
     const form = useForm<{ employee_id: string; type: string; start_date: string; end_date: string; reason: string; fit_note: File | null; return: string }>({
-        employee_id: String(preselect ?? employees[0]?.id ?? ''),
-        type: 'annual',
-        start_date: today(),
-        end_date: today(),
-        reason: '',
+        employee_id: String(classify?.employeeId ?? preselect ?? employees[0]?.id ?? ''),
+        type: classify ? 'unauthorised' : 'annual',
+        start_date: classify?.date ?? today(),
+        end_date: classify?.date ?? today(),
+        reason: classify ? 'No clock-in and no contact' : '',
         fit_note: null,
         return: preselect ? 'profile' : '',
     });
@@ -77,8 +78,13 @@ export default function RecordAbsence({ employees, types, preselect, maxUploadMb
 
     return (
         <AppLayout title="Record absence">
-            <PageHeader title="Record absence" back={preselect ? { href: `/app/employees/${preselect}?tab=absence`, label: 'Back to employee' } : { href: '/app/absence', label: 'Absence log' }} />
+            <PageHeader title="Record absence" back={classify ? { href: '/app', label: 'Dashboard' } : preselect ?{ href: `/app/employees/${preselect}?tab=absence`, label: 'Back to employee' } : { href: '/app/absence', label: 'Absence log' }} />
 
+            {classify && (
+                <div className="mb-5">
+                    <Alert tone="info">{classify.note}</Alert>
+                </div>
+            )}
             <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
                 <Card className="p-5 sm:p-6">
                     <form onSubmit={submit} noValidate className="flex flex-col gap-4">

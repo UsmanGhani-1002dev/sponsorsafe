@@ -6,6 +6,7 @@ use App\Enums\AbsenceType;
 use App\Http\Controllers\Controller;
 use App\Models\Absence;
 use App\Models\Employee;
+use App\Models\UnexplainedAbsence;
 use App\Services\AbsenceCheck;
 use App\Services\AbsenceRecorder;
 use App\Services\WorkingDays;
@@ -44,12 +45,21 @@ class AbsenceController extends Controller
     public function create(Request $request): Response
     {
         $employees = $request->user()->business->employees()->current()->orderBy('full_name')->get();
+        // "Classify absence" from the dashboard: the unexplained day, as unauthorised until HR says otherwise (prototype).
+        $alert = $request->query('unexplained')
+            ? UnexplainedAbsence::open()->where('business_id', $request->user()->business_id)->with('employee:id,full_name')->find((int) $request->query('unexplained'))
+            : null;
 
         return Inertia::render('App/Absence/Create', [
             'employees' => $employees->map(fn (Employee $e) => ['id' => $e->id, 'name' => $e->full_name, 'sponsored' => $e->isSponsored()]),
             'types' => AbsenceType::options(),
             'preselect' => $employees->firstWhere('id', (int) $request->query('employee'))?->id,
             'maxUploadMb' => config('sponsorsafe.documents.max_kb') / 1024,
+            'classify' => $alert ? [
+                'employeeId' => $alert->employee_id,
+                'date' => $alert->date->format('Y-m-d'),
+                'note' => "Classifying the unexplained absence for {$alert->employee->full_name} on {$alert->date->format('j M Y')}. Change the type if they were sick or on leave, then save.",
+            ] : null,
         ]);
     }
 

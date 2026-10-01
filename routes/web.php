@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\App\AbsenceController;
+use App\Http\Controllers\App\ClockInController;
 use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\DocumentController;
 use App\Http\Controllers\App\EmployeeController;
@@ -73,6 +74,7 @@ Route::middleware(['auth:web', 'business.active', 'role:admin'])->prefix('app')-
     Route::get('/employees/{employee}', [EmployeeController::class, 'show'])->whereNumber('employee')->name('employees.show');
     Route::put('/employees/{employee}/personal', [EmployeeController::class, 'correct'])->whereNumber('employee')->name('employees.correct');
     Route::post('/employees/{employee}/changes', [EmployeeController::class, 'recordChange'])->whereNumber('employee')->name('employees.changes');
+    Route::put('/employees/{employee}/work-days', [EmployeeController::class, 'workDays'])->whereNumber('employee')->name('employees.work-days');
     Route::post('/employees/{employee}/invite', [EmployeeController::class, 'invite'])->whereNumber('employee')->name('employees.invite');
     Route::post('/employees/{employee}/end', [EmployeeController::class, 'end'])->whereNumber('employee')->name('employees.end');
     Route::get('/employees/{employee}/compliance-pack', [EmployeeController::class, 'pack'])->whereNumber('employee')->middleware('throttle:20,1')->name('employees.pack');
@@ -117,6 +119,9 @@ Route::middleware(['auth:web', 'business.active', 'role:admin'])->prefix('app')-
     Route::get('/settings/plan/paypal', [SettingsController::class, 'paypalPlan'])->middleware('throttle:10,1')->name('plan.paypal');
     Route::put('/settings/rules', [SettingsController::class, 'updateRules'])->name('rules.update');
     Route::put('/settings/business', [SettingsController::class, 'updateBusiness'])->name('business.update');
+    Route::put('/settings/clock-in', [ClockInController::class, 'toggle'])->name('clock-in.toggle');
+    Route::post('/settings/clock-ins', [ClockInController::class, 'import'])->middleware('throttle:20,1')->name('clock-in.import');
+    Route::post('/unexplained/{alert}/worked', [ClockInController::class, 'worked'])->whereNumber('alert')->name('unexplained.worked');
     Route::post('/settings/admins', [SettingsController::class, 'storeAdmin'])->middleware('throttle:10,1')->name('admins.store');
     Route::post('/settings/admins/{admin}/resend', [SettingsController::class, 'resendAdmin'])->whereNumber('admin')->middleware('throttle:10,1')->name('admins.resend');
     Route::delete('/settings/admins/{admin}', [SettingsController::class, 'destroyAdmin'])->whereNumber('admin')->name('admins.destroy');

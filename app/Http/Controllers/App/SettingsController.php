@@ -19,6 +19,9 @@ use App\Billing\Subscriptions;
 use App\Models\Business;
 use App\Models\User;
 use App\Services\BusinessAdmins;
+use App\Services\UnexplainedAbsences;
+use App\Models\ClockIn;
+use Illuminate\Support\Carbon;
 use App\Support\Audit;
 use App\Support\Pricing;
 use Illuminate\Http\RedirectResponse;
@@ -87,6 +90,11 @@ class SettingsController extends Controller
             ]),
             'employees' => $employees->map(fn (Employee $e) => ['id' => $e->id, 'name' => $e->full_name, 'siteId' => $e->work_site_id]),
             'retentionDue' => Retention::due($business)->count(),
+            'clockIn' => [
+                'enabled' => UnexplainedAbsences::enabled($business),
+                'lastImport' => ($last = ClockIn::where('business_id', $business->id)->max('imported_at')) ? Carbon::parse($last)->format('j M Y, H:i') : null,
+                'latestDay' => ($day = ClockIn::where('business_id', $business->id)->max('date')) ? Carbon::parse($day)->format('j M Y') : null,
+            ],
             'rules' => [
                 'values' => [
                     ...collect(['unpaid_limit_weeks', 'unpaid_leave_year', 'unauthorised_trigger_days', 'worker_report_deadline_days', 'company_report_deadline_days',

@@ -22,6 +22,9 @@ use App\Services\EmployeeRecorder;
 use App\Services\EmployeeRequests;
 use App\Services\ReportTasks;
 use App\Services\DocumentVault;
+use App\Services\UnexplainedAbsences;
+use App\Services\WorkingDays;
+use App\Models\ClockIn;
 use Illuminate\Database\Seeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -82,7 +85,7 @@ class DemoSeeder extends Seeder
         $daniel = $this->employee($retail, 'Main shop', 'Daniel Okafor', 'Part-time Sales Assistant', B::OtherVisa, [
             'nationality' => 'Nigerian', 'date_of_birth' => '2000-01-28', 'passport_expiry' => '2030-10-11', 'rtw_check_method' => self::SHARE, 'rtw_check_date' => '2025-08-20',
             'visa_type' => 'Graduate', 'visa_start' => '2025-07-01', 'visa_expiry' => '2027-06-30', 'work_restrictions' => 'None on Graduate route',
-            'salary' => 13400, 'start_date' => '2025-09-01', 'days_per_week' => 3, 'contracted_hours' => 20, 'contract_type' => 'Part-time permanent',
+            'salary' => 13400, 'start_date' => '2025-09-01', 'days_per_week' => 3, 'work_days' => ['mon', 'wed', 'fri'], 'contracted_hours' => 20, 'contract_type' => 'Part-time permanent',
             'address' => '27 Avenue Road, Southampton SO14 6TR', 'phone' => '07700 900105', 'ni_number' => 'QQ718365A', 'passport_number' => 'A09152877',
         ]);
 
@@ -229,6 +232,42 @@ class DemoSeeder extends Seeder
                 'handled_at' => $handled ? '2026-09-18 15:00' : null, 'created_at' => $at, 'updated_at' => $at,
             ]);
         }
+
+        $this->clockIns($retail);
+    }
+
+    /**
+     * Clock-in check (§11) for Demo Retail: the last 5 working days uploaded from its clock-in system. Two days
+     * have no clock-in and no absence: James 4 working days ago (red) and Daniel on his latest working day (amber).
+     */
+    private function clockIns(Business $b): void
+    {
+        $b->update(['settings' => [...(array) $b->settings, 'clock_in_check' => true]]);
+        $wd = WorkingDays::fromDatabase();
+        $days = collect();
+        for ($d = today()->subDay(); $days->count() < 5; $d = $d->subDay()) {
+            if ($wd->isWorkingDay($d)) {
+                $days->push($d->toImmutable());
+            }
+        }
+        $people = $b->employees()->current()->with('absences')->get();
+        $daniel = $people->firstWhere('full_name', 'Daniel Okafor');
+        $missing = [
+            'James Carter' => $days[3]->toDateString(),
+            'Daniel Okafor' => $days->first(fn ($day) => $daniel?->scheduledOn($day, $wd))?->toDateString(),
+        ];
+
+        foreach ($days as $day) {
+            foreach ($people as $e) {
+                $onLeave = $e->absences->contains(fn ($a) => $a->start_date->lte($day) && $a->end_date->gte($day));
+                if (! $e->scheduledOn($day, $wd) || $onLeave || ($missing[$e->full_name] ?? null) === $day->toDateString()) {
+                    continue;
+                }
+                ClockIn::updateOrCreate(['employee_id' => $e->id, 'date' => $day->toDateString()],
+                    ['business_id' => $b->id, 'first_in' => sprintf('08:%02d:00', 40 + $e->id % 20), 'source' => 'csv', 'imported_at' => now()]);
+            }
+        }
+        $days->each(fn ($day) => app(UnexplainedAbsences::class)->scan($b->fresh(), $day));
     }
 
     private function document(Employee $e, string $category, string $name, string $uploaded, ?string $expires): void

@@ -59,9 +59,12 @@ class EmployeeRules
             'start_date' => ['required', 'date'],
             'work_site_id' => ['required', Rule::exists('work_sites', 'id')->where('business_id', $business->id)->whereNull('closed_on')],
             'days_per_week' => ['required', 'numeric', 'min:0.5', 'max:7'],
+            'work_days' => ['nullable', 'array'],
+            'work_days.*' => [Rule::in(array_keys(Employee::WEEK))],
             'contracted_hours' => ['required', 'numeric', 'min:1', 'max:99'],
             'contract_type' => ['required', Rule::in(Employee::CONTRACT_TYPES)],
         ], self::messages(), self::attributes())->validate();
+        $data['work_days'] = self::orderDays($data['work_days'] ?? null);
 
         // Clear anything that does not apply to this basis, and set derived fields.
         return [
@@ -70,6 +73,29 @@ class EmployeeRules
             'visa_type' => $basis->fixedVisaType() ?? ($data['visa_type'] ?? null),
             'follow_up_check_due' => self::followUpCheckDue($basis, $data['visa_expiry'] ?? null),
         ];
+    }
+
+    /**
+     * Usual working days (used by the clock-in check). At least one day.
+     *
+     * @throws ValidationException
+     */
+    public static function validateWorkDays(array $input): array
+    {
+        $data = Validator::make($input, [
+            'work_days' => ['required', 'array', 'min:1'],
+            'work_days.*' => [Rule::in(array_keys(Employee::WEEK))],
+        ], ['work_days.required' => 'Tick at least one day.', 'work_days.min' => 'Tick at least one day.'])->validate();
+
+        return ['work_days' => self::orderDays($data['work_days'])];
+    }
+
+    /** Week order, no repeats; null when nothing was ticked (Monday to Friday is assumed). */
+    private static function orderDays(?array $days): ?array
+    {
+        $days = array_values(array_intersect(array_keys(Employee::WEEK), (array) $days));
+
+        return $days ?: null;
     }
 
     /**
