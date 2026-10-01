@@ -4,6 +4,7 @@ use App\Http\Controllers\App\AbsenceController;
 use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\DocumentController;
 use App\Http\Controllers\App\EmployeeController;
+use App\Http\Controllers\App\PaletteController;
 use App\Http\Controllers\App\ReportTaskController;
 use App\Http\Controllers\App\RequestController;
 use App\Http\Controllers\App\RetentionController;
@@ -63,6 +64,7 @@ Route::post('/logout', [LoginController::class, 'destroy'])->middleware('auth:we
 // ---- Business admin area ----
 Route::middleware(['auth:web', 'business.active', 'role:admin'])->prefix('app')->name('app.')->group(function () {
     Route::get('/', DashboardController::class)->name('dashboard');
+    Route::get('/palette', PaletteController::class)->middleware('throttle:60,1')->name('palette');
 
     Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
     Route::get('/employees/create', [EmployeeController::class, 'create'])->name('employees.create');

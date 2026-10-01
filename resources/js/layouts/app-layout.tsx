@@ -1,12 +1,12 @@
-import { Flash } from '@/components/flash';
+import { CommandPalette, isMac, usePaletteShortcut } from '@/components/command-palette';
 import { Logo } from '@/components/logo';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/cn';
 import type { SharedProps } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ClipboardCheck, FileWarning, Inbox, LayoutDashboard, LogOut, Settings, Users } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { ClipboardCheck, FileWarning, Inbox, LayoutDashboard, LogOut, Search, Settings, Users } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
 
 // Items not built yet are shown so the structure is clear; they switch on stage by stage.
 const nav = [
@@ -22,6 +22,8 @@ export default function AppLayout({ title, children }: { title: string; children
     const { auth, billing } = usePage<SharedProps>().props;
     const path = usePage().url.split('?')[0];
     const isActive = (href: string) => (href === '/app' ? path === '/app' : path === href || path.startsWith(href + '/'));
+    const [palette, setPalette] = useState(false);
+    usePaletteShortcut(setPalette);
 
     return (
         <div className="flex min-h-screen flex-col">
@@ -35,7 +37,18 @@ export default function AppLayout({ title, children }: { title: string; children
                     <span className="hidden truncate text-sm text-muted sm:inline">{auth.user?.business}</span>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3">
-                    <span className="hidden text-sm text-ink-2 sm:inline">{auth.user?.name}</span>
+                    <button
+                        type="button"
+                        onClick={() => setPalette(true)}
+                        aria-label="Search employees, screens and actions"
+                        aria-keyshortcuts={isMac ? 'Meta+K' : 'Control+K'}
+                        className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-line-strong bg-surface px-3 text-sm text-muted hover:bg-canvas lg:w-56"
+                    >
+                        <Search size={16} aria-hidden />
+                        <span className="hidden lg:inline">Search…</span>
+                        <kbd className="ml-auto hidden rounded border border-line px-1.5 text-xs lg:inline">{isMac ? '⌘K' : 'Ctrl K'}</kbd>
+                    </button>
+                    <span className="hidden text-sm text-ink-2 xl:inline">{auth.user?.name}</span>
                     <ThemeToggle />
                     <button
                         onClick={() => router.post('/logout')}
@@ -45,6 +58,8 @@ export default function AppLayout({ title, children }: { title: string; children
                     </button>
                 </div>
             </header>
+
+            <CommandPalette open={palette} onClose={() => setPalette(false)} />
 
             {/* Phone and small tablet: the same menu as a scrolling strip. */}
             <nav aria-label="Main" className="flex gap-1 overflow-x-auto border-b border-line bg-surface px-3 py-2 md:hidden">
@@ -91,7 +106,6 @@ export default function AppLayout({ title, children }: { title: string; children
                 </nav>
                 <main id="main" className="min-w-0 flex-1 px-4 py-6 sm:px-10 sm:py-8">
                     <div className="mx-auto max-w-6xl">
-                        <Flash />
                         {billing && (
                             <div role="alert" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/60 dark:text-red-200">
                                 <span>

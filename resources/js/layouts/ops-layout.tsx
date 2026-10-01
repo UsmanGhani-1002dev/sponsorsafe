@@ -1,4 +1,3 @@
-import { Flash } from '@/components/flash';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/cn';
 import type { SharedProps } from '@/types';
@@ -57,7 +56,6 @@ export default function OpsLayout({ title, base, children }: { title: string; ba
                 </nav>
                 <main className="min-w-0 flex-1 px-4 py-8 sm:px-8">
                     <div className="mx-auto max-w-6xl">
-                        <Flash />
                         {children}
                     </div>
                 </main>

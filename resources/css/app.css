@@ -51,6 +51,14 @@
 
 @layer base {
     html { -webkit-font-smoothing: antialiased; }
+    /* Toasts slide up into place (no movement for people who ask their device to reduce motion). */
+    @keyframes toast-in {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: none; }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+        .toast-in { animation: toast-in 180ms ease-out; }
+    }
     /* Website only: menu links (#features, #pricing…) glide to their section. */
     @media (prefers-reduced-motion: no-preference) {
         html:has([data-website]) { scroll-behavior: smooth; }

@@ -1,4 +1,5 @@
 import '../css/app.css';
+import { listenForFlash, Toaster } from '@/components/toaster';
 import { createInertiaApp } from '@inertiajs/react';
 import { createRoot } from 'react-dom/client';
 
@@ -10,7 +11,13 @@ createInertiaApp({
         return pages[`./pages/${name}.tsx`]() as never;
     },
     setup({ el, App, props }) {
-        createRoot(el!).render(<App {...props} />);
+        listenForFlash(props.initialPage);
+        createRoot(el!).render(
+            <>
+                <App {...props} />
+                <Toaster />
+            </>,
+        );
     },
     progress: { color: '#4F46E5', delay: 150 },
 });

@@ -24,8 +24,9 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
 - **Stage 7b part 2 (PayPal + price moves with 30 days' notice): done and tested** — 229 PHPUnit tests passing.
 - **Plans by team size (client change, 1 Oct 2026): done and tested** — Starter / Standard / Corporate,
   upgrades and downgrades; 238 PHPUnit tests passing. Waiting for review.
-- **Next (agreed order is Shaf's call):** a polish stage (Ctrl+K palette, toasts, editable business
-  details, second admin, employee privacy notice), Stage 8 (reminders), Stage 7c (AI chat).
+- **Polish stage part 1 (toasts, Ctrl+K palette): done and tested** — 240 PHPUnit tests passing. Waiting for review.
+- **Next:** polish part 2 (editable business details, more admin logins, employee privacy notice), then
+  Stage 8 (reminders), then Stage 7c (AI chat).
 - Local setup on this laptop is done (git repo, MySQL databases, PHP 8.4).
 
 ## Local setup (Windows)
@@ -152,8 +153,7 @@ Demo logins (password `password`, local only):
   Colours are CSS tokens with a `.dark` override (`ThemeToggle`); use `bg-surface`,
   not `bg-white`, and `bg-accent-fill` for solid indigo with white text.
   Pages are lazily loaded (one chunk each).
-- Not built yet (later stages): toasts (flash messages are banners), Ctrl+K palette,
-  dashboard count caching.
+- Toasts and the Ctrl+K palette were built in the polish stage (see below); dashboard count caching in Stage 4.
 
 ## What Stage 3 built (follow these conventions)
 
@@ -329,6 +329,17 @@ Demo logins (password `password`, local only):
   `setPlan()` = super admin Businesses → Set plan (tiers or Corporate); refuses a PayPal price change.
 - Price moves are per tier: `moveCandidates()` targets today's price for the business's tier, or for the
   original plan the tier that fits its current employees (none above 10 → "Needs a Corporate price").
+
+## What the polish stage built (follow these conventions)
+
+- **Toasts** (`components/toaster.tsx`, mounted once in `app.tsx`): every Inertia visit's `flash.success` /
+  `flash.error` pops up bottom-right; success fades after 5 s, errors stay until closed. Keep using
+  `->with('success'|'error', …)` on the server; no banner component any more. `Auth/*` pages keep their
+  inline messages; the website contact form keeps its own "message sent" card (`flash.contactSent`).
+- **Ctrl+K / ⌘K palette** (`components/command-palette.tsx`, in `app-layout.tsx` with a header Search
+  button): employees from `GET /app/palette` (JSON, this business only, fetched on open), screens and actions.
+  New admin screens or actions belong in its `screens` / `actions` lists. `/app/reports?create=1` opens the
+  create-report form.
 
 ## UI and performance rules ("modern and very fast")
 

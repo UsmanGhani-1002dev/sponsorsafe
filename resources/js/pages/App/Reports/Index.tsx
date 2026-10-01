@@ -22,7 +22,8 @@ interface Props {
 
 export default function ReportsIndex({ tasks, table, employees, events, reporter, today, openTask }: Props) {
     const [marking, setMarking] = useState<TaskRow | null>(() => tasks.data.find((t) => t.id === openTask && t.pending) ?? null);
-    const [creating, setCreating] = useState(false);
+    // ?create=1 (from the Ctrl+K palette) opens the form straight away.
+    const [creating, setCreating] = useState(() => new URLSearchParams(window.location.search).get('create') === '1');
     const filtered = table.q !== '' || Object.values(table.filters).some((v) => v !== null);
 
     const columns: Column<TaskRow>[] = [

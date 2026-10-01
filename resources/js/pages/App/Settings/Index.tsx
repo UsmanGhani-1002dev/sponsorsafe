@@ -151,7 +151,9 @@ function ChangePlan({ plan }: { plan: Props['plan'] }) {
                             <span className="font-semibold">{o.name}</span> · £{o.price} a month · up to {o.limit} employees
                         </p>
                         {o.current ? (
-                            <Badge tone="blue">Your plan</Badge>
+                            <span className="self-start">
+                                <Badge tone="blue">Your plan</Badge>
+                            </span>
                         ) : o.allowed ? (
                             <Button variant="secondary" className="min-h-10 self-start text-sm" onClick={() => setChoosing(o)}>
                                 Switch to {o.name}

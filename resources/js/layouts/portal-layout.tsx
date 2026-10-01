@@ -1,4 +1,3 @@
-import { Flash } from '@/components/flash';
 import { Logo } from '@/components/logo';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { cn } from '@/lib/cn';
@@ -75,7 +74,6 @@ export default function PortalLayout({ title, children }: { title: string; child
                 </nav>
                 <main id="main" className="min-w-0 flex-1 px-4 py-6 sm:px-8 sm:py-8">
                     <div className="mx-auto max-w-3xl">
-                        <Flash />
                         {children}
                     </div>
                 </main>
