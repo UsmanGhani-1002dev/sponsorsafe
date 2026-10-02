@@ -95,6 +95,8 @@ Demo logins (password `password`, local only):
   match the screens, wording and look. The markup is prototype-only; don't copy it.
 - `README-DEPLOY.md` and `deploy/production.env.example` — production install on Shaf's
   cPanel/WHM server.
+- `docs/testing-guide.md` — the manual test plan for testers (every role, every email, scheduled jobs,
+  security). Add checks to it when a stage adds screens, emails or jobs.
 - Out of scope (removed on purpose): payroll, messages, notices,
   letters/contract acknowledgements, pay reviews. Payslips are uploaded by the
   business only as evidence of pay.
