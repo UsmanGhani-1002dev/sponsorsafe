@@ -112,6 +112,8 @@ Use test / sandbox mode (0.3). Each sign-up creates a new business.
 | SU-09 | Click the same email link again. | "This link has expired or was already used" (links work once). | |
 | SU-10 | Second sign-up: **Test Cafe Ltd**, `you+paypal@gmail.com`, employees **6–10**, **PayPal**. | PayPal sandbox opens showing **£35.00 per month**. Approve with the sandbox personal account. You return to the "all set" page and get the welcome email. | |
 | SU-11 | Start a sign-up, open the Stripe page, then close it without paying. | No email; you can't sign in with that email ("set your password" never arrived). The unpaid sign-up is removed automatically after 7 days. | |
+| SU-12 | Straight after SU-11, sign up again with the **same email** and pay. | Works normally. Super admin → Businesses shows **one** business for that email, not two. | |
+| SU-13 | Sign-up with an email that already has a login (e.g. `you+admin@gmail.com`). | Refused with a clear message; nothing charged. | |
 
 ---
 
@@ -142,6 +144,7 @@ Sign in at `https://…/<OPS_PATH>/login` from an allowed IP address.
 | SA-13 | **Set plan** on Test Shop Ltd → **Standard**. | Plan Standard, limit 10. Their Settings → Subscription shows Standard. | |
 | SA-14 | Set plan → **Corporate**, price **£60**, limit **25**. | Saved; their limit is 25. (With Stripe this changes the price from their next payment.) | |
 | SA-15 | Set it back to **Starter**. | Saved. | |
+| SA-16 | Set plan → **Corporate** with a different price on the **PayPal** business (Test Cafe Ltd). | Refused with a message: PayPal needs the customer's approval for a new price, so they change plan themselves in Settings. | |
 
 ### 2.3 Plans and pricing
 
@@ -213,6 +216,7 @@ Sign in at `/login` as `you+admin@gmail.com` (Test Shop Ltd), or `hr@demo-retail
 | BA-14 | Theme toggle (light/dark). | Whole app switches; text stays readable. | |
 | BA-15 | Save any change. | A green message pops up bottom-right and fades. Errors pop up red and stay until closed. | |
 | BA-16 | Use the app on a phone. | Usable: menu, tables and forms fit. | |
+| BA-17 | **Log out** (sidebar). | Back to the login page. The browser's Back button does not show app pages. | |
 
 ### 3.3 Settings (do this first on a new business)
 
@@ -232,14 +236,17 @@ Sign in at `/login` as `you+admin@gmail.com` (Test Shop Ltd), or `hr@demo-retail
 | BA-31 | **Manage billing** (card business). | Opens Stripe's customer portal (change card, invoices, cancel). For PayPal: PayPal's automatic payments page. | |
 | BA-32 | **Change plan** to Standard. | Limit becomes 10 straight away; new price from the next payment. PayPal: you approve the new price on PayPal first. | |
 | BA-33 | Change back to Starter while you have more than 5 current employees. | Refused with a reason. | |
-| BA-34 | **Compliance rules**: change a value (e.g. worker report deadline), save; then put it back. | Saved. Invalid values (e.g. negative) are refused. | |
+| BA-34 | **Compliance rules**: change a value (e.g. unauthorised absence trigger from 10 to 5 days), save. Open Record absence and enter 5 unauthorised days for a sponsored worker. Then put the rule back to 10. | Saved; the live Home Office check now uses 5 days. Invalid values (e.g. negative) are refused. | |
 | BA-35 | **Clock-in check**: switch on, import a CSV (columns `email,date,time`). | Import summary; "last import" shown. Switch off again afterwards if not needed. | |
+| BA-36 | **Work sites** → **Close** a site that still has current employees. | Refused: "Move everyone who works at {site} to another site before closing it." | |
+| BA-37 | Close a site with nobody on it. | Shown as closed; a company Home Office task "work address closed" (20 working days). | |
+| BA-38 | **Key personnel**: change a person's name, then remove one. | Each creates its own company Home Office task. | |
 
 ### 3.4 Employees
 
 | ID | Steps | Expected | Pass |
 |---|---|---|---|
-| BA-40 | **Employees** → **Add employee**, right-to-work basis **Skilled Worker visa – sponsored by this business**. | Form shows the sponsored fields (CoS number, SOC code, salary, visa dates, etc.) and the checks you need. | |
+| BA-40 | **Employees** → **Add employee**, right-to-work basis **Skilled Worker visa – sponsored by this business**. | Form shows the sponsored fields (CoS number, SOC code, salary, visa dates, etc.), the checks you need and the documents this person will need. "Fill with dummy data" appears on the local copy only, never on the live site. | |
 | BA-41 | Set the right-to-work check date **after** the start date. | Blocked with a clear message. | |
 | BA-42 | Set the visa expiry **before** the start date. | Blocked. | |
 | BA-43 | Fill properly (email `you+emp1@gmail.com`, visa expiring in about **60 days** for the reminder test later). Save. | Employee saved. Portal invite **"Set up your Test Shop Ltd employee portal"** sent (E-05). | |
@@ -257,6 +264,9 @@ Sign in at `/login` as `you+admin@gmail.com` (Test Shop Ltd), or `hr@demo-retail
 | BA-55 | **Compliance check** tab. | Rows marked done / check / missing / manual; header shows "Compliance: N to fix". | |
 | BA-56 | **Export compliance pack (PDF)**. | PDF downloads: check, details (last 4 only for secrets), documents list, absences, Home Office reports, change history. | |
 | BA-57 | Resend the portal invite for an employee who hasn't signed in. | New invite email; old link stops working. | |
+| BA-58 | Profile → **Absence** tab. | This person's absences only, unpaid days used against the limit, and annual leave allowance / taken / left. | |
+| BA-59 | Profile → **Home Office** tab. | This person's report tasks; **Mark reported** / **Not required** work here too. | |
+| BA-59a | Add employees with three other bases: **EU Settlement Scheme – pre-settled**, **Indefinite leave to remain**, **Other visa (Graduate…)**. | Each shows its own right-to-work guidance; pre-settled and other visa need an expiry date (follow-up check); ILR does not. | |
 
 ### 3.5 Documents
 
@@ -277,7 +287,8 @@ Sign in at `/login` as `you+admin@gmail.com` (Test Shop Ltd), or `hr@demo-retail
 |---|---|---|---|
 | BA-70 | **Absence** → **Record absence** → choose the sponsored worker, Annual leave, 3 days. | Home Office check panel: **No report needed**. Save → in the log. | |
 | BA-71 | Sponsored worker, **Unpaid leave**, 21 working days in this leave year. | Panel shows a warning **before** saving (over 4 weeks' unpaid leave = report). After saving: Home Office task with deadline. | |
-| BA-72 | Sponsored worker, **Unauthorised absence**, 10 working days in a row (span a weekend). | Panel says **Report to Home Office** with the deadline (10 working days after the 10th day). Task created. | |
+| BA-72 | Sponsored worker, **Unauthorised absence**, 10 working days in a row, spanning a weekend **and a bank holiday** (e.g. around 25–26 Dec or Easter). | Weekends and the bank holiday are not counted. Panel says **Report to Home Office** with the deadline (10 working days after the 10th working day). Task created. | |
+| BA-72a | Record the same 10 days as two separate entries (e.g. 6 days, then 4 days straight after). | Joined into one streak: the report is triggered by the second entry. | |
 | BA-73 | Same as BA-72 on the British worker. | Logged, **no** report (reporting is for sponsored workers only). | |
 | BA-74 | Sickness – self-certified for 9 calendar days. | Warning: more than 7 days needs a fit note. | |
 | BA-75 | Sickness – fit note without a file. | Saved, flagged **Fit note missing**; upload the fit note from the log afterwards. | |
@@ -326,6 +337,9 @@ Sign in at `/login` as `you+admin@gmail.com` (Test Shop Ltd), or `hr@demo-retail
 | BA-110 | **Coming up** card. | Visa/permission expiries, follow-up checks and passports that are coming up. | |
 | BA-111 | **Unexplained absences** (local copy has two; on live, needs clock-in data: BA-35 + section 6). | Each row: **Classify absence** opens Record absence pre-filled as unauthorised for that day; **Worked – clock-in missed** clears it. Red after 2 working days. | |
 | BA-112 | Payment failed banner (local copy: `hr@demo-catering.example`). | Red banner with "update payment details by {date}". | |
+| BA-113 | **Right-to-work watchlist**. | Everyone with time-limited permission: status, expiry badge (red/amber/green by how soon) and unpaid days used. | |
+| BA-114 | **Next Home Office deadlines**. | The nearest pending tasks with badges; clicking one goes to Home Office reports. | |
+| BA-115 | Leavers' records notice (when something is due for deletion). | Notice with a link to the review page. | |
 
 ---
 
@@ -337,7 +351,7 @@ Sign in at `/login` as `you+emp1@gmail.com` (or `aisha.rahman@demo-retail.exampl
 |---|---|---|---|
 | EM-01 | Open the portal invite email (E-05), set a password. | Lands on the portal **Home**. No authenticator needed (optional for employees). | |
 | EM-02 | Menu. | Home, My documents, Leave and sickness, Update my details, My requests, My details. Privacy notice link at the bottom of every page. | |
-| EM-03 | **Home**. | Annual leave left, documents HR needs, right-to-work status, quick actions, recent requests. | |
+| EM-03 | **Home**. | Annual leave left, documents HR needs, right-to-work status, quick actions, recent requests. Leave left = 5.6 weeks pro rata (5 days a week → 28 days; 3 days a week → 16.8 days) minus leave taken and leave waiting for HR this year. | |
 | EM-04 | Type `/app` in the address bar. | Sent back to the portal: employees can't open the admin area. | |
 | EM-05 | **My documents** → the passport HR requested (BA-65) → upload a PDF → Send. | Shows "Waiting for HR". HR sees it in Requests. | |
 | EM-06 | Send another document (e.g. Other). | Waiting for HR. | |
@@ -356,6 +370,8 @@ Sign in at `/login` as `you+emp1@gmail.com` (or `aisha.rahman@demo-retail.exampl
 | EM-19 | Turn two-step sign-in off (needs your password). | "Off". | |
 | EM-20 | **Privacy notice**. | Full notice with the company name and the business's retention periods. | |
 | EM-21 | Employee of Test Shop Ltd opens a document link belonging to another employee (ask the tester for a URL). | Not allowed (404 / forbidden). | |
+| EM-22 | **Forgot password?** as an employee. | Reset email E-03; after the new password you land on the portal (no code unless two-step sign-in is on). | |
+| EM-23 | **Log out**. | Back to the login page. | |
 
 ---
 
@@ -399,6 +415,7 @@ cd ~/sponsersafe.codely.quest
 |---|---|---|---|
 | JOB-01 | `php artisan schedule:list` | Four jobs: `billing:check` 06:00, `reminders:send` 07:00, `absences:check-clock-ins` 20:00, `bank-holidays:sync` monthly (times in UTC). | |
 | JOB-02 | Wait a day; check the reminder email arrived without running anything by hand. | Proves the cron job runs. | |
+| JOB-03 | `php artisan bank-holidays:sync` | "Imported N bank holidays." (England and Wales, from gov.uk), no error. | |
 
 ### 6.2 Reminders
 
@@ -407,6 +424,10 @@ cd ~/sponsersafe.codely.quest
 | JOB-10 | Make sure an employee's visa expires in about 60 days (BA-43), then run `php artisan reminders:send`. | Admins get **"1 compliance reminder for Test Shop Ltd"** (E-09) listing the expiry. | |
 | JOB-11 | Run `php artisan reminders:send` again. | **No** second email for the same thing (each stage is sent once). | |
 | JOB-12 | A pending Home Office task due within 5 working days, or overdue, then run the job. | Included in the reminder email. | |
+| JOB-13 | Visa alert stages: give three sponsored workers visa expiries about **90**, **60** and **30** days away (and one already expired), then run the job. | Each appears in the email at its stage (90 / 60 / 30 days, expired). A new expiry date for someone starts their alerts again. | |
+| JOB-14 | A pre-settled or other-visa worker whose follow-up check is within 30 days; someone whose passport expires within 90 days. Run the job. | Both are listed (follow-up check due; passport expiring). | |
+| JOB-15 | A leaver whose records are past their delete-after date (local copy: Priya Shah). Run the job. | "Records due for deletion" is in the email (sent once a month). | |
+| JOB-16 | A business with nothing due. Run the job. | No email for that business. | |
 
 ### 6.3 Payments over time (Stripe test mode)
 
@@ -416,7 +437,15 @@ cd ~/sponsersafe.codely.quest
 | JOB-21 | Move the test clock past the grace period (7 days), then run `php artisan billing:check`. | Business **suspended** (reason payment); admins get **E-07**; nobody can sign in. | |
 | JOB-22 | Pay the invoice in Stripe (change back to `4242…`). | Business active again; sign-in works. | |
 | JOB-23 | Customer portal → **Cancel** subscription. Stripe ends it at the end of the paid month: move the test clock past the next payment date. | The business keeps access until the paid month ends, then is **suspended** (reason cancelled) and admins get **E-07**. (PayPal ends at once: Settings shows **Cancelled** with "access until {date}", and `billing:check` suspends it on that date.) | |
-| JOB-24 | Super admin → Payment gateways: check the Stripe webhook shows recent deliveries without errors in the Stripe Dashboard (Developers → Webhooks). | All 2xx. | |
+| JOB-24 | Check the Stripe webhook's recent deliveries in the Stripe Dashboard (Developers → Webhooks). | All succeeded (2xx). | |
+
+### 6.3a PayPal over time (sandbox)
+
+| ID | Steps | Expected | Pass |
+|---|---|---|---|
+| JOB-25 | developer.paypal.com → your sandbox app → Webhooks → check recent events for `…/paypal/webhook`. | Delivered successfully. | |
+| JOB-26 | Test Cafe Ltd admin: Settings → **Manage billing in PayPal**, or the sandbox personal account → Automatic payments → **cancel** SponsorSafe. | Settings shows **Cancelled** and "access until {next payment date}". Sign-in still works until then; `billing:check` on that date suspends it (E-07). | |
+| JOB-27 | Test Cafe Ltd: Settings → **Change plan** (e.g. to Starter, if staff fit). | Sent to PayPal to approve the new price; after approving you come back and the plan shows the change. Cancelling on PayPal leaves the old plan. | |
 
 ### 6.4 Clock-in check
 
@@ -443,6 +472,9 @@ cd ~/sponsersafe.codely.quest
 | SEC-10 | Audit log (ask the site owner to check the `audit_logs` table in phpMyAdmin). | Entries for sign-ins, document views/downloads, record changes, suspensions, price/gateway changes, exports and password changes, with who, when and IP. | |
 | SEC-11 | Upload a renamed file (e.g. a `.exe` renamed to `.pdf`). | Refused. | |
 | SEC-12 | Super admin address never appears on the website or in emails. | Not linked anywhere. | |
+| SEC-13 | Open an address that doesn't exist, e.g. `/this-does-not-exist`. | A plain "Not Found" page. **No** technical error details, file paths or code on screen (if you see any, `APP_DEBUG` must be `false` on the live site). | |
+| SEC-14 | Sign in, leave the tab idle for more than 2 hours, then click something. | You're asked to sign in again. | |
+| SEC-15 | Removed or ended logins (removed admin, leaver, removed super admin) try to sign in. | All refused. | |
 
 ---
 
