@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\App\AbsenceController;
+use App\Http\Controllers\App\ActivityController;
+use App\Http\Controllers\Ops\ActivityController as OpsActivityController;
 use App\Http\Controllers\App\ClockInController;
 use App\Http\Controllers\App\DashboardController;
 use App\Http\Controllers\App\DocumentController;
@@ -116,6 +118,7 @@ Route::middleware(['auth:web', 'business.active', 'role:admin'])->prefix('app')-
     Route::post('/absence/{absence}/fit-note', [AbsenceController::class, 'fitNote'])->whereNumber('absence')->name('absence.fit-note');
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
+    Route::get('/activity', ActivityController::class)->name('activity');
     Route::post('/settings/billing', [SettingsController::class, 'billing'])->middleware(['stripe', 'throttle:10,1'])->name('billing');
     Route::post('/settings/plan', [SettingsController::class, 'changePlan'])->middleware(['stripe', 'throttle:10,1'])->name('plan.change');
     Route::get('/settings/plan/paypal', [SettingsController::class, 'paypalPlan'])->middleware('throttle:10,1')->name('plan.paypal');
@@ -183,6 +186,7 @@ Route::prefix(config('sponsorsafe.ops_path'))->middleware('ops.ip')->name('ops.'
         Route::post('/super-admins', [SuperAdminController::class, 'store'])->middleware('throttle:10,1')->name('admins.store');
         Route::post('/super-admins/{admin}/resend', [SuperAdminController::class, 'resend'])->whereNumber('admin')->middleware('throttle:10,1')->name('admins.resend');
         Route::delete('/super-admins/{admin}', [SuperAdminController::class, 'destroy'])->whereNumber('admin')->name('admins.destroy');
+        Route::get('/activity', OpsActivityController::class)->name('activity');
         Route::get('/account', [SuperAdminController::class, 'account'])->name('account');
         Route::put('/account/password', [SuperAdminController::class, 'password'])->middleware('throttle:10,1')->name('account.password');
         Route::post('/logout', [OpsAuthController::class, 'destroy'])->name('logout');

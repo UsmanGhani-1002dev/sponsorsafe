@@ -3,10 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\Business;
+use App\Models\Document;
 use App\Models\Employee;
 use App\Models\ReportTask;
 use App\Models\User;
 use App\Notifications\ComplianceDigest;
+use App\Services\Reminders;
 use Carbon\CarbonImmutable;
 use Database\Seeders\BankHolidaySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -36,15 +38,29 @@ class RemindersTest extends TestCase
         return Employee::factory()->sponsored()->create(['business_id' => $this->business->id, 'full_name' => 'Aisha Rahman', ...$attributes]);
     }
 
-    /** Run the daily job on a date and return the texts emailed to the admin that day. */
-    private function runOn(string $date): array
+    /**
+     * Run the daily job on a date and return the texts emailed to the admin that day. Missing-payslip reminders are left
+     * out unless asked for (the factory's workers started in 2025 with no payslips).
+     */
+    private function runOn(string $date, bool $payslips = false): array
     {
         $this->travelTo(CarbonImmutable::parse("$date 07:00"));
         $before = Notification::sent($this->admin, ComplianceDigest::class)->count();
         $this->artisan('reminders:send')->assertSuccessful();
 
         return Notification::sent($this->admin, ComplianceDigest::class)->slice($before)
-            ->flatMap(fn (ComplianceDigest $n) => array_column($n->items, 'text'))->values()->all();
+            ->flatMap(fn (ComplianceDigest $n) => $n->items)
+            ->filter(fn ($i) => $payslips === ($i['type'] === Reminders::PAYSLIP))
+            ->pluck('text')->values()->all();
+    }
+
+    private function payslip(Employee $e, string $on, ?string $review = null): Document
+    {
+        $doc = Document::create(['business_id' => $e->business_id, 'employee_id' => $e->id, 'category' => 'payroll', 'original_name' => "payslip-$on.pdf",
+            'path' => "documents/x/$on.enc", 'mime' => 'application/pdf', 'size' => 10, 'review_status' => $review]);
+        $doc->forceFill(['created_at' => "$on 09:00:00"])->save();
+
+        return $doc;
     }
 
     public function test_acceptance_visa_expiry_alerts_fire_at_90_60_and_30_days(): void
@@ -107,7 +123,7 @@ class RemindersTest extends TestCase
 
     public function test_one_digest_per_business_and_only_for_active_businesses(): void
     {
-        $this->sponsored(['visa_expiry' => '2026-10-20', 'follow_up_check_due' => '2026-10-20', 'passport_expiry' => '2026-11-01']);
+        $this->payslip($this->sponsored(['visa_expiry' => '2026-10-20', 'follow_up_check_due' => '2026-10-20', 'passport_expiry' => '2026-11-01']), '2026-10-01');
         $second = User::factory()->admin()->create(['business_id' => $this->business->id]);
         $suspended = Business::factory()->suspended()->create();
         $suspendedAdmin = User::factory()->admin()->create(['business_id' => $suspended->id]);
@@ -134,11 +150,43 @@ class RemindersTest extends TestCase
     public function test_the_dashboard_shows_what_is_coming_up(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-10-06 09:00'));
-        $this->sponsored(['visa_expiry' => '2026-11-05', 'follow_up_check_due' => null]);
+        $this->sponsored(['visa_expiry' => '2026-11-05', 'follow_up_check_due' => null, 'start_date' => '2026-09-14']);
 
         $this->actingAs($this->admin)->get('/app')->assertInertia(fn (Assert $p) => $p->has('reminders', 1)
             ->where('reminders.0.text', "Aisha Rahman's visa or permission ends on 5 Nov 2026 (30 days)")
             ->where('reminders.0.tone', 'red')
             ->where('reminders.0.href', '/app/employees/'.Employee::sole()->id));
+    }
+
+    public function test_a_missing_payslip_is_reminded_when_overdue_then_monthly_until_one_is_uploaded(): void
+    {
+        $e = $this->sponsored(['visa_expiry' => null, 'follow_up_check_due' => null]);
+        $this->payslip($e, '2026-10-01');
+        $this->payslip($e, '2026-10-20', review: Document::PENDING_REVIEW); // sent from the portal, not accepted yet: does not count
+
+        $this->assertSame([], $this->runOn('2026-11-05', payslips: true)); // 35 days: still fresh
+        $this->assertSame(['No payslip uploaded for Aisha Rahman since 1 Oct 2026: upload the latest one from your accountant'], $this->runOn('2026-11-06', payslips: true));
+        $this->assertSame([], $this->runOn('2026-11-20', payslips: true)); // not repeated every day
+        $this->assertCount(1, $this->runOn('2026-12-06', payslips: true)); // a month later, still missing
+
+        $this->payslip($e, '2026-12-07');
+        $this->assertSame([], $this->runOn('2026-12-08', payslips: true));
+        $this->assertCount(1, $this->runOn('2027-01-12', payslips: true)); // the next one is late: starts again
+    }
+
+    public function test_payslip_reminders_are_for_sponsored_workers_and_wait_for_a_new_starters_first_payday(): void
+    {
+        $this->sponsored(['full_name' => 'Rahul Mehta', 'start_date' => '2026-10-25']);
+        $this->sponsored(['full_name' => 'Kasia Nowak', 'start_date' => '2026-09-01']);
+        Employee::factory()->create(['business_id' => $this->business->id, 'full_name' => 'James Carter', 'start_date' => '2025-01-13']); // not sponsored
+        Employee::factory()->sponsored()->left('2026-10-31')->create(['business_id' => $this->business->id, 'full_name' => 'Chloe Martin']);
+
+        $this->assertSame(['No payslip on file for Kasia Nowak, who started on 1 Sep 2026: upload the payslips your accountant sends'], $this->runOn('2026-11-24', payslips: true));
+        // Rahul's first payslip is late 35 days after he started; Kasia is not reminded again until a month after her first reminder.
+        $this->assertSame([], $this->runOn('2026-11-29', payslips: true));
+        $this->assertSame(['No payslip on file for Rahul Mehta, who started on 25 Oct 2026: upload the payslips your accountant sends'], $this->runOn('2026-11-30', payslips: true));
+
+        $this->actingAs($this->admin)->get('/app')->assertInertia(fn (Assert $p) => $p
+            ->where('reminders', fn ($r) => collect($r)->pluck('href')->contains('/app/employees/'.Employee::where('full_name', 'Kasia Nowak')->value('id').'?tab=docs')));
     }
 }

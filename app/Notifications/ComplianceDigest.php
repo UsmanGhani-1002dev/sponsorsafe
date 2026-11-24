@@ -30,6 +30,6 @@ class ComplianceDigest extends Notification
 
         return $mail
             ->action('Open your dashboard', route('app.dashboard'))
-            ->line('You only get each reminder once. Change when reminders are sent in Settings → Compliance rules.');
+            ->line('You only get each reminder once (a missing payslip once a month). Change when reminders are sent in Settings → Compliance rules.');
     }
 }

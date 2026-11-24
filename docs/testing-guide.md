@@ -184,6 +184,8 @@ Sign in at `https://…/<OPS_PATH>/login` from an allowed IP address.
 | SA-41 | Change password with the right current password, a new one (12+), and the authenticator code. | "Password changed…". Email **"Your SponsorSafe password was changed"** (E-10). You stay signed in. | |
 | SA-42 | Sign in as the same super admin in a second browser *before* SA-41; after SA-41, click anything there. | The second browser is signed out. | |
 | SA-43 | **Log out**. | Back to the sign-in page; Back button doesn't show super admin pages. | |
+| SA-44 | Open **Activity log**. | Newest first: when, business, who (with "Super admin", "Admin" or "Employee"), what happened in plain English, and the IP address. Your own sign-ins and the super admin changes above are there. | |
+| SA-45 | Filter by **Business** (Test Shop Ltd), by **What** (e.g. Documents, Super admin area), and by dates; search a person's or business's name. | Each narrows the list correctly; clearing it shows everything again. | |
 
 ---
 
@@ -241,6 +243,9 @@ Sign in at `/login` as `you+admin@gmail.com` (Test Shop Ltd), or `hr@demo-retail
 | BA-36 | **Work sites** → **Close** a site that still has current employees. | Refused: "Move everyone who works at {site} to another site before closing it." | |
 | BA-37 | Close a site with nobody on it. | Shown as closed; a company Home Office task "work address closed" (20 working days). | |
 | BA-38 | **Key personnel**: change a person's name, then remove one. | Each creates its own company Home Office task. | |
+| BA-39 | Settings → **Activity log** (also in Ctrl+K: "Activity log"). | Newest first: when, who (Admin / Employee / SponsorSafe), what happened in plain English (e.g. "Opened passport-scan.pdf (Passport / identity)", "Changed phone"), the employee it was about (click to open them) and the IP address. Nothing from any other business. | |
+| BA-39a | Filter **What** = Documents, **Who** = Employees, a date range, and search an employee's name. | Each narrows the list. Searching a name shows what that person did and what was done to their record (including their Home Office tasks). | |
+| BA-39b | As an employee, open `/app/activity`. | Sent back to the portal; employees can't see it. | |
 
 ### 3.4 Employees
 
@@ -334,7 +339,7 @@ Sign in at `/login` as `you+admin@gmail.com` (Test Shop Ltd), or `hr@demo-retail
 
 | ID | Steps | Expected | Pass |
 |---|---|---|---|
-| BA-110 | **Coming up** card. | Visa/permission expiries, follow-up checks and passports that are coming up. | |
+| BA-110 | **Coming up** card. | Visa/permission expiries, follow-up checks, passports that are coming up, and sponsored workers with no recent payslip ("No payslip uploaded for … since …"; clicking it opens their Documents tab). | |
 | BA-111 | **Unexplained absences** (local copy has two; on live, needs clock-in data: BA-35 + section 6). | Each row: **Classify absence** opens Record absence pre-filled as unauthorised for that day; **Worked – clock-in missed** clears it. Red after 2 working days. | |
 | BA-112 | Payment failed banner (local copy: `hr@demo-catering.example`). | Red banner with "update payment details by {date}". | |
 | BA-113 | **Right-to-work watchlist**. | Everyone with time-limited permission: status, expiry badge (red/amber/green by how soon) and unpaid days used. | |
@@ -433,6 +438,8 @@ cd ~/sponsersafe.codely.quest
 | JOB-18 | The employee sends **New visa or extension** in the portal (EM-13); HR hasn't approved it yet. Run the job at the next stage. | The employee is **not** reminded about the visa again. | |
 | JOB-19 | Leave a document request unanswered and run the job 7 and 14 days after HR asked (or ask the site owner to backdate the request). | The employee is chased once at 7 days and once at 14 days, then no more. Once they upload it (waiting for HR) or HR cancels the request, the chasing stops. | |
 | JOB-19a | An employee without portal access, a leaver, and an employee of a suspended business. | None of them is emailed. | |
+| JOB-19b | A sponsored worker whose latest payslip (category Payslips / payroll) was uploaded more than 35 days ago, or who started more than 35 days ago with none. Run the job. | The admins' email says **"No payslip uploaded for {name} since {date}"** (or "No payslip on file for {name}, who started on {date}"). Run again: not repeated; it comes again a month later if still missing. | |
+| JOB-19c | Upload a payslip for that worker as HR, then run the job. | No payslip reminder. A payslip sent from the portal and still waiting for HR does **not** count. Non-sponsored workers and new starters (less than 35 days) are never reminded. | |
 
 ### 6.3 Payments over time (Stripe test mode)
 
@@ -474,7 +481,7 @@ cd ~/sponsersafe.codely.quest
 | SEC-07 | All pages use `https://` with a padlock. Try `http://` – it should redirect. | HTTPS only. | |
 | SEC-08 | Password reset, invite and super admin links: use twice, and after expiry. | Refused the second time and after expiry. | |
 | SEC-09 | Passport, NI and share code anywhere in the app or PDFs. | Last 4 only. | |
-| SEC-10 | Audit log (ask the site owner to check the `audit_logs` table in phpMyAdmin). | Entries for sign-ins, document views/downloads, record changes, suspensions, price/gateway changes, exports and password changes, with who, when and IP. | |
+| SEC-10 | Audit log: Settings → **Activity log** (business) and **Activity log** (super admin). | Entries for sign-ins, document views/downloads, record changes, suspensions, price/gateway changes, exports and password changes, with who, when and IP. | |
 | SEC-11 | Upload a renamed file (e.g. a `.exe` renamed to `.pdf`). | Refused. | |
 | SEC-12 | Super admin address never appears on the website or in emails. | Not linked anywhere. | |
 | SEC-13 | Open an address that doesn't exist, e.g. `/this-does-not-exist`. | A plain "Not Found" page. **No** technical error details, file paths or code on screen (if you see any, `APP_DEBUG` must be `false` on the live site). | |

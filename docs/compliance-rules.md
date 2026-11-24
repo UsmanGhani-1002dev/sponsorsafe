@@ -146,6 +146,7 @@ integration: build the alert model and screens, stub the import interface.
 | Passport expiry | 90 days before |
 | Home Office task deadline | 5 working days before, and when overdue |
 | Unexplained absence | Next morning, red after 2 working days |
+| Payslip missing (sponsored workers) | Latest payslip older than payslip freshness (35 days), counted from the start date if there is none; then every 30 days until one is uploaded |
 
 ## 13. Acceptance tests (must pass before go-live)
 

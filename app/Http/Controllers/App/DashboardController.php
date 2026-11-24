@@ -57,9 +57,9 @@ class DashboardController extends Controller
                     'badge' => $u->badge($wd, (int) $business->rule('unexplained_red_after_days')),
                 ]),
             ],
-            // Expiries and follow-up checks coming up (§12). Deadlines and deletions have their own cards.
+            // Expiries, follow-up checks and missing payslips (§12). Deadlines and deletions have their own cards.
             'reminders' => $reminders->current($business)
-                ->whereIn('type', [Reminders::VISA, Reminders::FOLLOW_UP, Reminders::PASSPORT])
+                ->whereIn('type', [Reminders::VISA, Reminders::FOLLOW_UP, Reminders::PASSPORT, Reminders::PAYSLIP])
                 ->take(8)
                 ->map(fn ($i) => ['key' => "{$i['type']}-{$i['subject']}", 'text' => $i['text'], 'tone' => $i['tone'], 'href' => $i['href']])
                 ->values(),

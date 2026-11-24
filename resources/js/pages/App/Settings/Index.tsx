@@ -155,6 +155,14 @@ export default function Settings({ business, admins, login, people, roles, plan,
                 </Link>
             </Card>
 
+            <SectionTitle title="Activity log" description="Every sign-in, document view and change, with who did it and when. It cannot be edited." />
+            <Card className="flex flex-wrap items-center justify-between gap-3 p-5">
+                <p className="text-sm text-ink-2">Useful at a Home Office visit, or when someone asks who looked at their documents.</p>
+                <Link href="/app/activity" className="inline-flex min-h-11 items-center rounded-lg border border-line-strong bg-surface px-4 text-[15px] font-semibold text-ink-2 hover:bg-canvas">
+                    Open the activity log
+                </Link>
+            </Card>
+
             <SectionTitle title="Compliance rules" description="The thresholds and deadlines behind every Home Office check. Changes apply to checks from now on; past records keep their result." />
             <RulesForm {...rules} />
         </AppLayout>

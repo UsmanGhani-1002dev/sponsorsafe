@@ -37,6 +37,8 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
   super admins; super admins add other super admins from the super admin area. 281 PHPUnit tests passing.
 - **Employee reminders (24 Nov 2026): done and tested** — employees are emailed about their own visa expiry (new share
   code) and documents HR asked for. 288 PHPUnit tests passing.
+- **Payslip reminders and Activity log (24 Nov 2026): done and tested** — admins are reminded when a sponsored worker's
+  payslip is missing; Settings → Activity log and a super admin Activity log show the audit log. 294 PHPUnit tests passing.
 - **Next:** Stage 7c (AI chat assistant).
 - Local setup on this laptop is done (git repo, MySQL databases, PHP 8.4).
 
@@ -428,6 +430,19 @@ Demo logins (password `password`, local only):
   not already uploaded. Only current employees with an active portal login, in active businesses. Stages are stored in
   `reminders` (types `employee_visa`, `employee_document`) so each is sent once. `reminders:send` runs it after the admins'
   digest. The employee privacy notice mentions these emails.
+
+## Payslip reminders and Activity log (follow these conventions)
+
+- `Reminders::PAYSLIP` (`payslip_missing`, compliance-rules §12): current sponsored workers whose latest filed payslip
+  (category payroll; portal uploads waiting for HR do not count) is older than `payslip_freshness_days`, counted from the
+  start date when there is none. Stage = months overdue @ due date, so it is emailed when overdue, then every 30 days;
+  a new upload starts again. Shown on the dashboard "Coming up" card (links to the Documents tab, `?tab=docs`).
+- **`App\Services\ActivityLog`** turns `audit_logs` rows into plain English (`describe()`), with filters (`TYPES` by action
+  prefix, `WHO`, dates) and search by person (actor login, employee subject, `meta.employee_id`, their report tasks).
+  `rows()` loads names once per page. **A new `Audit::log` action needs a line in `describe()`** (the fallback is the raw
+  action name). Business view `/app/activity` (Settings → Activity log, palette) shows only its own business, with super
+  admins as "SponsorSafe support"; super admin view `/{ops}/activity` covers everything, with a Business filter. Sorted by
+  id (newest first). Read-only: nothing edits or deletes audit entries.
 
 ## UI and performance rules ("modern and very fast")
 

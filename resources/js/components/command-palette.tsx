@@ -1,6 +1,6 @@
 import { cn } from '@/lib/cn';
 import { router } from '@inertiajs/react';
-import { ClipboardCheck, CornerDownLeft, FileWarning, Inbox, KeyRound, LayoutDashboard, Plus, Search, Settings, Trash2, User, Users, type LucideIcon } from 'lucide-react';
+import { ClipboardCheck, CornerDownLeft, FileWarning, History, Inbox, KeyRound, LayoutDashboard, Plus, Search, Settings, Trash2, User, Users, type LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 
 /**
@@ -26,6 +26,7 @@ const screens: Item[] = [
     { id: 's-requests', group: 'Screens', label: 'Requests', href: '/app/requests', icon: Inbox },
     { id: 's-settings', group: 'Screens', label: 'Settings', detail: 'Business, plan, key personnel, work sites, rules', href: '/app/settings', icon: Settings },
     { id: 's-retention', group: 'Screens', label: "Leavers' records due for deletion", href: '/app/retention', icon: Trash2 },
+    { id: 's-activity', group: 'Screens', label: 'Activity log', detail: 'Sign-ins, document views and changes', href: '/app/activity', icon: History },
 ];
 
 let peopleCache: Person[] | null = null;

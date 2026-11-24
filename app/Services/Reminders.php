@@ -2,12 +2,16 @@
 
 namespace App\Services;
 
+use App\Enums\DocumentCategory;
+use App\Enums\RightToWorkBasis;
 use App\Models\Business;
+use App\Models\Document;
 use App\Models\Employee;
 use App\Models\Reminder;
 use App\Models\UnexplainedAbsence;
 use App\Notifications\ComplianceDigest;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
 
@@ -19,6 +23,7 @@ use Illuminate\Support\Facades\Notification;
  *   Home Office task deadline  — `task_alert_working_days` (5) working days before, and when overdue
  *   leavers' records due for deletion — once a month while any are due (the Stage 6 review)
  *   unexplained absence (§11) — the morning after it is found
+ *   payslip missing            — a sponsored worker's latest payslip is older than `payslip_freshness_days` (35), then monthly
  * A stage includes the date it is about ("60@2026-12-10"), so a new visa expiry starts the reminders again.
  */
 class Reminders
@@ -29,6 +34,7 @@ class Reminders
     public const TASK = 'task_deadline';
     public const RETENTION = 'retention_due';
     public const UNEXPLAINED = 'unexplained_absence';
+    public const PAYSLIP = 'payslip_missing';
 
     /**
      * Everything that needs attention now, soonest first.
@@ -82,6 +88,8 @@ class Reminders
                 }
             }
         }
+
+        $items->push(...$this->payslips($business, $today));
 
         $soon = (int) $business->rule('task_alert_working_days');
         $wd = WorkingDays::fromDatabase();
@@ -149,6 +157,37 @@ class Reminders
         });
 
         return [$businesses, $reminders];
+    }
+
+    /**
+     * Sponsored workers whose latest payslip is older than `payslip_freshness_days` (35), the same test as the
+     * Compliance check. Someone with no payslip yet counts from their start date, so a new starter is not chased
+     * before their first payday. Reminded when it becomes overdue, then every 30 days while still missing; a new
+     * upload starts again. Portal uploads waiting for HR do not count.
+     */
+    private function payslips(Business $business, CarbonInterface $today): array
+    {
+        $fresh = (int) $business->rule('payslip_freshness_days');
+        $employees = $business->employees()->current()->where('rtw_basis', RightToWorkBasis::Sponsored->value)->whereNotNull('start_date')
+            ->withMax(['documents as last_payslip_at' => fn ($q) => $q->where('category', DocumentCategory::Payroll->value)
+                ->where(fn ($q) => $q->whereNull('review_status')->orWhere('review_status', '!=', Document::PENDING_REVIEW))], 'created_at')
+            ->get(['id', 'full_name', 'start_date']);
+
+        $items = [];
+        foreach ($employees as $e) {
+            $last = $e->last_payslip_at ? Carbon::parse($e->last_payslip_at)->startOfDay() : null;
+            $age = (int) ($last ?? $e->start_date)->diffInDays($today, false);
+            if ($age <= $fresh) {
+                continue;
+            }
+            $due = ($last ?? $e->start_date)->copy()->addDays($fresh);
+            $text = $last
+                ? "No payslip uploaded for {$e->full_name} since {$this->date($last)}: upload the latest one from your accountant"
+                : "No payslip on file for {$e->full_name}, who started on {$this->date($e->start_date)}: upload the payslips your accountant sends";
+            $items[] = $this->item(self::PAYSLIP, "employee:{$e->id}", (string) intdiv($age - $fresh - 1, 30), $due, $text, 'amber', "/app/employees/{$e->id}?tab=docs");
+        }
+
+        return $items;
     }
 
     private function item(string $type, string $subject, string $stage, CarbonInterface $date, string $text, string $tone, string $href): array

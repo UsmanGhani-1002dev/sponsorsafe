@@ -14,6 +14,7 @@ export default function OpsLayout({ title, base, children }: { title: string; ba
         { label: 'Payment gateways', href: `${base}/gateways`, ready: true },
         { label: 'Enquiries and training', href: `${base}/enquiries`, ready: true, count: ops?.newEnquiries ?? 0 },
         { label: 'Super admins', href: `${base}/super-admins`, ready: true },
+        { label: 'Activity log', href: `${base}/activity`, ready: true },
         { label: 'AI chat assistant', href: `${base}/assistant`, ready: false },
     ];
 
