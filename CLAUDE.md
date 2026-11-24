@@ -39,6 +39,7 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
   code) and documents HR asked for. 288 PHPUnit tests passing.
 - **Payslip reminders and Activity log (24 Nov 2026): done and tested** — admins are reminded when a sponsored worker's
   payslip is missing; Settings → Activity log and a super admin Activity log show the audit log. 294 PHPUnit tests passing.
+- **Get started checklist and Home Office visit pack (24 Nov 2026): done and tested** — 297 PHPUnit tests passing.
 - **Next:** Stage 7c (AI chat assistant).
 - Local setup on this laptop is done (git repo, MySQL databases, PHP 8.4).
 
@@ -443,6 +444,20 @@ Demo logins (password `password`, local only):
   action name). Business view `/app/activity` (Settings → Activity log, palette) shows only its own business, with super
   admins as "SponsorSafe support"; super admin view `/{ops}/activity` covers everything, with a Business filter. Sorted by
   id (newest first). Read-only: nothing edits or deletes audit entries.
+
+## Get started and Home Office visit pack (follow these conventions)
+
+- `App\Support\SetupChecklist::for($business)` (dashboard prop `setup`): business address + licence number, Authorising
+  Officer and Key Contact, an open work site, a current employee, every current employee with a filed right-to-work
+  document (portal uploads waiting for HR do not count). Returns null when all five are done, so the card disappears by
+  itself. Buttons link to `/app/settings#business|#people|#sites` (anchor ids on the Settings page) and Employees.
+- **`App\Services\VisitPack`**: one PDF (`resources/views/pdf/visit-pack.blade.php`) for the whole business: sponsor
+  details, key personnel, work sites, every current employee's status and what to fix, pending reports, then
+  `CompliancePack::data()` for each current employee (sponsored first; leavers left out). The per-worker body is the
+  shared partial `pdf/partials/worker-pack.blade.php` (styles in `pdf/partials/pack-styles.blade.php`), also used by the
+  single pack. `GET /app/visit-pack` (throttled), audited `employee.visit_pack_exported`. Buttons: dashboard and Employees
+  headers (`components/visit-pack-link.tsx`, a plain `<a>`) and the Ctrl+K action (palette items with `download: true`
+  use a normal browser request, not an Inertia visit).
 
 ## UI and performance rules ("modern and very fast")
 

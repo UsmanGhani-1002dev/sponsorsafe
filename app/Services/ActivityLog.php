@@ -175,6 +175,7 @@ class ActivityLog
             'employee.ended' => 'Ended employment'.(($d = $date($m['last_day'] ?? null)) ? " (last day {$d}".(isset($m['reason']) ? ", {$m['reason']}" : '').')' : ''),
             'employee.invited' => 'Sent a portal invite',
             'employee.pack_exported' => 'Downloaded the compliance pack',
+            'employee.visit_pack_exported' => 'Downloaded the Home Office visit pack ('.($m['employees'] ?? 0).' employees)',
 
             'employee_request.sent' => trim('Sent a '.$kind().' request'),
             'employee_request.approved' => trim('Approved a '.$kind().' request'),

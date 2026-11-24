@@ -1,4 +1,5 @@
 import { Alert } from '@/components/ui/alert';
+import { VisitPackLink } from '@/components/visit-pack-link';
 import type { TaskRow } from '@/components/report-task';
 import { Badge, type Tone } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/cn';
 import { Link, router } from '@inertiajs/react';
-import { CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Check, CheckCircle2, ShieldCheck } from 'lucide-react';
 
 interface Props {
     business: { name: string; employees: number; limit: number };
@@ -19,9 +20,77 @@ interface Props {
     retentionDue: number;
     reminders: { key: string; text: string; tone: Tone; href: string }[];
     unexplained: { enabled: boolean; items: { id: number; name: string; date: string; badge: { text: string; tone: Tone } }[] };
+    setup: Setup | null;
 }
 
-export default function Dashboard({ business, stats, watchlist, year, deadlines, retentionDue, reminders, unexplained }: Props) {
+interface Setup {
+    steps: { key: string; title: string; detail: string; done: boolean; href: string; action: string }[];
+    done: number;
+    total: number;
+}
+
+/** "Get started": the five set-up steps for a new business. Goes away once all are done. */
+function GetStarted({ setup }: { setup: Setup }) {
+    const next = setup.steps.find((s) => !s.done);
+
+    return (
+        <section aria-labelledby="setup-title" className="mb-6">
+            <Card className="overflow-hidden">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
+                    <div>
+                        <h2 id="setup-title" className="text-lg font-semibold">
+                            Get started
+                        </h2>
+                        <p className="text-sm text-ink-2">Set these up so SponsorSafe can keep your records and tell you what to report.</p>
+                    </div>
+                    <div className="flex min-w-[160px] flex-col gap-1.5">
+                        <span className="text-sm font-semibold">
+                            {setup.done} of {setup.total} done
+                        </span>
+                        <div className="h-2 rounded bg-subtle" role="progressbar" aria-valuenow={setup.done} aria-valuemin={0} aria-valuemax={setup.total} aria-label="Set-up steps done">
+                            <div className="h-2 rounded bg-accent-fill" style={{ width: `${Math.round((setup.done / setup.total) * 100)}%` }} />
+                        </div>
+                    </div>
+                </div>
+                <ol>
+                    {setup.steps.map((s, i) => (
+                        <li key={s.key} className="flex flex-wrap items-center gap-3 border-t border-line px-5 py-3.5 first:border-t-0">
+                            <span
+                                aria-hidden
+                                className={cn(
+                                    'inline-flex size-7 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold',
+                                    s.done ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300' : 'border border-line-strong text-ink-2',
+                                )}
+                            >
+                                {s.done ? <Check size={15} /> : i + 1}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                                <p className={cn('font-semibold', s.done && 'text-muted line-through decoration-1')}>
+                                    {s.title}
+                                    <span className="sr-only">{s.done ? ' (done)' : ' (to do)'}</span>
+                                </p>
+                                <p className="text-[13px] text-muted">{s.detail}</p>
+                            </div>
+                            {!s.done && (
+                                <Link
+                                    href={s.href}
+                                    className={cn(
+                                        'inline-flex min-h-11 items-center rounded-lg px-4 text-sm font-semibold',
+                                        s === next ? 'bg-accent-fill text-white hover:bg-accent-fill-hover' : 'border border-line-strong bg-surface text-ink-2 hover:bg-canvas',
+                                    )}
+                                >
+                                    {s.action}
+                                </Link>
+                            )}
+                        </li>
+                    ))}
+                </ol>
+            </Card>
+        </section>
+    );
+}
+
+export default function Dashboard({ business, stats, watchlist, year, deadlines, retentionDue, reminders, unexplained, setup }: Props) {
     const tiles = [
         { label: 'Home Office reports pending', value: stats.pending, hint: 'Worker and company events', href: '/app/reports?status=pending', alert: false },
         { label: 'Due within 5 working days', value: stats.urgent, hint: 'Including overdue', href: '/app/reports?status=pending', alert: stats.urgent > 0 },
@@ -31,7 +100,11 @@ export default function Dashboard({ business, stats, watchlist, year, deadlines,
 
     return (
         <AppLayout title="Dashboard">
-            <PageHeader title="Dashboard" description={`${business.name} · ${business.employees} of ${business.limit} employees on your plan`} />
+            <PageHeader
+                title="Dashboard"
+                description={`${business.name} · ${business.employees} of ${business.limit} employees on your plan`}
+                actions={business.employees > 0 ? <VisitPackLink /> : undefined}
+            />
             {retentionDue > 0 && (
                 <div className="mb-5">
                     <Alert tone="warning">
@@ -42,6 +115,7 @@ export default function Dashboard({ business, stats, watchlist, year, deadlines,
                     </Alert>
                 </div>
             )}
+            {setup && <GetStarted setup={setup} />}
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {tiles.map((t) => {

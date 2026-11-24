@@ -1,6 +1,6 @@
 import { cn } from '@/lib/cn';
 import { router } from '@inertiajs/react';
-import { ClipboardCheck, CornerDownLeft, FileWarning, History, Inbox, KeyRound, LayoutDashboard, Plus, Search, Settings, Trash2, User, Users, type LucideIcon } from 'lucide-react';
+import { ClipboardCheck, CornerDownLeft, Download, FileWarning, History, Inbox, KeyRound, LayoutDashboard, Plus, Search, Settings, Trash2, User, Users, type LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 
 /**
@@ -8,13 +8,14 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent }
  * Employees come from /app/palette the first time it opens (then refreshed in the background).
  * A native <dialog>: focus stays inside, Escape closes it, focus returns to where it was.
  */
-type Item = { id: string; group: 'Actions' | 'Screens' | 'Employees'; label: string; detail?: string; href: string; icon: LucideIcon; muted?: boolean };
+type Item = { id: string; group: 'Actions' | 'Screens' | 'Employees'; label: string; detail?: string; href: string; icon: LucideIcon; muted?: boolean; download?: boolean };
 type Person = { id: number; name: string; detail: string; leaver: boolean };
 
 const actions: Item[] = [
     { id: 'a-employee', group: 'Actions', label: 'Add employee', href: '/app/employees/create', icon: Plus },
     { id: 'a-absence', group: 'Actions', label: 'Record absence', href: '/app/absence/create', icon: Plus },
     { id: 'a-report', group: 'Actions', label: 'Create Home Office report', href: '/app/reports?create=1', icon: Plus },
+    { id: 'a-visit', group: 'Actions', label: 'Prepare for a Home Office visit', detail: 'Download the visit pack (PDF)', href: '/app/visit-pack', icon: Download, download: true },
     { id: 'a-password', group: 'Actions', label: 'Change my password', href: '/app/settings#password', icon: KeyRound },
 ];
 
@@ -87,7 +88,9 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
         (item: Item | undefined) => {
             if (!item) return;
             onClose();
-            router.visit(item.href);
+            // A file download is a normal browser request, not an Inertia page visit.
+            if (item.download) window.location.href = item.href;
+            else router.visit(item.href);
         },
         [onClose],
     );

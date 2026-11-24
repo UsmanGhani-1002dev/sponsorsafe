@@ -3,6 +3,7 @@ import { Alert } from '@/components/ui/alert';
 import { Badge, type Tone } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/ui/page-header';
+import { VisitPackLink } from '@/components/visit-pack-link';
 import AppLayout from '@/layouts/app-layout';
 import { Link } from '@inertiajs/react';
 import { Plus, Users } from 'lucide-react';
@@ -75,11 +76,14 @@ export default function EmployeesIndex({ employees, table, bases, plan }: Props)
                 title="Employees"
                 description={`${plan.used} of ${plan.limit} employees on your plan.`}
                 actions={
-                    plan.reached ? undefined : (
-                        <Link href="/app/employees/create" prefetch className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-accent-fill px-4 text-[15px] font-semibold text-white hover:bg-accent-fill-hover">
-                            <Plus size={18} aria-hidden /> Add employee
-                        </Link>
-                    )
+                    <div className="flex flex-wrap gap-2">
+                        {plan.used > 0 && <VisitPackLink />}
+                        {!plan.reached && (
+                            <Link href="/app/employees/create" prefetch className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-accent-fill px-4 text-[15px] font-semibold text-white hover:bg-accent-fill-hover">
+                                <Plus size={18} aria-hidden /> Add employee
+                            </Link>
+                        )}
+                    </div>
                 }
             />
             {plan.reached && (

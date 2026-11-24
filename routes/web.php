@@ -12,6 +12,7 @@ use App\Http\Controllers\App\ReportTaskController;
 use App\Http\Controllers\App\RequestController;
 use App\Http\Controllers\App\RetentionController;
 use App\Http\Controllers\App\SettingsController;
+use App\Http\Controllers\App\VisitPackController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\SetPasswordController;
 use App\Http\Controllers\Auth\TwoFactorController;
@@ -119,6 +120,7 @@ Route::middleware(['auth:web', 'business.active', 'role:admin'])->prefix('app')-
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
     Route::get('/activity', ActivityController::class)->name('activity');
+    Route::get('/visit-pack', VisitPackController::class)->middleware('throttle:10,1')->name('visit-pack');
     Route::post('/settings/billing', [SettingsController::class, 'billing'])->middleware(['stripe', 'throttle:10,1'])->name('billing');
     Route::post('/settings/plan', [SettingsController::class, 'changePlan'])->middleware(['stripe', 'throttle:10,1'])->name('plan.change');
     Route::get('/settings/plan/paypal', [SettingsController::class, 'paypalPlan'])->middleware('throttle:10,1')->name('plan.paypal');

@@ -345,6 +345,10 @@ Sign in at `/login` as `you+admin@gmail.com` (Test Shop Ltd), or `hr@demo-retail
 | BA-113 | **Right-to-work watchlist**. | Everyone with time-limited permission: status, expiry badge (red/amber/green by how soon) and unpaid days used. | |
 | BA-114 | **Next Home Office deadlines**. | The nearest pending tasks with badges; clicking one goes to Home Office reports. | |
 | BA-115 | Leavers' records notice (when something is due for deletion). | Notice with a link to the review page. | |
+| BA-116 | **Get started** card, on a newly signed-up business (Test Shop Ltd straight after SU-08). | Five steps with "N of 5 done": business address, key personnel (says which of Authorising Officer / Key Contact is still needed), work sites, add employees, upload each right-to-work check ("N of M employees have…"). Each button goes to the right place in Settings or Employees. Done steps are ticked and crossed out. | |
+| BA-117 | Finish every step (a right-to-work check sent from the portal only counts once HR accepts it). | The card disappears. Add an employee without a right-to-work check: it comes back until that check is uploaded. | |
+| BA-118 | **Prepare for a Home Office visit** (dashboard or Employees page header, or Ctrl+K). | Downloads one PDF: sponsor details, key personnel, work sites, every current employee with their right-to-work status and what is left to fix, pending Home Office reports, then each current employee's compliance pack (sponsored workers first). Leavers are not included. Passport, NI and share code show the last 4 only. | |
+| BA-119 | Settings → Activity log after BA-118. | "Downloaded the Home Office visit pack (N employees)". | |
 
 ---
 

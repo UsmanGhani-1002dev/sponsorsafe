@@ -72,7 +72,9 @@ export default function Settings({ business, admins, login, people, roles, plan,
             <PageHeader title="Settings" />
 
             <div className="grid items-start gap-5 lg:grid-cols-2">
-                <BusinessCard business={business} />
+                <div id="business" className="scroll-mt-20">
+                    <BusinessCard business={business} />
+                </div>
 
                 <Card className="flex flex-col gap-4 p-5 sm:p-6">
                     <div className="flex items-center justify-between">
@@ -142,8 +144,12 @@ export default function Settings({ business, admins, login, people, roles, plan,
                 </Card>
             </div>
 
-            <KeyPersonnel people={people} roles={roles} />
-            <WorkSites sites={sites} employees={employees} />
+            <div id="people" className="scroll-mt-20">
+                <KeyPersonnel people={people} roles={roles} />
+            </div>
+            <div id="sites" className="scroll-mt-20">
+                <WorkSites sites={sites} employees={employees} />
+            </div>
 
             <ClockInCheck clockIn={clockIn} />
 
