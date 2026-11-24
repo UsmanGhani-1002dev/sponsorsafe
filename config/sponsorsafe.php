@@ -17,7 +17,7 @@ return [
         'number' => env('COMPANY_NUMBER'),                           // Companies House number
         'address' => env('COMPANY_ADDRESS', 'Southampton, United Kingdom'),
         'ico' => env('COMPANY_ICO_NUMBER'),                          // ICO data protection registration
-        'legal_updated' => '1 October 2026',                         // date of the current privacy policy and terms
+        'legal_updated' => '24 November 2026',                       // date of the current privacy policy and terms
     ],
 
     // Defaults for new businesses and the public plan (super admin can change them).

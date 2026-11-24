@@ -114,7 +114,7 @@ class RemindersTest extends TestCase
         Employee::factory()->sponsored()->create(['business_id' => $suspended->id, 'visa_expiry' => '2026-10-20']);
 
         $this->travelTo(CarbonImmutable::parse('2026-10-06 07:00'));
-        $this->artisan('reminders:send')->expectsOutputToContain('Sent 3 reminder(s) to 1 business(es).');
+        $this->artisan('reminders:send')->expectsOutputToContain('Sent 3 reminder(s) to 1 business(es), and reminders to 0 employee(s).');
 
         Notification::assertSentToTimes($this->admin, ComplianceDigest::class, 1);
         Notification::assertSentToTimes($second, ComplianceDigest::class, 1);

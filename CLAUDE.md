@@ -35,6 +35,8 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
   268 PHPUnit tests passing.
 - **Change password and super admins (after go-live): done and tested** — Change password for admins, employees and
   super admins; super admins add other super admins from the super admin area. 281 PHPUnit tests passing.
+- **Employee reminders (24 Nov 2026): done and tested** — employees are emailed about their own visa expiry (new share
+  code) and documents HR asked for. 288 PHPUnit tests passing.
 - **Next:** Stage 7c (AI chat assistant).
 - Local setup on this laptop is done (git repo, MySQL databases, PHP 8.4).
 
@@ -416,6 +418,16 @@ Demo logins (password `password`, local only):
   single-use link to `/{ops}/set-password/{token}`, hash stored on `super_admins.password_token`), resend until first
   sign-in, remove — never yourself, never the last. New super admins still need their IP in `OPS_ALLOWED_IPS` (the page
   shows the list and your current IP). `php artisan ops:create-admin` still works as the server-side fallback.
+
+## Employee reminders (follow these conventions)
+
+- **`App\Services\EmployeeReminders`** emails employees their own reminders (`EmployeeReminder`, one email per employee):
+  visa / permission expiry at the `expiry_alert_days` stages and when expired ("Please send your new share code", link to
+  Update my details → New visa), skipped while a visa change request is pending; documents HR asked for, straight away
+  from "Request from employee" (`documentRequested()`), then after `DOCUMENT_CHASE_DAYS` (7, 14) while still awaiting and
+  not already uploaded. Only current employees with an active portal login, in active businesses. Stages are stored in
+  `reminders` (types `employee_visa`, `employee_document`) so each is sent once. `reminders:send` runs it after the admins'
+  digest. The employee privacy notice mentions these emails.
 
 ## UI and performance rules ("modern and very fast")
 

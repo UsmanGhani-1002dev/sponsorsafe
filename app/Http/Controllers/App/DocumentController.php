@@ -8,6 +8,7 @@ use App\Models\Document;
 use App\Models\DocumentRequest;
 use App\Models\Employee;
 use App\Services\DocumentVault;
+use App\Services\EmployeeReminders;
 use App\Support\Audit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -61,7 +62,7 @@ class DocumentController extends Controller
     }
 
     /** "Request from employee": the request appears in their portal (Stage 5). */
-    public function requestFromEmployee(Request $request, int $employee): RedirectResponse
+    public function requestFromEmployee(Request $request, int $employee, EmployeeReminders $reminders): RedirectResponse
     {
         $e = $this->employee($request, $employee);
         $category = DocumentCategory::from($request->validate(['category' => ['required', Rule::enum(DocumentCategory::class)]])['category']);
@@ -70,9 +71,10 @@ class DocumentController extends Controller
         }
         $req = $e->documentRequests()->create(['business_id' => $e->business_id, 'category' => $category, 'requested_by' => $request->user()->id]);
         Audit::log('document.requested', $req, ['employee_id' => $e->id, 'category' => $category->value]);
+        $reminders->documentRequested($req);
 
         return back()->with('success', $category->label().' requested from '.strtok($e->full_name, ' ').'.'
-            .($e->user_id ? ' It will appear in their portal.' : ' They do not have portal access yet, so send them an invite too.'));
+            .($e->user?->active ? ' We have emailed them, and it will appear in their portal.' : ' They do not have portal access yet, so send them an invite too.'));
     }
 
     public function cancelRequest(Request $request, int $documentRequest): RedirectResponse

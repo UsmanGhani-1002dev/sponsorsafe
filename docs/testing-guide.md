@@ -8,7 +8,7 @@ For each check, follow the **Steps**, compare with **Expected**, and tick **Pass
 instead (❌ + note). Report failures with the check ID (for example `BA-24`), a screenshot, the time, and the
 email address you were signed in with.
 
-Last updated: 2 Oct 2026.
+Last updated: 24 Nov 2026.
 
 ---
 
@@ -277,7 +277,7 @@ Sign in at `/login` as `you+admin@gmail.com` (Test Shop Ltd), or `hr@demo-retail
 | BA-62 | Upload a `.docx`, and a file over 10 MB. | Both refused with a clear message. | |
 | BA-63 | **View** and **Download** a document. | Opens / downloads correctly. | |
 | BA-64 | Copy a document's view link, sign out, paste it in the browser. | You're sent to the login page; the file does not open. | |
-| BA-65 | **Request from employee** → Passport / identity for `you+emp1`. | Shows as waiting; Requests → "Waiting for employees" lists it. | |
+| BA-65 | **Request from employee** → Passport / identity for `you+emp1`. | "…We have emailed them…". Shows as waiting; Requests → "Waiting for employees" lists it. `you+emp1` gets **"Please upload your passport / identity"** straight away (E-12). | |
 | BA-66 | Cancel a request. | Removed from waiting. | |
 | BA-67 | Delete a document. | Confirmation; removed. | |
 
@@ -392,6 +392,7 @@ Tick each email once you've seen it arrive, read properly (logo/name, greeting, 
 | E-09 | N compliance reminder(s) for {business} | Business admins | Daily 07:00 reminder job when something is due (6.2). | |
 | E-10 | Your SponsorSafe password was changed | Whoever changed it | Change password: admin (BA-09), employee (EM-16), super admin (SA-41). | |
 | E-11 | You've been added as a SponsorSafe super admin | New super admin | Super admin → Super admins → Add (SA-33). | |
+| E-12 | "Please upload your {document}", "Please send your new share code", or "N things {business} needs from you" | The employee (only with a portal login) | HR asks for a document (BA-65: sent at once, chased after 7 and 14 days), or their visa ends in 90 / 60 / 30 days or has ended (daily job, JOB-17). The button opens the right portal page. | |
 
 Also check for each email:
 - Arrives within a minute or two, and **not in spam**.
@@ -428,6 +429,10 @@ cd ~/sponsersafe.codely.quest
 | JOB-14 | A pre-settled or other-visa worker whose follow-up check is within 30 days; someone whose passport expires within 90 days. Run the job. | Both are listed (follow-up check due; passport expiring). | |
 | JOB-15 | A leaver whose records are past their delete-after date (local copy: Priya Shah). Run the job. | "Records due for deletion" is in the email (sent once a month). | |
 | JOB-16 | A business with nothing due. Run the job. | No email for that business. | |
+| JOB-17 | Employee with a portal login whose visa ends in about 60 days (`you+emp1`). Run the job. | Besides the admins' email, the employee gets **"Please send your new share code"** (E-12), asking for the new expiry date and share code through Update my details → New visa or extension. Run again: no second email. | |
+| JOB-18 | The employee sends **New visa or extension** in the portal (EM-13); HR hasn't approved it yet. Run the job at the next stage. | The employee is **not** reminded about the visa again. | |
+| JOB-19 | Leave a document request unanswered and run the job 7 and 14 days after HR asked (or ask the site owner to backdate the request). | The employee is chased once at 7 days and once at 14 days, then no more. Once they upload it (waiting for HR) or HR cancels the request, the chasing stops. | |
+| JOB-19a | An employee without portal access, a leaver, and an employee of a suspended business. | None of them is emailed. | |
 
 ### 6.3 Payments over time (Stripe test mode)
 

@@ -68,6 +68,10 @@ export default function Privacy({ business, contacts, retentionYears, rtwRetenti
                         So the main legal reason for keeping it is that the law requires it (legal obligation). Some of it, such as your contact details and leave requests, is kept to
                         run your employment (contract).
                     </p>
+                    <p>
+                        Your email address is also used to remind you when your visa or permission to work is about to end, and when {business} is waiting for a document from
+                        you.
+                    </p>
                 </Section>
 
                 <Section title="Who can see it">

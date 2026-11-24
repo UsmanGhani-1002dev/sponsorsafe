@@ -124,7 +124,7 @@ class WebsiteTest extends TestCase
 
         $this->get('/terms')->assertInertia(fn (Assert $p) => $p
             ->where('company.name', 'Enovtec Ltd')->where('company.number', '12345678')->where('company.ico', null)
-            ->where('company.email', 'support@example.co.uk')->where('company.updated', '1 October 2026')
+            ->where('company.email', 'support@example.co.uk')->where('company.updated', '24 November 2026')
             ->where('plans.tiers.0.price', '20')->where('plans.tiers.1.limit', 10)->where('graceDays', 7));
     }
 
