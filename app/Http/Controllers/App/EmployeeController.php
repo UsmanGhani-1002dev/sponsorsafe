@@ -18,6 +18,7 @@ use App\Support\Audit;
 use App\Services\EmployeeRecorder;
 use App\Services\EmployeeRules;
 use App\Services\PasswordLinks;
+use App\Services\PayCheck;
 use App\Services\WorkingDays;
 use App\Support\Badges;
 use App\Support\Table;
@@ -85,6 +86,7 @@ class EmployeeController extends Controller
                 ],
             ],
             'plan' => $this->plan($business),
+            'payMinimum' => (float) $business->rule('sponsored_min_salary'),
             'canFillDemo' => ! app()->isProduction(),
         ]);
     }
@@ -100,7 +102,8 @@ class EmployeeController extends Controller
         $employee = $this->recorder->create($business, $data, $request->user(), $invite);
 
         return redirect()->route('app.employees.show', $employee)->with('success', $employee->full_name.' added.'
-            .($invite ? " Portal invite sent to {$employee->email}, with a request to upload their passport / ID." : ''));
+            .($invite ? " Portal invite sent to {$employee->email}, with a request to upload their passport / ID." : ''))
+            ->with('error', PayCheck::warningFor($employee->setRelation('business', $business)));
     }
 
     public function show(Request $request, int $employee): Response
@@ -162,7 +165,11 @@ class EmployeeController extends Controller
                 'label' => $r->category->label(),
                 'since' => Employee::formatDate($r->created_at),
             ]),
-            'changeTypes' => array_map(fn ($t) => [...$t, 'current' => Employee::displayValue($t['field'], $e->{$t['field']})], ChangeType::options($e->isSponsored())),
+            'changeTypes' => array_map(fn ($t) => [...$t, 'current' => $t['field'] === 'min_salary' && $e->min_salary === null
+                ? 'Not set: the general threshold of '.PayCheck::money(PayCheck::minimumFor($e)).' applies'
+                : Employee::displayValue($t['field'], $e->{$t['field']})], ChangeType::options($e->isSponsored())),
+            // Sponsored workers: the minimum salary for their visa, for the live warning on Record a change.
+            'pay' => $e->isSponsored() ? ['minimum' => PayCheck::minimumFor($e), 'general' => (float) $e->business->rule('sponsored_min_salary'), 'salary' => $e->salary !== null ? (float) $e->salary : null] : null,
             'personal' => [
                 'values' => [
                     'full_name' => $e->full_name,
@@ -209,13 +216,16 @@ class EmployeeController extends Controller
         if (! $changes) {
             return back()->withErrors(['value' => 'That is the same as the current value.']);
         }
+        // A salary (or a new minimum) that leaves a sponsored worker below the minimum for their visa: a warning that stays on screen.
+        $warning = in_array($type, [ChangeType::SalaryReduction, ChangeType::SalaryIncrease, ChangeType::MinSalary], true) ? PayCheck::warningFor($e) : null;
         if ($taskId = $changes[0]->report_task_id) {
             $deadline = Employee::formatDate(ReportTask::findOrFail($taskId)->deadline);
 
-            return back()->with('success', "Saved and logged. A Home Office report task was created: report this change on the Sponsor Management System by {$deadline}.");
+            return back()->with('success', "Saved and logged. A Home Office report task was created: report this change on the Sponsor Management System by {$deadline}.")
+                ->with('error', $warning);
         }
 
-        return back()->with('success', 'Saved and logged in the history. No Home Office report needed.');
+        return back()->with('success', 'Saved and logged in the history. No Home Office report needed.')->with('error', $warning);
     }
 
     /** End of employment (§10). A sponsored worker gets a Home Office task: 10 working days from the last day. */
@@ -358,11 +368,12 @@ class EmployeeController extends Controller
 
         $job = [$f('Sponsored worker', $e->isSponsored() ? 'Yes – Skilled Worker' : 'No')];
         if ($e->isSponsored()) {
-            array_push($job, $f('CoS number', $e->cos_number), $f('CoS assigned', $d($e->cos_assigned_on)), $f('SOC code', $e->soc_code));
+            array_push($job, $f('CoS number', $e->cos_number), $f('CoS assigned', $d($e->cos_assigned_on)), $f('SOC code', $e->soc_code),
+                $f('Minimum salary for the visa', PayCheck::money(PayCheck::minimumFor($e)).($e->min_salary !== null ? ' (set for this worker)' : ' (general threshold)')));
         }
         array_push($job,
             $f('Job title', $e->job_title),
-            $f($e->isSponsored() ? 'Salary on CoS' : 'Salary', Employee::displayValue('salary', $e->salary)),
+            $f($e->isSponsored() ? 'Salary on CoS' : 'Salary', Employee::displayValue('salary', $e->salary), PayCheck::warningFor($e) ? ['text' => 'Below the visa minimum', 'tone' => 'red'] : null),
             $f('Contracted hours', Employee::displayValue('contracted_hours', $e->contracted_hours).' per week'),
             $f('Work site', $e->workSite?->name),
         );

@@ -112,14 +112,24 @@ the employee can view their own in the portal. No payroll features.
 Right-to-work check on file and dated on/before start · follow-up check (Check ≤ 90
 days, Missing if overdue) · passport/ID on file · current address and contact details ·
 contract on file · sponsored only: CoS on file, job description matches CoS,
-recruitment evidence, payslip uploaded in last 35 days, pay vs CoS (manual check),
-no pending/overdue Home Office reports.
+recruitment evidence, payslip uploaded in last 35 days, salary at or above the minimum
+for the visa (the worker's own minimum if set, otherwise the general threshold; Missing
+if below), no pending/overdue Home Office reports. Comparing payslips with the salary
+stays a manual check.
+
+Business score (dashboard): items done ÷ all checkable items across current employees
+(manual checks left out); "Fix next" lists Missing items first, then Check.
+
+Sponsored workers' pay: a salary below the minimum shows a warning on Add employee and
+Record a change before saving and after saving; it never blocks the save. A pay cut is
+still reportable as before.
 
 ## 9. Settings (per business, seeded defaults)
 
 Unpaid limit weeks (4), reset (1 January), unauthorised trigger (10 working days),
 worker deadline (10 working days), company deadline (20 working days), exempt absence
-types, expiry alert lead times (90/60/30 days), payslip freshness (35 days), retention
+types, expiry alert lead times (90/60/30 days), payslip freshness (35 days), sponsored
+workers' minimum salary (£41,700, the general threshold from 22 July 2025: confirm on gov.uk), retention
 (end + 1 year; right-to-work evidence end + 2 years), annual leave (5.6 weeks pro rata).
 
 ## 10. End of employment

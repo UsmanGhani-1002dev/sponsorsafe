@@ -80,8 +80,18 @@ class ComplianceCheck
                 default => self::DONE,
             }, $payslip ? 'Latest uploaded '.$date($payslip->created_at) : 'Upload the payslips your accountant sends, every month.');
 
-            $add('pay', 'Pay matches the CoS salary', self::MANUAL,
-                'Compare each payslip with the CoS salary ('.Employee::displayValue('salary', $e->salary).'). Sponsorship costs must not be deducted from pay.');
+            // Salary at or above the minimum for the visa (the worker's own minimum, or the general threshold).
+            $min = PayCheck::minimumFor($e);
+            $minimum = PayCheck::money($min).($e->min_salary !== null ? ' (set for this worker)' : ' (general threshold)');
+            $add('pay', 'Salary at or above the visa minimum', match (true) {
+                $e->salary === null || (float) $e->salary < $min => self::MISSING,
+                default => self::DONE,
+            }, match (true) {
+                $e->salary === null => 'No salary recorded. Record the salary on the CoS.',
+                (float) $e->salary < $min => 'Salary '.PayCheck::money((float) $e->salary).' is below the minimum of '.$minimum.'. If a different minimum applies to this '
+                    .'worker (for example the going rate for their SOC code, or a new entrant rate), record it under History → Record a change → Minimum salary for the visa.',
+                default => 'Salary '.PayCheck::money((float) $e->salary).', minimum '.$minimum.'. Compare each payslip with it; sponsorship costs must not be deducted from pay.',
+            });
 
             $pending = $e->reportTasks->filter->isPending();
             $overdue = $pending->filter(fn (ReportTask $t) => $this->wd->until($today->format('Y-m-d'), $t->deadline->format('Y-m-d')) < 0)->count();

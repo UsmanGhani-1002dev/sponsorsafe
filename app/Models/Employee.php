@@ -49,6 +49,7 @@ class Employee extends Model
         'soc_code' => 'SOC code',
         'job_title' => 'Job title',
         'salary' => 'Salary',
+        'min_salary' => 'Minimum salary for the visa',
         'start_date' => 'Start date',
         'work_site_id' => 'Work site',
         'days_per_week' => 'Working days per week',
@@ -61,7 +62,7 @@ class Employee extends Model
         'business_id', 'user_id', 'work_site_id', 'full_name', 'date_of_birth', 'nationality', 'email', 'phone', 'address',
         'ni_number', 'passport_number', 'passport_expiry', 'rtw_basis', 'visa_type', 'rtw_check_method', 'rtw_check_date',
         'rtw_checked_by', 'share_code', 'visa_start', 'visa_expiry', 'work_restrictions', 'follow_up_check_due', 'cos_number',
-        'cos_assigned_on', 'soc_code', 'job_title', 'salary', 'start_date', 'days_per_week', 'work_days', 'contracted_hours', 'contract_type',
+        'cos_assigned_on', 'soc_code', 'job_title', 'salary', 'min_salary', 'start_date', 'days_per_week', 'work_days', 'contracted_hours', 'contract_type',
         'ended_on', 'end_reason', 'delete_after', 'rtw_delete_after',
     ];
 
@@ -86,6 +87,7 @@ class Employee extends Model
             'delete_after' => 'date',
             'rtw_delete_after' => 'date',
             'salary' => 'decimal:2',
+            'min_salary' => 'decimal:2',
             'days_per_week' => 'decimal:1',
             'work_days' => 'array',
             'contracted_hours' => 'decimal:2',
@@ -204,7 +206,7 @@ class Employee extends Model
             $value instanceof CarbonInterface => self::formatDate($value),
             $value instanceof RightToWorkBasis => $value->label(),
             $field === 'work_site_id' => WorkSite::find($value)?->name,
-            $field === 'salary' => '£'.number_format((float) $value, 2),
+            in_array($field, ['salary', 'min_salary'], true) => '£'.number_format((float) $value, 2),
             $field === 'contracted_hours' => rtrim(rtrim((string) $value, '0'), '.').' hours',
             $field === 'days_per_week' => rtrim(rtrim((string) $value, '0'), '.').' days',
             $field === 'work_days' => self::workDaysText((array) $value),

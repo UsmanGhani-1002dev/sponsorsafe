@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/cn';
 import { WEEKDAYS, WorkDaysPicker } from '@/components/employee/work-days-picker';
+import { money, parseMoney, payWarning } from '@/lib/pay';
 import { Link, useForm } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
 
@@ -29,13 +30,14 @@ interface Props {
         requiredDocs: { standard: string[]; sponsored: string[] };
     };
     plan: { used: number; limit: number; reached: boolean; message: string; canUpgrade: boolean };
+    payMinimum: number;
     canFillDemo: boolean;
 }
 
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const inDays = (n: number) => iso(new Date(Date.now() + n * 86400000));
 
-export default function CreateEmployee({ options, plan, canFillDemo }: Props) {
+export default function CreateEmployee({ options, plan, payMinimum, canFillDemo }: Props) {
     const [shareMethod, manualMethod] = [options.checkMethods[0], options.checkMethods[1]];
     const form = useForm({
         full_name: '',
@@ -61,6 +63,7 @@ export default function CreateEmployee({ options, plan, canFillDemo }: Props) {
         soc_code: '',
         job_title: '',
         salary: '',
+        min_salary: '',
         start_date: '',
         work_site_id: options.sites[0] ? String(options.sites[0].id) : '',
         days_per_week: '5',
@@ -73,6 +76,9 @@ export default function CreateEmployee({ options, plan, canFillDemo }: Props) {
     const basis = options.bases.find((b) => b.value === data.rtw_basis) ?? options.bases[0];
     const docs = basis.sponsored ? options.requiredDocs.sponsored : options.requiredDocs.standard;
     const errorCount = Object.keys(errors).length;
+    // Sponsored workers: warn (never block) when the salary is below the minimum for the visa.
+    const minimum = parseMoney(data.min_salary) ?? payMinimum;
+    const lowPay = basis.sponsored ? payWarning(parseMoney(data.salary), minimum) : null;
 
     const changeBasis = (value: string) => {
         const next = options.bases.find((b) => b.value === value)!;
@@ -231,6 +237,12 @@ export default function CreateEmployee({ options, plan, canFillDemo }: Props) {
                             {text('cos_number', 'CoS number')}
                             {text('cos_assigned_on', 'CoS assigned date', { type: 'date' })}
                             {text('soc_code', 'SOC code', { placeholder: '4-digit occupation code', inputMode: 'numeric' })}
+                            {text('min_salary', 'Minimum salary for their visa (optional)', {
+                                placeholder: money(payMinimum),
+                                inputMode: 'decimal',
+                                hint: `Leave blank to use the general threshold of ${money(payMinimum)}. Enter the going rate for their SOC code if it is higher, or a lower minimum if one applies to them (for example a new entrant).`,
+                                className: 'sm:col-span-2',
+                            })}
                         </Grid>
                         <p className="text-sm text-ink-2">Job title, salary and hours below must be the same as on the CoS. Also keep the job advert and interview notes as recruitment evidence.</p>
                     </Section>
@@ -256,6 +268,11 @@ export default function CreateEmployee({ options, plan, canFillDemo }: Props) {
                             </Select>
                         </Field>
                     </Grid>
+                    {lowPay && (
+                        <div className="mt-4">
+                            <Alert tone="error">{lowPay}</Alert>
+                        </div>
+                    )}
                     <div className="mt-4">
                         <WorkDaysPicker value={data.work_days} onChange={(d) => setData('work_days', d)} error={errors.work_days} />
                     </div>

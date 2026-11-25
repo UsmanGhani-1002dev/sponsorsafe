@@ -17,6 +17,7 @@ export interface RulesProps {
         retention_years: string;
         rtw_retention_years: string;
         annual_leave_weeks: string;
+        sponsored_min_salary: string;
         exempt_absence_types: string[];
         expiry_alert_days: string;
     };
@@ -71,6 +72,17 @@ export function RulesForm({ values, reducedPayTypes }: RulesProps) {
                             ))}
                         </div>
                         {form.errors['exempt_absence_types.0' as keyof typeof form.errors] && <p className="text-[13px] text-red-700">Choose from the listed types.</p>}
+                    </div>
+                </fieldset>
+
+                <fieldset className="flex flex-col gap-4">
+                    <legend className="mb-3 text-[15px] font-semibold">Sponsored workers' pay</legend>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {number(
+                            'sponsored_min_salary',
+                            'Minimum salary (£ a year)',
+                            'The general threshold for a Skilled Worker visa. You are warned when a sponsored worker is paid less. Set a different minimum on a worker if one applies to them.',
+                        )}
                     </div>
                 </fieldset>
 

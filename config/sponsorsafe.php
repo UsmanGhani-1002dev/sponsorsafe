@@ -56,6 +56,10 @@ return [
         'clock_in_check' => false,
         'unexplained_red_after_days' => 2, // working days unclassified before the alert turns red
         'payslip_freshness_days' => 35,
+        // Lowest annual salary for a sponsored (Skilled Worker) visa unless a different minimum is set on the worker
+        // (a higher going rate for their SOC code, or a lower rate that applies to them). £41,700 = the general
+        // threshold from 22 July 2025: check it against current gov.uk guidance before relying on it.
+        'sponsored_min_salary' => 41700,
         'retention_years' => 1,
         'rtw_retention_years' => 2,
         'annual_leave_weeks' => 5.6,             // pro rata to working days per week

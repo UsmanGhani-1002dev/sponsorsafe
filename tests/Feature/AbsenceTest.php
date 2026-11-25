@@ -171,7 +171,7 @@ class AbsenceTest extends TestCase
         $this->actingAs($this->admin)->put('/app/settings/rules', [
             'unpaid_limit_weeks' => 4, 'unpaid_leave_year' => 'calendar', 'unauthorised_trigger_days' => 5, 'worker_report_deadline_days' => 10,
             'company_report_deadline_days' => 20, 'exempt_absence_types' => ['sick_self', 'sick_fit'], 'self_cert_max_days' => 7,
-            'expiry_alert_days' => '90, 30, 60', 'payslip_freshness_days' => 35, 'retention_years' => 1, 'rtw_retention_years' => 2, 'annual_leave_weeks' => 5.6,
+            'expiry_alert_days' => '90, 30, 60', 'payslip_freshness_days' => 35, 'retention_years' => 1, 'rtw_retention_years' => 2, 'annual_leave_weeks' => 5.6, 'sponsored_min_salary' => 41700,
         ])->assertSessionHas('success', 'Compliance rules saved. New checks use them from now on.');
 
         $business = $this->admin->business->fresh();

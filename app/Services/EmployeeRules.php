@@ -56,6 +56,7 @@ class EmployeeRules
 
             'job_title' => ['required', 'string', 'max:255'],
             'salary' => [$sponsored ? 'required' : 'nullable', 'numeric', 'min:0', 'max:99999999'],
+            'min_salary' => $onlyIf($sponsored, ['nullable', 'numeric', 'min:0', 'max:99999999']),
             'start_date' => ['required', 'date'],
             'work_site_id' => ['required', Rule::exists('work_sites', 'id')->where('business_id', $business->id)->whereNull('closed_on')],
             'days_per_week' => ['required', 'numeric', 'min:0.5', 'max:7'],
@@ -68,7 +69,7 @@ class EmployeeRules
 
         // Clear anything that does not apply to this basis, and set derived fields.
         return [
-            ...array_fill_keys(['visa_type', 'share_code', 'visa_start', 'visa_expiry', 'work_restrictions', 'cos_number', 'cos_assigned_on', 'soc_code'], null),
+            ...array_fill_keys(['visa_type', 'share_code', 'visa_start', 'visa_expiry', 'work_restrictions', 'cos_number', 'cos_assigned_on', 'soc_code', 'min_salary'], null),
             ...$data,
             'visa_type' => $basis->fixedVisaType() ?? ($data['visa_type'] ?? null),
             'follow_up_check_due' => self::followUpCheckDue($basis, $data['visa_expiry'] ?? null),
@@ -133,6 +134,7 @@ class EmployeeRules
             ChangeType::Soc => ['required', 'string', 'max:20'],
             ChangeType::SalaryReduction => ['required', 'numeric', 'min:0', 'max:99999999', ...($current !== null ? ['lt:'.$current] : [])],
             ChangeType::SalaryIncrease => ['required', 'numeric', 'min:0', 'max:99999999', ...($current !== null ? ['gt:'.$current] : [])],
+            ChangeType::MinSalary => ['required', 'numeric', 'min:0', 'max:99999999'],
             ChangeType::Hours => ['required', 'numeric', 'min:1', 'max:99'],
             ChangeType::Address => ['required', 'string', 'max:500'],
             ChangeType::Phone => ['required', 'string', 'max:50'],
@@ -189,8 +191,10 @@ class EmployeeRules
         if (isset($out['email'])) {
             $out['email'] = mb_strtolower($out['email']);
         }
-        if (isset($out['salary'])) {
-            $out['salary'] = str_replace(['£', ',', ' '], '', (string) $out['salary']);
+        foreach (['salary', 'min_salary'] as $money) {
+            if (isset($out[$money])) {
+                $out[$money] = str_replace(['£', ',', ' '], '', (string) $out[$money]);
+            }
         }
 
         return $out;
@@ -220,6 +224,7 @@ class EmployeeRules
             'visa_expiry' => 'visa / permission expiry', 'cos_number' => 'CoS number', 'cos_assigned_on' => 'CoS assigned date',
             'soc_code' => 'SOC code', 'ni_number' => 'National Insurance number', 'work_site_id' => 'work site',
             'days_per_week' => 'working days per week', 'contracted_hours' => 'contracted hours per week',
+            'min_salary' => 'minimum salary for the visa',
         ];
     }
 }

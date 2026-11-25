@@ -46,6 +46,7 @@ class CompliancePack
                     'SOC code' => $e->isSponsored() ? $e->soc_code : null,
                     'Job title' => $e->job_title,
                     'Salary' => Employee::displayValue('salary', $e->salary) ?? '—',
+                    'Minimum salary for the visa' => $e->isSponsored() ? PayCheck::money(PayCheck::minimumFor($e)).($e->min_salary !== null ? ' (set for this worker)' : ' (general threshold)') : null,
                     'Working pattern' => Employee::displayValue('days_per_week', $e->days_per_week).' per week, '.Employee::displayValue('contracted_hours', $e->contracted_hours).' per week',
                     'Contract type' => $e->contract_type,
                     'Work site' => $e->workSite ? $e->workSite->name.', '.$e->workSite->address : '—',

@@ -12,6 +12,7 @@ use App\Models\UnexplainedAbsence;
 use App\Services\WorkingDays;
 use App\Support\Badges;
 use App\Support\DashboardCounts;
+use App\Support\ComplianceScore;
 use App\Support\SetupChecklist;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -20,7 +21,7 @@ use Inertia\Response;
 /** Dashboard: stat tiles (cached briefly), right-to-work watchlist and the next Home Office deadlines. */
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request, Reminders $reminders, UnexplainedAbsences $unexplained): Response
+    public function __invoke(Request $request, Reminders $reminders, UnexplainedAbsences $unexplained, ComplianceScore $score): Response
     {
         $business = $request->user()->business;
         $counts = DashboardCounts::for($business);
@@ -48,6 +49,7 @@ class DashboardController extends Controller
             }),
             'year' => $year,
             'setup' => SetupChecklist::for($business),
+            'compliance' => $score->for($business),
             'retentionDue' => Retention::due($business)->count(),
             // §11: scheduled working days with no clock-in and no absence, waiting to be classified.
             'unexplained' => [

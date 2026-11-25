@@ -98,7 +98,7 @@ class ComplianceCheckTest extends TestCase
         $this->file($e, 'payroll', '2026-09-01');
 
         $rows = $this->rows($e);
-        $this->assertSame(['done', 'done', 'done', 'done', 'manual', 'done'], [$rows['cos'], $rows['jd'], $rows['recruit'], $rows['payslip'], $rows['pay'], $rows['reports']]);
+        $this->assertSame(['done', 'done', 'done', 'done', 'done', 'done'], [$rows['cos'], $rows['jd'], $rows['recruit'], $rows['payslip'], $rows['pay'], $rows['reports']]);
 
         $this->travelTo('2026-10-20');   // payslip now 49 days old (limit 35)
         $this->assertSame('check', $this->rows($e)['payslip']);

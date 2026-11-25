@@ -1,5 +1,6 @@
 import { Alert } from '@/components/ui/alert';
 import { VisitPackLink } from '@/components/visit-pack-link';
+import { ComplianceScoreCard, type Compliance } from '@/components/compliance-score';
 import type { TaskRow } from '@/components/report-task';
 import { Badge, type Tone } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ interface Props {
     reminders: { key: string; text: string; tone: Tone; href: string }[];
     unexplained: { enabled: boolean; items: { id: number; name: string; date: string; badge: { text: string; tone: Tone } }[] };
     setup: Setup | null;
+    compliance: Compliance | null;
 }
 
 interface Setup {
@@ -90,7 +92,7 @@ function GetStarted({ setup }: { setup: Setup }) {
     );
 }
 
-export default function Dashboard({ business, stats, watchlist, year, deadlines, retentionDue, reminders, unexplained, setup }: Props) {
+export default function Dashboard({ business, stats, watchlist, year, deadlines, retentionDue, reminders, unexplained, setup, compliance }: Props) {
     const tiles = [
         { label: 'Home Office reports pending', value: stats.pending, hint: 'Worker and company events', href: '/app/reports?status=pending', alert: false },
         { label: 'Due within 5 working days', value: stats.urgent, hint: 'Including overdue', href: '/app/reports?status=pending', alert: stats.urgent > 0 },
@@ -116,6 +118,7 @@ export default function Dashboard({ business, stats, watchlist, year, deadlines,
                 </div>
             )}
             {setup && <GetStarted setup={setup} />}
+            {compliance && <ComplianceScoreCard compliance={compliance} />}
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {tiles.map((t) => {

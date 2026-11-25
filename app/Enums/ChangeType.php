@@ -9,6 +9,7 @@ enum ChangeType: string
     case Soc = 'soc';
     case SalaryReduction = 'salary_reduction';
     case SalaryIncrease = 'salary_increase';
+    case MinSalary = 'min_salary';
     case Hours = 'hours';
     case Address = 'address';
     case Phone = 'phone';
@@ -21,6 +22,7 @@ enum ChangeType: string
             self::Soc => 'SOC code / duties',
             self::SalaryReduction => 'Salary – reduction',
             self::SalaryIncrease => 'Salary – increase',
+            self::MinSalary => 'Minimum salary for the visa',
             self::Hours => 'Contracted weekly hours',
             self::Address => 'Home address',
             self::Phone => 'Phone',
@@ -35,6 +37,7 @@ enum ChangeType: string
             self::JobTitle => 'job_title',
             self::Soc => 'soc_code',
             self::SalaryReduction, self::SalaryIncrease => 'salary',
+            self::MinSalary => 'min_salary',
             self::Hours => 'contracted_hours',
             self::Address => 'address',
             self::Phone => 'phone',
@@ -48,10 +51,10 @@ enum ChangeType: string
         return in_array($this, [self::JobTitle, self::Soc, self::SalaryReduction, self::Hours], true);
     }
 
-    /** SOC codes only exist for sponsored workers. */
+    /** SOC codes and the visa's minimum salary only exist for sponsored workers. */
     public function sponsoredOnly(): bool
     {
-        return $this === self::Soc;
+        return in_array($this, [self::Soc, self::MinSalary], true);
     }
 
     public static function options(bool $sponsored): array

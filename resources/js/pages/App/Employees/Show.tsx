@@ -13,6 +13,7 @@ import { WorkDaysPicker } from '@/components/employee/work-days-picker';
 import { DocumentsTab, type DocumentCategoryRow } from '@/components/employee/documents-tab';
 import type { AbsenceRow } from '@/components/absence';
 import { ReportDialog, reopenTask, type TaskRow } from '@/components/report-task';
+import { money, parseMoney, payWarning } from '@/lib/pay';
 import { router, useForm } from '@inertiajs/react';
 import { Download, FileCheck2, History, Mail, Pencil, UserX } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
@@ -64,6 +65,8 @@ interface Props {
         nationalities: string[];
     };
     reportDeadlineDays: number;
+    /** Sponsored workers only: the minimum salary for their visa (their own, or the general threshold) and the salary now. */
+    pay: { minimum: number; general: number; salary: number | null } | null;
 }
 
 const portalBadge: Record<Props['employee']['portal'], { text: string; tone: Tone }> = {
@@ -394,7 +397,7 @@ function CorrectForm({ employeeId, personal, onDone }: { employeeId: number; per
     );
 }
 
-function HistoryTab({ employee, history, changeTypes, reportDeadlineDays }: Props) {
+function HistoryTab({ employee, history, changeTypes, reportDeadlineDays, pay }: Props) {
     const form = useForm({ type: changeTypes[0]?.value ?? '', value: '' });
     const type = changeTypes.find((t) => t.value === form.data.type) ?? changeTypes[0];
     const numeric = type.field === 'salary' || type.field === 'contracted_hours';
@@ -407,7 +410,15 @@ function HistoryTab({ employee, history, changeTypes, reportDeadlineDays }: Prop
     let hint: { text: string; tone: 'warning' | 'info' };
     if (type.reportable) hint = { text: `Sponsored worker: saving creates a Home Office report task, due in ${reportDeadlineDays} working days.`, tone: 'warning' };
     else if (employee.sponsored && type.value === 'salary_increase') hint = { text: 'Salary increase: logged only, not reportable.', tone: 'info' };
+    else if (type.value === 'min_salary' && pay)
+        hint = { text: `Not reportable. Use this when the general threshold (${money(pay.general)}) is not the right minimum for this worker, for example a higher going rate for their SOC code.`, tone: 'info' };
     else hint = { text: 'Not reportable. It is logged in the history.', tone: 'info' };
+
+    // Sponsored workers: warn before saving a salary (or a new minimum) that leaves them below the minimum for their visa.
+    const typed = parseMoney(form.data.value);
+    let lowPay: string | null = null;
+    if (pay && type.field === 'salary') lowPay = payWarning(typed, pay.minimum);
+    else if (pay && type.value === 'min_salary' && typed !== null) lowPay = payWarning(pay.salary, typed);
 
     return (
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
@@ -465,6 +476,7 @@ function HistoryTab({ employee, history, changeTypes, reportDeadlineDays }: Prop
                             <Input id="change-value" type={type.field === 'email' ? 'email' : 'text'} inputMode={numeric ? 'decimal' : undefined} value={form.data.value} onChange={(e) => form.setData('value', e.target.value)} invalid={!!form.errors.value} />
                         </Field>
                         <Alert tone={hint.tone}>{hint.text}</Alert>
+                        {lowPay && <Alert tone="error">{lowPay}</Alert>}
                         <Button type="submit" disabled={form.processing}>
                             Save change
                         </Button>

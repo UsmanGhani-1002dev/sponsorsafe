@@ -40,6 +40,8 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
 - **Payslip reminders and Activity log (24 Nov 2026): done and tested** — admins are reminded when a sponsored worker's
   payslip is missing; Settings → Activity log and a super admin Activity log show the audit log. 294 PHPUnit tests passing.
 - **Get started checklist and Home Office visit pack (24 Nov 2026): done and tested** — 297 PHPUnit tests passing.
+- **Compliance score and low-pay warning (25 Nov 2026): done and tested** — 301 PHPUnit tests passing. Shaf must confirm
+  the £41,700 default (`sponsored_min_salary`) against gov.uk.
 - **Next:** Stage 7c (AI chat assistant).
 - Local setup on this laptop is done (git repo, MySQL databases, PHP 8.4).
 
@@ -458,6 +460,19 @@ Demo logins (password `password`, local only):
   single pack. `GET /app/visit-pack` (throttled), audited `employee.visit_pack_exported`. Buttons: dashboard and Employees
   headers (`components/visit-pack-link.tsx`, a plain `<a>`) and the Ctrl+K action (palette items with `download: true`
   use a normal browser request, not an Inertia visit).
+
+## Compliance score and low-pay warning (follow these conventions)
+
+- **`App\Services\PayCheck`**: minimum = the worker's `employees.min_salary` (optional, set on Add employee or Record a change →
+  "Minimum salary for the visa", `ChangeType::MinSalary`, sponsored only, not reportable) or the business rule
+  `sponsored_min_salary` (config default 41700, Settings → Compliance rules). `warning()` text is mirrored in
+  `resources/js/lib/pay.ts` for the live warnings on Add employee and Record a change; after saving, the same warning is
+  flashed as `error` (stays on screen). It warns, never blocks. ComplianceCheck row `pay` ("Salary at or above the visa
+  minimum") is Done / Missing instead of Manual. Details and the compliance pack show the minimum.
+- **`App\Support\ComplianceScore::for($business)`** (dashboard prop `compliance`, null with no current employees): score =
+  floor(done ÷ checkable rows × 100) over every current employee's ComplianceCheck rows (manual rows left out); tone red if
+  anything is Missing, amber if only Check; `fixes` (Missing first, max 6) link to the profile tab that fixes them (`TABS`);
+  `people` = each employee's summary, worst first. Card: `components/compliance-score.tsx`.
 
 ## UI and performance rules ("modern and very fast")
 

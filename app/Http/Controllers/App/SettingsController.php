@@ -101,7 +101,7 @@ class SettingsController extends Controller
             'rules' => [
                 'values' => [
                     ...collect(['unpaid_limit_weeks', 'unpaid_leave_year', 'unauthorised_trigger_days', 'worker_report_deadline_days', 'company_report_deadline_days',
-                        'self_cert_max_days', 'payslip_freshness_days', 'retention_years', 'rtw_retention_years', 'annual_leave_weeks'])
+                        'self_cert_max_days', 'payslip_freshness_days', 'retention_years', 'rtw_retention_years', 'annual_leave_weeks', 'sponsored_min_salary'])
                         ->mapWithKeys(fn ($k) => [$k => (string) $business->rule($k)])->all(),
                     'exempt_absence_types' => array_values((array) $business->rule('exempt_absence_types')),
                     'expiry_alert_days' => implode(', ', (array) $business->rule('expiry_alert_days')),
@@ -402,6 +402,7 @@ class SettingsController extends Controller
             'retention_years' => ['required', 'integer', 'min:1', 'max:10'],
             'rtw_retention_years' => ['required', 'integer', 'min:1', 'max:10'],
             'annual_leave_weeks' => ['required', 'numeric', 'min:0', 'max:10'],
+            'sponsored_min_salary' => ['required', 'integer', 'min:0', 'max:500000'],
         ], ['expiry_alert_days.regex' => 'Enter days as numbers separated by commas, like 90, 60, 30.']);
 
         $data['expiry_alert_days'] = collect(explode(',', $data['expiry_alert_days']))->map(fn ($d) => (int) trim($d))->unique()->sortDesc()->values()->all();
@@ -409,7 +410,7 @@ class SettingsController extends Controller
         foreach (['unpaid_limit_weeks', 'annual_leave_weeks'] as $f) {
             $data[$f] = (float) $data[$f];
         }
-        foreach (['unauthorised_trigger_days', 'worker_report_deadline_days', 'company_report_deadline_days', 'self_cert_max_days', 'payslip_freshness_days', 'retention_years', 'rtw_retention_years'] as $f) {
+        foreach (['unauthorised_trigger_days', 'worker_report_deadline_days', 'company_report_deadline_days', 'self_cert_max_days', 'payslip_freshness_days', 'retention_years', 'rtw_retention_years', 'sponsored_min_salary'] as $f) {
             $data[$f] = (int) $data[$f];
         }
 
