@@ -118,7 +118,6 @@ export default function Dashboard({ business, stats, watchlist, year, deadlines,
                 </div>
             )}
             {setup && <GetStarted setup={setup} />}
-            {compliance && <ComplianceScoreCard compliance={compliance} />}
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {tiles.map((t) => {
@@ -140,6 +139,8 @@ export default function Dashboard({ business, stats, watchlist, year, deadlines,
                     );
                 })}
             </div>
+
+            {compliance && <ComplianceScoreCard compliance={compliance} />}
 
             {(unexplained.enabled || unexplained.items.length > 0) && (
                 <section aria-labelledby="unexplained-title" className="mt-8">

@@ -38,7 +38,7 @@ export function ComplianceScoreCard({ compliance }: { compliance: Compliance }) 
     const headline = toFix === 0 ? 'Everything is in order' : `${toFix} ${toFix === 1 ? 'thing' : 'things'} to fix`;
 
     return (
-        <section aria-labelledby="compliance-title" className="mb-6">
+        <section aria-labelledby="compliance-title" className="mt-8">
             <Card className="overflow-hidden">
                 <div className="grid gap-0 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
                     <div className="flex items-center gap-5 border-b border-line p-5 lg:border-r lg:border-b-0">
