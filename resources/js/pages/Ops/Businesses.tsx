@@ -111,7 +111,7 @@ export default function Businesses({ base, tiers, businesses, stats }: { base: s
                     </Card>
                 ))}
             </div>
-            <Card className="overflow-x-auto">
+            <Card className="relative overflow-x-auto">
                 <table className="w-full min-w-[900px] text-left text-sm">
                     <thead className="bg-canvas text-[13px] text-ink-2">
                         <tr>

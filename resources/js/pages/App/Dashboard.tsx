@@ -199,7 +199,7 @@ export default function Dashboard({ business, stats, watchlist, year, deadlines,
                 </section>
             )}
 
-            <div className="mt-8 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <div className="mt-8 grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 <section aria-labelledby="deadlines-title">
                     <div className="mb-3 flex items-baseline justify-between">
                         <h2 id="deadlines-title" className="text-lg font-semibold">
@@ -241,7 +241,7 @@ export default function Dashboard({ business, stats, watchlist, year, deadlines,
                         {watchlist.length === 0 ? (
                             <EmptyState icon={ShieldCheck} title="Nobody has time-limited permission" />
                         ) : (
-                            <div className="overflow-x-auto">
+                            <div className="relative overflow-x-auto">
                                 <table className="w-full text-left text-sm">
                                     <thead className="bg-canvas text-[13px] font-semibold text-ink-2">
                                         <tr>

@@ -71,7 +71,7 @@ export default function Settings({ business, admins, login, people, roles, plan,
         <AppLayout title="Settings">
             <PageHeader title="Settings" />
 
-            <div className="grid items-start gap-5 lg:grid-cols-2">
+            <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
                 <div id="business" className="scroll-mt-20">
                     <BusinessCard business={business} />
                 </div>
@@ -267,7 +267,7 @@ function KeyPersonnel({ people, roles }: Pick<Props, 'people' | 'roles'>) {
     return (
         <>
             <SectionTitle title="Key personnel" description="The people named on your Sponsor Management System. When they change, update the SMS promptly." />
-            <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+            <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
                 <Card className="overflow-hidden">
                     {people.length === 0 ? (
                         <EmptyState icon={UserRound} title="No key personnel added">
@@ -516,7 +516,7 @@ function AdminLogins({ admins }: Pick<Props, 'admins'>) {
     return (
         <>
             <SectionTitle title="Admin logins" description="People who can sign in and manage this business. Every admin uses an authenticator app when signing in." />
-            <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+            <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
                 <Card className="overflow-hidden">
                     {errors.admin && (
                         <div className="p-4 pb-0">
@@ -599,7 +599,7 @@ function WorkSites({ sites, employees }: Pick<Props, 'sites' | 'employees'>) {
                         Add the address where your employees work. You need at least one before adding employees.
                     </EmptyState>
                 ) : (
-                    <div className="overflow-x-auto">
+                    <div className="relative overflow-x-auto">
                         <table className="w-full text-left text-sm">
                             <thead className="bg-canvas text-[13px] font-semibold text-ink-2">
                                 <tr>
@@ -657,7 +657,7 @@ function WorkSites({ sites, employees }: Pick<Props, 'sites' | 'employees'>) {
                 )}
             </Card>
 
-            <div className="mt-5 grid items-start gap-5 lg:grid-cols-2">
+            <div className="mt-5 grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
                 <Card className="p-5 sm:p-6">
                     <form
                         noValidate

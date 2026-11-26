@@ -40,7 +40,7 @@ export function ComplianceScoreCard({ compliance }: { compliance: Compliance }) 
     return (
         <section aria-labelledby="compliance-title" className="mt-8">
             <Card className="overflow-hidden">
-                <div className="grid gap-0 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
+                <div className="grid grid-cols-1 gap-0 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
                     <div className="flex items-center gap-5 border-b border-line p-5 lg:border-r lg:border-b-0">
                         <Ring score={score} tone={tone} />
                         <div className="min-w-0">

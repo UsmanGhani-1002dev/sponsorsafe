@@ -29,7 +29,7 @@ const fill: Record<Kind, string> = {
 // Not employed on that day (before they started, after they left).
 const hatch = { backgroundImage: 'repeating-linear-gradient(135deg, var(--color-line-strong) 0 1px, transparent 1px 6px)' };
 
-const navLink = 'inline-flex min-h-11 items-center justify-center rounded-lg border border-line-strong bg-surface text-sm font-semibold text-ink-2 hover:bg-canvas';
+const navLink = 'inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg border border-line-strong bg-surface text-sm font-semibold text-ink-2 hover:bg-canvas';
 
 /** Absence → Calendar: who is off each day of the month. The absence log stays the compliance record. */
 export default function AbsenceCalendar({ month, days, people, kinds }: Props) {
@@ -57,7 +57,7 @@ export default function AbsenceCalendar({ month, days, people, kinds }: Props) {
                     <Link href={`/app/absence/calendar?month=${month.prev}`} preserveScroll className={cn(navLink, 'w-11')} aria-label="Previous month">
                         <ChevronLeft size={18} aria-hidden />
                     </Link>
-                    <h2 className="min-w-40 text-center text-lg font-semibold" aria-live="polite">
+                    <h2 className="min-w-32 text-center text-lg font-semibold sm:min-w-40" aria-live="polite">
                         {month.label}
                     </h2>
                     <Link href={`/app/absence/calendar?month=${month.next}`} preserveScroll className={cn(navLink, 'w-11')} aria-label="Next month">

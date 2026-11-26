@@ -291,7 +291,7 @@ function Details({ employee, sections, waitingFor, personal }: Props) {
                     Waiting for {employee.name.split(' ')[0]} to upload: {waitingFor.map((w) => `${w.label} (requested ${w.since})`).join(', ')}.
                 </Alert>
             )}
-            <div className="grid items-start gap-4 lg:grid-cols-2">
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
                 {sections.map((s) => (
                     <Card key={s.title} className="flex flex-col p-5 sm:p-6">
                         <div className="mb-2 flex items-center justify-between gap-3">
@@ -421,12 +421,12 @@ function HistoryTab({ employee, history, changeTypes, reportDeadlineDays, pay }:
     else if (pay && type.value === 'min_salary' && typed !== null) lowPay = payWarning(pay.salary, typed);
 
     return (
-        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <Card className="overflow-hidden">
                 {history.length === 0 ? (
                     <EmptyState icon={History} title="No changes recorded yet" />
                 ) : (
-                    <div className="overflow-x-auto">
+                    <div className="relative overflow-x-auto">
                         <table className="w-full text-left text-sm">
                             <thead className="bg-canvas text-[13px] font-semibold text-ink-2">
                                 <tr>

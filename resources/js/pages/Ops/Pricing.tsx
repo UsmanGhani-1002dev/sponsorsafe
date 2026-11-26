@@ -100,7 +100,7 @@ function ExistingSubscribers({ base, s }: { base: string; s: Subscribers }) {
                     <p className="text-[15px] text-ink-2">
                         {s.older} subscriber{s.older === 1 ? ' is' : 's are'} on an older price. Businesses on the original plan move to the plan that fits their current employees.
                     </p>
-                    <div className="overflow-x-auto rounded-lg border border-line">
+                    <div className="relative overflow-x-auto rounded-lg border border-line">
                         <table className="w-full min-w-[760px] text-left text-sm">
                             <thead className="bg-canvas text-[13px] text-ink-2">
                                 <tr>

@@ -45,7 +45,7 @@ export function AbsenceTab({
                 {absence.rows.length === 0 ? (
                     <EmptyState icon={CalendarX2} title="No absences recorded" />
                 ) : (
-                    <div className="overflow-x-auto">
+                    <div className="relative overflow-x-auto">
                         <table className="w-full text-left text-sm">
                             <thead className="bg-canvas text-[13px] font-semibold text-ink-2">
                                 <tr>

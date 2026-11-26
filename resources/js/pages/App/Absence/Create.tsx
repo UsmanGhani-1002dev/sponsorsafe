@@ -93,7 +93,7 @@ export default function RecordAbsence({ employees, types, preselect, maxUploadMb
                     <Alert tone="info">{classify.note}</Alert>
                 </div>
             )}
-            <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+            <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
                 <Card className="p-5 sm:p-6">
                     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
                         <Field id="employee_id" label="Employee" error={errors.employee_id}>

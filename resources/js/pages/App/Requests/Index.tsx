@@ -81,7 +81,7 @@ export default function RequestsInbox({ waiting, awaiting, decided }: Props) {
                 {decided.length === 0 ? (
                     <p className="p-5 text-sm text-ink-2">Nothing decided yet.</p>
                 ) : (
-                    <div className="overflow-x-auto">
+                    <div className="relative overflow-x-auto">
                         <table className="w-full text-left text-sm">
                             <thead className="bg-canvas text-[13px] font-semibold text-ink-2">
                                 <tr>
