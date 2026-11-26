@@ -69,7 +69,7 @@ export default function AbsenceCalendar({ month, days, people, kinds }: Props) {
                         </Link>
                     )}
                 </div>
-                <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-ink-2" aria-label="Key">
+                <ul className={cn('flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-ink-2', people.length === 0 && 'hidden')} aria-label="Key">
                     {(Object.keys(kinds) as Kind[]).map((k) => (
                         <li key={k} className="flex items-center gap-1.5">
                             <span aria-hidden className={cn('size-3 rounded-sm', fill[k])} /> {kinds[k]}
@@ -82,9 +82,19 @@ export default function AbsenceCalendar({ month, days, people, kinds }: Props) {
             </div>
 
             {people.length === 0 ? (
-                <EmptyState icon={CalendarX2} title="Nobody employed this month">
-                    Add your employees, and their absences show here month by month.
-                </EmptyState>
+                <Card>
+                    <EmptyState
+                        icon={CalendarX2}
+                        title="Nobody employed this month"
+                        action={
+                            <Link href="/app/employees/create" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-line-strong bg-surface px-4 text-sm font-semibold text-ink-2 hover:bg-canvas">
+                                <Plus size={16} aria-hidden /> Add employee
+                            </Link>
+                        }
+                    >
+                        Add your employees, and their absences show here month by month.
+                    </EmptyState>
+                </Card>
             ) : (
                 <Card className="relative overflow-x-auto">
                     {/* relative: the screen-reader labels inside scroll with the table instead of widening the page. */}
@@ -183,7 +193,7 @@ export default function AbsenceCalendar({ month, days, people, kinds }: Props) {
                 </Card>
             )}
 
-            <p className="mt-3 text-[13px] text-muted">
+            <p className={cn('mt-3 text-[13px] text-muted', people.length === 0 && 'hidden')}>
                 Grey cells are each person's usual days off, and paler colours fall on those days. Striped cells are before they started or after they left. "Unpaid N of M" counts
                 unpaid and unauthorised days in the leave year for sponsored workers; going over the limit must be reported.
             </p>
