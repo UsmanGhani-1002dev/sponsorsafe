@@ -1,9 +1,10 @@
+import { AccountMenu } from '@/components/account-menu';
 import { Logo } from '@/components/logo';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { cn } from '@/lib/cn';
 import type { SharedProps } from '@/types';
-import { Head, Link, router, usePage } from '@inertiajs/react';
-import { CalendarDays, FileText, Home, Inbox, LogOut, PencilLine, UserRound } from 'lucide-react';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { CalendarDays, FileText, Home, Inbox, KeyRound, PencilLine, UserRound } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 const nav = [
@@ -52,15 +53,16 @@ export default function PortalLayout({ title, children }: { title: string; child
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="hidden text-sm text-ink-2 sm:inline">{auth.user?.name}</span>
                     <ThemeToggle />
-                    <button
-                        onClick={() => router.post('/logout')}
-                        aria-label="Log out"
-                        className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-line-strong bg-surface px-3 text-sm font-semibold text-ink-2 hover:bg-canvas"
-                    >
-                        <LogOut size={16} aria-hidden /> <span className="hidden sm:inline">Log out</span>
-                    </button>
+                    {auth.user && (
+                        <AccountMenu
+                            user={auth.user}
+                            links={[
+                                { label: 'My details', href: '/me/details', icon: UserRound },
+                                { label: 'Change password', href: '/me/details#password', icon: KeyRound },
+                            ]}
+                        />
+                    )}
                 </div>
             </header>
 

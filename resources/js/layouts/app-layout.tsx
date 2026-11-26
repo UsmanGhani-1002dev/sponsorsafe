@@ -1,3 +1,4 @@
+import { AccountMenu } from '@/components/account-menu';
 import { CommandPalette, isMac, usePaletteShortcut } from '@/components/command-palette';
 import { Logo } from '@/components/logo';
 import { SetupPill } from '@/components/setup-pill';
@@ -5,8 +6,8 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/cn';
 import type { SharedProps } from '@/types';
-import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ClipboardCheck, FileWarning, Inbox, LayoutDashboard, LogOut, Search, Settings, Users } from 'lucide-react';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { ClipboardCheck, FileWarning, Inbox, KeyRound, LayoutDashboard, Search, Settings, Users } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 
 // Items not built yet are shown so the structure is clear; they switch on stage by stage.
@@ -49,14 +50,8 @@ export default function AppLayout({ title, children }: { title: string; children
                         <span className="hidden lg:inline">Search…</span>
                         <kbd className="ml-auto hidden rounded border border-line px-1.5 text-xs lg:inline">{isMac ? '⌘K' : 'Ctrl K'}</kbd>
                     </button>
-                    <span className="hidden text-sm text-ink-2 xl:inline">{auth.user?.name}</span>
                     <ThemeToggle />
-                    <button
-                        onClick={() => router.post('/logout')}
-                        className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-line-strong bg-surface px-3 text-sm font-semibold text-ink-2 hover:bg-canvas"
-                    >
-                        <LogOut size={16} aria-hidden /> Log out
-                    </button>
+                    {auth.user && <AccountMenu user={auth.user} links={[{ label: 'Change password', href: '/app/settings#password', icon: KeyRound }]} />}
                 </div>
             </header>
 

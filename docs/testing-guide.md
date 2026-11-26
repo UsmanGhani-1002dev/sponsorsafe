@@ -218,7 +218,8 @@ Sign in at `/login` as `you+admin@gmail.com` (Test Shop Ltd), or `hr@demo-retail
 | BA-14 | Theme toggle (light/dark). | Whole app switches; text stays readable. | |
 | BA-15 | Save any change. | A green message pops up bottom-right and fades. Errors pop up red and stay until closed. | |
 | BA-16 | Use the app on a phone. | Usable: menu, tables and forms fit. | |
-| BA-17 | **Log out** (sidebar). | Back to the login page. The browser's Back button does not show app pages. | |
+| BA-17a | Click your initials and name at the top right. | A menu with your name, email, "Business · Admin", **Change password** (opens Settings at the password form) and **Log out**. The light/dark button stays separate in the header. Escape or a click elsewhere closes the menu. | |
+| BA-17 | Account menu → **Log out**. | Back to the login page. The browser's Back button does not show app pages. | |
 
 ### 3.3 Settings (do this first on a new business)
 
@@ -386,7 +387,7 @@ Sign in at `/login` as `you+emp1@gmail.com` (or `aisha.rahman@demo-retail.exampl
 | EM-20 | **Privacy notice**. | Full notice with the company name and the business's retention periods. | |
 | EM-21 | Employee of Test Shop Ltd opens a document link belonging to another employee (ask the tester for a URL). | Not allowed (404 / forbidden). | |
 | EM-22 | **Forgot password?** as an employee. | Reset email E-03; after the new password you land on the portal (no code unless two-step sign-in is on). | |
-| EM-23 | **Log out**. | Back to the login page. | |
+| EM-23 | Account menu (initials, top right) → **Log out**. The menu also has **My details** and **Change password**. | Back to the login page. | |
 
 ---
 

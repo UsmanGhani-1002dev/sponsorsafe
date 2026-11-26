@@ -37,10 +37,12 @@ export default function MyDetails({ sections, password, twoFactor }: Props) {
                         </dl>
                     </Card>
                 ))}
-                <Card className="p-4 sm:p-6">
-                    <h2 className="mb-3 text-[17px] font-semibold">Change password</h2>
-                    <ChangePasswordForm action="/me/security/password" needsCode={password.needsCode} />
-                </Card>
+                <div id="password" className="scroll-mt-20">
+                    <Card className="p-4 sm:p-6">
+                        <h2 className="mb-3 text-[17px] font-semibold">Change password</h2>
+                        <ChangePasswordForm action="/me/security/password" needsCode={password.needsCode} />
+                    </Card>
+                </div>
                 <TwoStep {...twoFactor} />
             </div>
         </PortalLayout>
