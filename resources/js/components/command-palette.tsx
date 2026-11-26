@@ -1,6 +1,6 @@
 import { cn } from '@/lib/cn';
 import { router } from '@inertiajs/react';
-import { ClipboardCheck, CornerDownLeft, Download, FileWarning, History, Inbox, KeyRound, LayoutDashboard, Plus, Search, Settings, Trash2, User, Users, type LucideIcon } from 'lucide-react';
+import { CalendarDays, ClipboardCheck, CornerDownLeft, Download, FileWarning, History, Inbox, KeyRound, LayoutDashboard, Plus, Search, Settings, Trash2, User, Users, type LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 
 /**
@@ -23,6 +23,7 @@ const screens: Item[] = [
     { id: 's-dashboard', group: 'Screens', label: 'Dashboard', href: '/app', icon: LayoutDashboard },
     { id: 's-employees', group: 'Screens', label: 'Employees', href: '/app/employees', icon: Users },
     { id: 's-absence', group: 'Screens', label: 'Absence', href: '/app/absence', icon: ClipboardCheck },
+    { id: 's-calendar', group: 'Screens', label: 'Absence calendar', detail: 'Who is off, month by month', href: '/app/absence/calendar', icon: CalendarDays },
     { id: 's-reports', group: 'Screens', label: 'Home Office reports', href: '/app/reports', icon: FileWarning },
     { id: 's-requests', group: 'Screens', label: 'Requests', href: '/app/requests', icon: Inbox },
     { id: 's-settings', group: 'Screens', label: 'Settings', detail: 'Business, plan, key personnel, work sites, rules', href: '/app/settings', icon: Settings },

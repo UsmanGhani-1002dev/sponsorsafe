@@ -15,6 +15,7 @@ interface Props {
     preselect: number | null;
     maxUploadMb: number;
     classify: { employeeId: number; date: string; note: string } | null;
+    calendar: { date: string; month: string } | null;
 }
 
 interface Check {
@@ -33,16 +34,23 @@ const today = () => {
 };
 const fmt = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
-export default function RecordAbsence({ employees, types, preselect, maxUploadMb, classify }: Props) {
+export default function RecordAbsence({ employees, types, preselect, maxUploadMb, classify, calendar }: Props) {
     const form = useForm<{ employee_id: string; type: string; start_date: string; end_date: string; reason: string; fit_note: File | null; return: string }>({
         employee_id: String(classify?.employeeId ?? preselect ?? employees[0]?.id ?? ''),
         type: classify ? 'unauthorised' : 'annual',
-        start_date: classify?.date ?? today(),
-        end_date: classify?.date ?? today(),
+        start_date: classify?.date ?? calendar?.date ?? today(),
+        end_date: classify?.date ?? calendar?.date ?? today(),
         reason: classify ? 'No clock-in and no contact' : '',
         fit_note: null,
-        return: preselect ? 'profile' : '',
+        return: calendar ? `calendar:${calendar.month}` : preselect ? 'profile' : '',
     });
+    const back = classify
+        ? { href: '/app', label: 'Dashboard' }
+        : calendar
+          ? { href: `/app/absence/calendar?month=${calendar.month}`, label: 'Absence calendar' }
+          : preselect
+            ? { href: `/app/employees/${preselect}?tab=absence`, label: 'Back to employee' }
+            : { href: '/app/absence', label: 'Absence log' };
     const { data, setData, errors } = form;
     const [check, setCheck] = useState<Check | null>(null);
     const [checking, setChecking] = useState(false);
@@ -78,7 +86,7 @@ export default function RecordAbsence({ employees, types, preselect, maxUploadMb
 
     return (
         <AppLayout title="Record absence">
-            <PageHeader title="Record absence" back={classify ? { href: '/app', label: 'Dashboard' } : preselect ?{ href: `/app/employees/${preselect}?tab=absence`, label: 'Back to employee' } : { href: '/app/absence', label: 'Absence log' }} />
+            <PageHeader title="Record absence" back={back} />
 
             {classify && (
                 <div className="mb-5">

@@ -10,6 +10,7 @@ use App\Models\UnexplainedAbsence;
 use App\Services\AbsenceCheck;
 use App\Services\AbsenceRecorder;
 use App\Services\WorkingDays;
+use App\Support\AbsenceCalendar;
 use App\Support\Audit;
 use App\Support\Table;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -60,6 +61,10 @@ class AbsenceController extends Controller
                 'date' => $alert->date->format('Y-m-d'),
                 'note' => "Classifying the unexplained absence for {$alert->employee->full_name} on {$alert->date->format('j M Y')}. Change the type if they were sick or on leave, then save.",
             ] : null,
+            // A day clicked on the absence calendar: that person and date, and back to that month afterwards.
+            'calendar' => ! $alert && $request->query('from') === 'calendar' && is_string($date = $request->query('date')) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) && strtotime($date)
+                ? ['date' => $date, 'month' => substr($date, 0, 7)]
+                : null,
         ]);
     }
 
@@ -90,8 +95,20 @@ class AbsenceController extends Controller
             $message .= ' Upload the fit note when you have it.';
         }
 
-        return redirect($request->input('return') === 'profile' ? route('app.employees.show', [$employee, 'tab' => 'absence']) : route('app.absence.index'))
-            ->with('success', $message);
+        $return = (string) $request->input('return');
+        $to = match (true) {
+            $return === 'profile' => route('app.employees.show', [$employee, 'tab' => 'absence']),
+            str_starts_with($return, 'calendar:') => route('app.absence.calendar', ['month' => AbsenceCalendar::parseMonth(substr($return, 9))->format('Y-m')]),
+            default => route('app.absence.index'),
+        };
+
+        return redirect($to)->with('success', $message);
+    }
+
+    /** Absence → Calendar: who is off, month by month. */
+    public function calendar(Request $request, AbsenceCalendar $calendar): Response
+    {
+        return Inertia::render('App/Absence/Calendar', $calendar->month($request->user()->business, AbsenceCalendar::parseMonth($request->query('month'))));
     }
 
     public function destroy(Request $request, int $absence): RedirectResponse

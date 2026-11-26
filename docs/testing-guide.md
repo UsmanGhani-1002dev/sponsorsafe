@@ -306,6 +306,9 @@ Sign in at `/login` as `you+admin@gmail.com` (Test Shop Ltd), or `hr@demo-retail
 | BA-77 | Filter the log by employee, type and date range. **Export CSV** and **Export PDF**. | Files contain only the filtered rows. | |
 | BA-78 | Delete an absence that has a **pending** Home Office task. | Absence and its pending task removed. | |
 | BA-79 | Try to delete an absence whose task is **already reported**. | Refused (reopen the task first). | |
+| BA-79a | **Absence** → **Calendar** (switch at the top; also Ctrl+K "Absence calendar"). | This month, one row per person employed that month, one column per day. Today is circled, weekends and bank holidays (marked **BH**) shaded. Colours: leave blue, sickness amber, unpaid grey, unauthorised red; each person's usual days off are grey and colours on those days are paler. Before a start date or after a leaving date the cells are striped. Sponsored workers show **Unpaid N of M** (amber near the limit, red over it). On a laptop the whole month fits without scrolling sideways. | |
+| BA-79b | Use ‹ and › to move months, then **This month**. Hover over a coloured day, then click it. | The hover shows the type and dates; the click opens that person's Absence tab. | |
+| BA-79c | Click an empty working day for someone, save the absence. | Record absence opens with that person and date filled in, and "Absence calendar" as the back link. After saving you are back on that month, with the new absence showing. | |
 
 ### 3.7 Home Office reports
 
@@ -366,7 +369,7 @@ Sign in at `/login` as `you+emp1@gmail.com` (or `aisha.rahman@demo-retail.exampl
 | ID | Steps | Expected | Pass |
 |---|---|---|---|
 | EM-01 | Open the portal invite email (E-05), set a password. | Lands on the portal **Home**. No authenticator needed (optional for employees). | |
-| EM-02 | Menu. | Home, My documents, Leave and sickness, Update my details, My requests, My details. Privacy notice link at the bottom of every page. | |
+| EM-02 | Menu. | On a laptop: sidebar with Home, My documents, Leave and sickness, Update my details, My requests, My details. On a phone: a tab bar fixed at the bottom (Home, Documents, Leave, Requests, Me), the current one highlighted; "Update my details" is on Home and in the account menu. Nothing on the page hides behind the tab bar, and "Sent to HR" messages appear above it. Privacy notice link at the bottom of every page. | |
 | EM-03 | **Home**. | Annual leave left, documents HR needs, right-to-work status, quick actions, recent requests. Leave left = 5.6 weeks pro rata (5 days a week → 28 days; 3 days a week → 16.8 days) minus leave taken and leave waiting for HR this year. | |
 | EM-04 | Type `/app` in the address bar. | Sent back to the portal: employees can't open the admin area. | |
 | EM-05 | **My documents** → the passport HR requested (BA-65) → upload a PDF → Send. | Shows "Waiting for HR". HR sees it in Requests. | |

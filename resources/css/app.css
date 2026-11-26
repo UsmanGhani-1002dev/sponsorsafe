@@ -63,6 +63,10 @@
     @media (prefers-reduced-motion: no-preference) {
         html:has([data-website]) { scroll-behavior: smooth; }
     }
+    /* Employee portal on a phone: toasts sit above the bottom tab bar. */
+    @media (max-width: 767px) {
+        html:has(.portal-tabbar) { --toast-offset: calc(4.5rem + env(safe-area-inset-bottom)); }
+    }
     body { @apply bg-canvas text-ink font-sans; }
     h1, h2, h3 { letter-spacing: -0.02em; }
     :focus-visible { outline: none; box-shadow: 0 0 0 4px var(--color-accent-ring); }

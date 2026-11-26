@@ -1,4 +1,5 @@
 import { AbsenceBadges, type AbsenceRow } from '@/components/absence';
+import { AbsenceViews } from '@/components/absence-views';
 import { DataTable, tableQuery, type Column, type Page, type TableState } from '@/components/data-table';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -61,6 +62,7 @@ export default function AbsenceIndex({ absences, table, employees, types }: Prop
                     </Link>
                 }
             />
+            <AbsenceViews current="list" />
             <DataTable
                 url="/app/absence"
                 only={['absences', 'table']}

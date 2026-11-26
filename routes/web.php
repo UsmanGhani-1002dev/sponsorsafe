@@ -111,6 +111,7 @@ Route::middleware(['auth:web', 'business.active', 'role:admin'])->prefix('app')-
     // Absence (compliance-rules §3).
     Route::get('/absence', [AbsenceController::class, 'index'])->name('absence.index');
     Route::get('/absence/create', [AbsenceController::class, 'create'])->name('absence.create');
+    Route::get('/absence/calendar', [AbsenceController::class, 'calendar'])->name('absence.calendar');
     Route::get('/absence/check', [AbsenceController::class, 'check'])->middleware('throttle:120,1')->name('absence.check');
     Route::post('/absence', [AbsenceController::class, 'store'])->name('absence.store');
     Route::get('/absence/export.csv', [AbsenceController::class, 'exportCsv'])->name('absence.export.csv');

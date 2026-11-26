@@ -42,6 +42,8 @@ Owner: Shaf (Enovtec, Southampton). Claude is the developer; Shaf reviews each s
 - **Get started checklist and Home Office visit pack (24 Nov 2026): done and tested** — 297 PHPUnit tests passing.
 - **Compliance score and low-pay warning (25 Nov 2026): done and tested** — 301 PHPUnit tests passing. Shaf must confirm
   the £41,700 default (`sponsored_min_salary`) against gov.uk.
+- **Design polish (26 Nov 2026): done and tested** — account menu, Get started panel, absence calendar, portal tab bar on
+  phones. 305 PHPUnit tests passing.
 - **Next:** Stage 7c (AI chat assistant).
 - Local setup on this laptop is done (git repo, MySQL databases, PHP 8.4).
 
@@ -476,6 +478,19 @@ Demo logins (password `password`, local only):
   floor(done ÷ checkable rows × 100) over every current employee's ComplianceCheck rows (manual rows left out); tone red if
   anything is Missing, amber if only Check; `fixes` (Missing first, max 6) link to the profile tab that fixes them (`TABS`);
   `people` = each employee's summary, worst first. Card: `components/compliance-score.tsx`.
+
+## Absence calendar and portal tab bar (follow these conventions)
+
+- **`App\Support\AbsenceCalendar`**: `/app/absence/calendar?month=YYYY-MM` (invalid → this month), List | Calendar switch
+  (`components/absence-views.tsx`) on both absence pages. Rows = everyone employed at some point in the month; cells
+  `out` (before start / after leaving), `off` (not `scheduledOn`: usual day off or bank holiday), `work`, or `absence` with
+  `kind` leave | sick | unpaid | unauthorised (`AbsenceCalendar::kind()`). Sponsored workers get "Unpaid N of M" from
+  `AbsenceRules::unpaidUsage()` at the month end. An empty day opens Record absence with `?employee=&date=&from=calendar`;
+  the form posts `return=calendar:YYYY-MM` and comes back to that month. The scroll box is `relative` so the sr-only labels
+  don't widen the page.
+- Employee portal on phones (< md): fixed bottom tab bar (`.portal-tabbar` in `portal-layout.tsx`: Home, Documents, Leave,
+  Requests, Me); `app.css` raises `--toast-offset` while it is on screen. The sidebar stays for md and up.
+- After every non-GET visit `app.tsx` calls `router.flushAll()`, so prefetched pages never show data from before a save.
 
 ## UI and performance rules ("modern and very fast")
 
