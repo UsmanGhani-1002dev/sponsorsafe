@@ -72,6 +72,23 @@ class SetupAndVisitPackTest extends TestCase
         $this->assertNull($this->checklist(), 'the card goes away once everything is done');
     }
 
+    public function test_other_admin_pages_show_the_small_get_started_pill_but_the_dashboard_does_not(): void
+    {
+        $this->actingAs($this->admin)->get('/app/employees')
+            ->assertInertia(fn (Assert $p) => $p->where('setupNudge.done', 0)->where('setupNudge.total', 5)->where('setupNudge.steps.0.href', '/app/settings#business'));
+        $this->get('/app/settings')->assertInertia(fn (Assert $p) => $p->where('setupNudge.done', 0));
+        $this->get('/app')->assertInertia(fn (Assert $p) => $p->where('setupNudge', null)->where('setup.done', 0));
+
+        // Gone once set-up is done.
+        $this->business->update(['registered_address' => '1 High Street']);
+        KeyPerson::create(['business_id' => $this->business->id, 'role' => 'authorising_officer', 'name' => 'Nadia Khan']);
+        KeyPerson::create(['business_id' => $this->business->id, 'role' => 'key_contact', 'name' => 'Nadia Khan']);
+        $site = WorkSite::factory()->create(['business_id' => $this->business->id]);
+        $this->rtw(Employee::factory()->create(['business_id' => $this->business->id, 'work_site_id' => $site->id]));
+        $this->admin->unsetRelation('business');
+        $this->actingAs($this->admin)->get('/app/employees')->assertInertia(fn (Assert $p) => $p->where('setupNudge', null));
+    }
+
     public function test_the_visit_pack_is_one_pdf_for_the_whole_business_and_is_audited(): void
     {
         $this->business->update(['registered_address' => '1 High Street, Southampton SO14 1AA']);

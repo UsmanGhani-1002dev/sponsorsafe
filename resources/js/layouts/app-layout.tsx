@@ -1,5 +1,6 @@
 import { CommandPalette, isMac, usePaletteShortcut } from '@/components/command-palette';
 import { Logo } from '@/components/logo';
+import { SetupPill } from '@/components/setup-pill';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/cn';
@@ -19,7 +20,7 @@ const nav = [
 ];
 
 export default function AppLayout({ title, children }: { title: string; children: ReactNode }) {
-    const { auth, billing } = usePage<SharedProps>().props;
+    const { auth, billing, setupNudge } = usePage<SharedProps>().props;
     const path = usePage().url.split('?')[0];
     const isActive = (href: string) => (href === '/app' ? path === '/app' : path === href || path.startsWith(href + '/'));
     const [palette, setPalette] = useState(false);
@@ -104,7 +105,7 @@ export default function AppLayout({ title, children }: { title: string; children
                         ),
                     )}
                 </nav>
-                <main id="main" className="min-w-0 flex-1 px-4 py-6 sm:px-10 sm:py-8">
+                <main id="main" className={cn('min-w-0 flex-1 px-4 py-6 sm:px-10 sm:py-8', setupNudge && 'pb-24 sm:pb-24')}>
                     <div className="mx-auto max-w-6xl">
                         {billing && (
                             <div role="alert" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/60 dark:text-red-200">
@@ -120,6 +121,7 @@ export default function AppLayout({ title, children }: { title: string; children
                     </div>
                 </main>
             </div>
+            {setupNudge && <SetupPill setup={setupNudge} />}
         </div>
     );
 }

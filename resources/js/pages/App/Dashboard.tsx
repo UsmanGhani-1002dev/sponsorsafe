@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/ui/page-header';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/cn';
+import type { Setup } from '@/types';
 import { Link, router } from '@inertiajs/react';
 import { Check, CheckCircle2, ShieldCheck } from 'lucide-react';
 
@@ -25,18 +26,12 @@ interface Props {
     compliance: Compliance | null;
 }
 
-interface Setup {
-    steps: { key: string; title: string; detail: string; done: boolean; href: string; action: string }[];
-    done: number;
-    total: number;
-}
-
 /** "Get started": the five set-up steps for a new business. Goes away once all are done. */
 function GetStarted({ setup }: { setup: Setup }) {
     const next = setup.steps.find((s) => !s.done);
 
     return (
-        <section aria-labelledby="setup-title" className="mb-6">
+        <section aria-labelledby="setup-title" className="mt-8">
             <Card className="overflow-hidden">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
                     <div>
@@ -117,7 +112,6 @@ export default function Dashboard({ business, stats, watchlist, year, deadlines,
                     </Alert>
                 </div>
             )}
-            {setup && <GetStarted setup={setup} />}
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {tiles.map((t) => {
@@ -140,6 +134,7 @@ export default function Dashboard({ business, stats, watchlist, year, deadlines,
                 })}
             </div>
 
+            {setup && <GetStarted setup={setup} />}
             {compliance && <ComplianceScoreCard compliance={compliance} />}
 
             {(unexplained.enabled || unexplained.items.length > 0) && (
