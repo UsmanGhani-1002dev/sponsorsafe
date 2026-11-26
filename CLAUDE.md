@@ -453,8 +453,9 @@ Demo logins (password `password`, local only):
   Officer and Key Contact, an open work site, a current employee, every current employee with a filed right-to-work
   document (portal uploads waiting for HR do not count). Returns null when all five are done, so the card disappears by
   itself. Buttons link to `/app/settings#business|#people|#sites` (anchor ids on the Settings page) and Employees.
-  The dashboard card sits below the four tiles; every other admin page gets the same steps as a small bottom-left pill
-  (`components/setup-pill.tsx`, shared prop `setupNudge`, only on `app/*`, so not on the dashboard). Toasts stay bottom right.
+  The dashboard card sits below the four tiles; every other admin page gets the same steps as a bottom-right panel
+  (`components/setup-pill.tsx`, shared prop `setupNudge`, only on `app/*`, so not on the dashboard), open by default on
+  sm+ screens, minimised state kept in sessionStorage. It sets `--toast-offset` so toasts stack above it.
 - **`App\Services\VisitPack`**: one PDF (`resources/views/pdf/visit-pack.blade.php`) for the whole business: sponsor
   details, key personnel, work sites, every current employee's status and what to fix, pending reports, then
   `CompliancePack::data()` for each current employee (sponsored first; leavers left out). The per-worker body is the

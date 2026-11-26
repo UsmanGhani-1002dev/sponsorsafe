@@ -8,6 +8,7 @@ import { useEffect, useSyncExternalStore } from 'react';
  * Toasts: the server's flash messages ("Saved…", "Could not…") pop up in the corner instead of a banner.
  * Success fades after 5 seconds; errors stay until closed (they usually need reading). One listener
  * for every Inertia visit (see listenForFlash in app.tsx); sign-in pages keep their own inline messages.
+ * --toast-offset (set by the Get started pill) lifts them above anything pinned to the same corner.
  */
 type Toast = { id: number; tone: 'success' | 'error'; text: string };
 
@@ -65,7 +66,7 @@ export function Toaster() {
     }, []);
 
     return (
-        <div aria-live="polite" className="pointer-events-none fixed inset-x-4 bottom-4 z-[60] flex flex-col items-end gap-2 sm:inset-x-auto sm:right-6 sm:bottom-6">
+        <div aria-live="polite" className="pointer-events-none fixed inset-x-4 bottom-[calc(var(--toast-offset,0px)_+_1rem)] z-[60] flex flex-col items-end gap-2 sm:inset-x-auto sm:right-6 sm:bottom-[calc(var(--toast-offset,0px)_+_1.5rem)]">
             {items.map((t) => (
                 <div
                     key={t.id}

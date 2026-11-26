@@ -1,36 +1,61 @@
 import { cn } from '@/lib/cn';
 import type { Setup } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { Check, ChevronDown, ListChecks } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
+
+const KEY = 'sponsorsafe.setupPill';
+
+/** Open by default on a laptop or desktop; once minimised it stays minimised for the rest of the browser session. */
+function initiallyOpen(): boolean {
+    try {
+        if (sessionStorage.getItem(KEY) === 'closed') return false;
+    } catch {
+        // storage blocked: just open it
+    }
+    return window.matchMedia('(min-width: 640px)').matches;
+}
+
+function remember(open: boolean) {
+    try {
+        sessionStorage.setItem(KEY, open ? 'open' : 'closed');
+    } catch {
+        // storage blocked: fine, it simply opens again on the next page
+    }
+}
 
 /**
- * "Get started · 2 of 5": a small pill at the bottom left of every admin page except the dashboard (which shows the
- * full card) until set-up is done. Opens the steps; each open step links to where it is done. Bottom left, so it
- * never covers the toasts at the bottom right.
+ * "Get started · 2 of 5": bottom right of every admin page except the dashboard (which shows the full card) until
+ * set-up is done. Open by default; each open step links to where it is done. Toasts stack above it (--toast-offset).
  */
 export function SetupPill({ setup }: { setup: Setup }) {
-    const [open, setOpen] = useState(false);
-    const url = usePage().url;
+    const [open, setOpen] = useState(initiallyOpen);
     const box = useRef<HTMLDivElement>(null);
     const next = setup.steps.find((s) => !s.done);
 
-    // Close when a step's link is followed, on Escape, and on a click elsewhere.
-    useEffect(() => setOpen(false), [url]);
-    useEffect(() => {
-        if (!open) return;
-        const key = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
-        const click = (e: MouseEvent) => box.current && !box.current.contains(e.target as Node) && setOpen(false);
-        document.addEventListener('keydown', key);
-        document.addEventListener('mousedown', click);
+    const toggle = () =>
+        setOpen((v) => {
+            remember(!v);
+            return !v;
+        });
+
+    // Keep toasts above the pill: share its height with the toaster.
+    useLayoutEffect(() => {
+        const el = box.current;
+        if (!el) return;
+        const root = document.documentElement;
+        const set = () => root.style.setProperty('--toast-offset', `${el.offsetHeight + 12}px`);
+        set();
+        const ro = new ResizeObserver(set);
+        ro.observe(el);
         return () => {
-            document.removeEventListener('keydown', key);
-            document.removeEventListener('mousedown', click);
+            ro.disconnect();
+            root.style.removeProperty('--toast-offset');
         };
-    }, [open]);
+    }, []);
 
     return (
-        <div ref={box} className="fixed bottom-4 left-4 z-40 flex max-w-[calc(100vw-2rem)] flex-col items-start gap-2 print:hidden">
+        <div ref={box} className="fixed right-4 bottom-4 z-40 flex max-w-[calc(100vw-2rem)] flex-col items-end gap-2 sm:right-6 sm:bottom-6 print:hidden">
             {open && (
                 <div id="setup-pill-panel" role="region" aria-labelledby="setup-pill-title" className="w-80 max-w-full overflow-hidden rounded-xl border border-line bg-surface shadow-lg">
                     <div className="border-b border-line px-4 py-3">
@@ -81,9 +106,10 @@ export function SetupPill({ setup }: { setup: Setup }) {
             )}
             <button
                 type="button"
-                onClick={() => setOpen((v) => !v)}
+                onClick={toggle}
                 aria-expanded={open}
                 aria-controls="setup-pill-panel"
+                aria-label={open ? `Minimise Get started (${setup.done} of ${setup.total} done)` : `Open Get started (${setup.done} of ${setup.total} done)`}
                 className="inline-flex min-h-11 items-center gap-2 rounded-full border border-line bg-surface py-1.5 pr-3 pl-2 text-sm font-semibold text-ink shadow-lg hover:border-line-strong"
             >
                 <span aria-hidden className="inline-flex size-8 items-center justify-center rounded-full bg-accent-fill text-white">
